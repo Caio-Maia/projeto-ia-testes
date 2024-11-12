@@ -52,7 +52,8 @@ function ImproveTaskPage() {
         return;
       }
       try {
-        const response = await axios.post(`http://localhost:5000/api/${model.apiName}/improve-task?token=${token}`, { model: model.version, data: `${prompt} \n\n Aqui está uma história de usuário:\n\n "${taskDescription}"`});
+        const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+        const response = await axios.post(`${backendUrl}/api/${model.apiName}/improve-task?token=${token}`, { model: model.version, data: `${prompt} \n\n Aqui está uma história de usuário:\n\n "${taskDescription}"`});
         setResult(response.data.data);
         saveGenerationToLocalStorage(response.data.data, 'task', model.version);
         console.log(result)

@@ -15,7 +15,8 @@ function PromptPage() {
         const fetchPromptFromBackend = async (fileName) => {
             setIsLoading(true);
             try {
-                const response = await axios.get(`http://localhost:5000/api/files/${fileName}`);
+                const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+                const response = await axios.get(`${backendUrl}/api/files/${fileName}`);
                 const promptContent = response.data.content;
                 setContent(promptContent);
                 localStorage.setItem(`${fileName}Prompt`, promptContent);
