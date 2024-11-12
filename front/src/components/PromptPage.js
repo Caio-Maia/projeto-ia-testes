@@ -11,23 +11,23 @@ function PromptPage() {
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-    const fetchPromptFromBackend = async (fileName) => {
-        setIsLoading(true);
-        try {
-            const response = await axios.get(`http://localhost:5000/api/files/${fileName}`);
-            const promptContent = response.data.content;
-            setContent(promptContent);
-            localStorage.setItem(`${fileName}Prompt`, promptContent);
-        } catch (error) {
-            console.error('Erro ao buscar o conteúdo do arquivo:', error);
-            setContent(''); // Limpa o conteúdo no caso de erro
-            showSnackbar('Erro ao carregar o conteúdo do arquivo.', 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     useEffect(() => {
+        const fetchPromptFromBackend = async (fileName) => {
+            setIsLoading(true);
+            try {
+                const response = await axios.get(`http://localhost:5000/api/files/${fileName}`);
+                const promptContent = response.data.content;
+                setContent(promptContent);
+                localStorage.setItem(`${fileName}Prompt`, promptContent);
+            } catch (error) {
+                console.error('Erro ao buscar o conteúdo do arquivo:', error);
+                setContent(''); // Limpa o conteúdo no caso de erro
+                showSnackbar('Erro ao carregar o conteúdo do arquivo.', 'error');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+    
         if (selectedFile) {
             const localPromptContent = localStorage.getItem(`${selectedFile}Prompt`);
             if (localPromptContent) {
