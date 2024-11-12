@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Box, Button, TextField, Typography, MenuItem, FormControl, InputLabel, Select, Grid2,  Alert, Snackbar, CircularProgress } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
 
 function GenerateTestsPage() {
@@ -165,7 +166,7 @@ const fetchPromptFromBackend = async (fileName) => {
             boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
           }}
         >
-          <ReactMarkdown>{result}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
         </Box>
       )}
     </Grid2>

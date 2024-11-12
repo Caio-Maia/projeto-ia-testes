@@ -22,7 +22,10 @@ const HistoryDrawer = () => {
     setGenerations(updatedGenerations);
   };*/
 
-  const generations = JSON.parse(localStorage.getItem('taskGenerations')) || [];
+  const taskGenerations = JSON.parse(localStorage.getItem('taskGenerations')) || [];
+  const testGenerations = JSON.parse(localStorage.getItem('testGenerations')) || [];
+
+  const generations = [...taskGenerations, ...testGenerations];
 
   return (
     <>
