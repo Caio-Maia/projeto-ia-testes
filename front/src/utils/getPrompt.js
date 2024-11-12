@@ -2,7 +2,8 @@ import axios from 'axios';
 
 export const getPrompt = async (fileName) => {
     try {
-        const response = await axios.get(`http://localhost:5000/api/files/${fileName}`);
+        const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+        const response = await axios.get(`${backendUrl}/api/files/${fileName}`);
         return response.data.prompt;
     } catch (error) {
         console.error('Erro ao buscar o prompt do backend:', error);

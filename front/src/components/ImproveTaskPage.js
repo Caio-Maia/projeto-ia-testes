@@ -30,7 +30,8 @@ function ImproveTaskPage() {
     const fetchPromptFromBackend = async (fileName) => {
         setIsLoading(true);
         try {
-            const response = await axios.get(`http://localhost:5000/api/files/${fileName}`);
+            const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+            const response = await axios.get(`${backendUrl}/api/files/${fileName}`);
             const promptContent = response.data.content;
             setPrompt(promptContent);
             localStorage.setItem('taskModelPrompt', promptContent);
@@ -52,7 +53,7 @@ function ImproveTaskPage() {
         return;
       }
       try {
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+        const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
         const response = await axios.post(`${backendUrl}/api/${model.apiName}/improve-task?token=${token}`, { model: model.version, data: `${prompt} \n\n Aqui está uma história de usuário:\n\n "${taskDescription}"`});
         setResult(response.data.data);
         saveGenerationToLocalStorage(response.data.data, 'task', model.version);
