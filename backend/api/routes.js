@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { improveTaskChatGPT, generateTestsChatGPT } = require('./controllers/chatgptController');
-const { improveTaskGemini, generateTestsGemini } = require('./controllers/geminiController');
-const { getFileContent, updateFileContent } = require('./controllers/fileController');
+const { improveTaskChatGPT, generateTestsChatGPT } = require('../controllers/chatgptController');
+const { improveTaskGemini, generateTestsGemini } = require('../controllers/geminiController');
+const { getFileContent, updateFileContent } = require('../controllers/fileController');
 
 // Rotas para ChatGPT
 router.post('/chatgpt/improve-task', improveTaskChatGPT);
