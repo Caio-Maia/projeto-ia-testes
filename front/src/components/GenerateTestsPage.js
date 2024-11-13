@@ -164,6 +164,7 @@ const fetchPromptFromBackend = async (fileName) => {
             padding: '20px',
             borderRadius: '8px',
             boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
+            overflowX: 'auto'
           }}
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>

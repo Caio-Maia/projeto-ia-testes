@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Drawer, List, ListItem, ListItemText, Button, Dialog, DialogTitle, DialogContent, Box, Typography } from '@mui/material';
 
 const HistoryDrawer = () => {
@@ -26,6 +27,7 @@ const HistoryDrawer = () => {
   const testGenerations = JSON.parse(localStorage.getItem('testGenerations')) || [];
 
   const generations = [...taskGenerations, ...testGenerations];
+  generations.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   return (
     <>
@@ -63,7 +65,7 @@ const HistoryDrawer = () => {
         <Typography color="textSecondary" variant="body2">{`${selectedGeneration?.date}`}</Typography>
         </DialogTitle>
         <DialogContent>
-          <ReactMarkdown>{selectedGeneration?.generation}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedGeneration?.generation}</ReactMarkdown>
         </DialogContent>
       </Dialog>
     </>
