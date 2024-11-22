@@ -25,7 +25,14 @@ const improveTaskGemini = async (req, res) => {
     const improvedContent = response.data.candidates[0].content.parts[0].text;
     res.json({data: improvedContent});
   } catch (error) {
-    console.error(error);
+    if (error.response) {
+      console.log(error.response.data);
+      console.log(error.response.status);
+    } else if (error.request) {
+      console.log(error.request);
+    } else {
+      console.error(error);
+    }
     res.status(500).json({ error: 'Erro ao tentar melhorar a tarefa com Gemini' });
   }
 };
