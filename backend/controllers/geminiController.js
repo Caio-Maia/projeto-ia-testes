@@ -11,7 +11,7 @@ const improveTaskGemini = async (req, res) => {
   }
   
   try {
-    const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${model}-latest:generateContent?key=${token}`, {
+    const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${token}`, {
       contents: [{ parts: [{ text: prompt }] }],
     });
     console.log('Request:', response.config.data);
@@ -47,7 +47,7 @@ const generateTestsGemini = async (req, res) => {
   }
 
   try {
-    const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${model}-latest:generateContent?key=${token}`, {
+    const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${token}`, {
       contents: [{ parts: [{ text: prompt }] }],
     });
     console.log('Request:', response.config.data);
