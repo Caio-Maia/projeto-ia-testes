@@ -1,16 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
 import HomePage from './components/HomePage';
 import ImproveTaskPage from './components/ImproveTaskPage';
 import GenerateTestsPage from './components/GenerateTestsPage';
+import CodeGenerationPage from './components/CodeGenerationPage';
+import RiskAnalysisPage from './components/RiskAnalysisPage';
+import FeedbackDashboard from './components/FeedbackDashboard';
 import Footer from './components/Footer';
-import Header from './components/Header';
+import Sidebar from './components/Sidebar';
 import TokenDialog from './components/TokenDialog';
 import PromptPage from './components/PromptPage';
+import EducationModeToggle from './components/EducationModeToggle';
+import './App.css';
+import './styles/global.css';
 
 function App() {
-
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     // Verificar se os tokens já estão no localStorage
@@ -18,26 +27,66 @@ function App() {
     const gemini = localStorage.getItem('geminiToken');
 
     if (!chatgpt && !gemini) {
-    // Se nenhum token estiver presente, abrir o diálogo
-    setDialogOpen(true);
+      // Se nenhum token estiver presente, abrir o diálogo
+      setDialogOpen(true);
     }
-}, []);
+  }, []);
+
+  // Handle sidebar toggle
+  const handleSidebarToggle = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  // Close sidebar on mobile when navigating
+  const handleNavigation = () => {
+    if (isMobile && sidebarOpen) {
+      setSidebarOpen(false);
+    }
+  };
 
   return (
-    <div>
-    <Router>
-      <div>
-        <Header />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/improve-task" element={<ImproveTaskPage />} />
-          <Route path="/generate-tests" element={<GenerateTestsPage />} />
-          <Route path="/adjust-prompts" element={<PromptPage />} />
-        </Routes>
-        <Footer />
-      </div>
-    </Router>
-    <TokenDialog open={dialogOpen} onClose={setDialogOpen} permitClose={false}/>
+    <div className="app-container">
+      <Router>
+        <Sidebar 
+          open={sidebarOpen} 
+          onToggle={handleSidebarToggle} 
+          isMobile={isMobile}
+          onNavigate={handleNavigation}
+        />
+        <Box 
+          component="main" 
+          className={`content-area ${sidebarOpen ? 'sidebar-open' : ''}`}
+          sx={{ 
+            flexGrow: 1, 
+            p: { xs: 1, sm: 2, md: 3 },
+            mt: { xs: 7, sm: 8 }
+          }}
+        >
+          <div className="responsive-container">
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                justifyContent: 'flex-end', 
+                mb: 2,
+                flexWrap: 'wrap'
+              }}
+            >
+              <EducationModeToggle />
+            </Box>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/improve-task" element={<ImproveTaskPage />} />
+              <Route path="/generate-tests" element={<GenerateTestsPage />} />
+              <Route path="/generate-code" element={<CodeGenerationPage />} />
+              <Route path="/analyze-risks" element={<RiskAnalysisPage />} />
+              <Route path="/feedback-dashboard" element={<FeedbackDashboard />} />
+              <Route path="/adjust-prompts" element={<PromptPage />} />
+            </Routes>
+            <Footer />
+          </div>
+        </Box>
+      </Router>
+      <TokenDialog open={dialogOpen} onClose={setDialogOpen} permitClose={false}/>
     </div>
   );
 }

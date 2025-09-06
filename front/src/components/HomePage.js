@@ -2,65 +2,95 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Button from '@mui/material/Button';
 import Grid2 from '@mui/material/Grid2';
+import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 
 function HomePage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  
   return (
-    <div style={{ textAlign: 'center', padding: '20px' }}>
+    <div className="responsive-container text-center spacing-md">
       {/* Cabeçalho */}
-      <h1 style={{ marginBottom: '10px' }}>Bem-vindo ao Gerador de Tarefas e Casos de Teste</h1>
+      <Typography 
+        variant={isMobile ? 'h5' : 'h4'} 
+        component="h1" 
+        className="heading-responsive"
+        sx={{ mb: { xs: 2, sm: 3 }, fontWeight: 'bold' }}
+      >
+        Bem-vindo ao Gerador de Tarefas e Casos de Teste
+      </Typography>
 
       {/* Container principal com duas colunas */}
       <Grid2 
         container 
-        spacing={2} 
+        spacing={{ xs: 2, sm: 3, md: 4 }} 
         justifyContent="center" 
         alignItems="center"
-        style={{ marginTop: '50px' }}
+        sx={{ mt: { xs: 2, sm: 4, md: 6 } }}
       >
         {/* Coluna da Imagem (esquerda) */}
-        <Grid2 item xs={12} md={6}>
+        <Grid2 item xs={12} md={6} className="flex-center">
           <img 
-            src='/undraw.svg'  // Substitua pelo caminho correto da sua imagem
+            src='/undraw.svg'
             alt="Imagem ilustrativa"
-            style={{ width: '100%', maxWidth: '400px', height: 'auto' }} // Tamanho da imagem ajustável
+            className="img-responsive"
+            style={{ 
+              maxWidth: isMobile ? '280px' : '400px',
+              marginBottom: isMobile ? '20px' : '0'
+            }}
           />
         </Grid2>
 
         {/* Coluna das opções (direita) */}
         <Grid2 item xs={12} md={6}>
-          <p style={{ fontSize: '18px', marginBottom: '20px' }}>Escolha uma das opções abaixo:</p>
+          <Typography 
+            variant="h6" 
+            component="p" 
+            sx={{ 
+              mb: { xs: 2, md: 3 },
+              fontSize: { xs: '16px', sm: '18px' }
+            }}
+          >
+            Escolha uma das opções abaixo:
+          </Typography>
           
-          {/* Botões em forma de lista, com largura fixa */}
-          <Grid2 container direction="column" spacing={2} alignItems="center">
-            <Grid2 item>
-              <Link to="/improve-task">
+          {/* Botões em forma de lista, com largura responsiva */}
+          <Grid2 
+            container 
+            direction="column" 
+            spacing={{ xs: 1, sm: 2 }} 
+            alignItems="center"
+          >
+            <Grid2 item sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
+              <Link to="/improve-task" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
                 <Button 
                   variant="contained" 
-                  size="large" 
-                  style={{ width: '250px' }} // Largura padrão para os botões
+                  size={isMobile ? "medium" : "large"} 
+                  fullWidth
                 >
                   Melhorar Tarefa
                 </Button>
               </Link>
             </Grid2>
-            <Grid2 item>
-              <Link to="/generate-tests">
+            <Grid2 item sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
+              <Link to="/generate-tests" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
                 <Button 
                   variant="contained" 
-                  size="large" 
-                  style={{ width: '250px' }} // Mesma largura do outro botão
+                  size={isMobile ? "medium" : "large"} 
+                  fullWidth
                 >
                   Gerar Casos de Teste
                 </Button>
               </Link>
             </Grid2>
-            <Grid2 item>
-              <Link to="/adjust-prompts">
+            <Grid2 item sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
+              <Link to="/adjust-prompts" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
                 <Button 
                   variant="contained" 
                   color='warning'
-                  size="large" 
-                  style={{ width: '250px' }} // Mesma largura do outro botão
+                  size={isMobile ? "medium" : "large"} 
+                  fullWidth
                 >
                   Ajustar Prompts
                 </Button>

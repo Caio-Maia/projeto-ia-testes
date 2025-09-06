@@ -4,6 +4,7 @@ import { Box, Button, TextField, Typography, MenuItem, FormControl, InputLabel, 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
+import FeedbackComponent from './FeedbackComponent';
 
 function GenerateTestsPage() {
   const [prompt, setPrompt] = useState('');
@@ -12,11 +13,20 @@ function GenerateTestsPage() {
   const [result, setResult] = useState('');
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [generationId, setGenerationId] = useState(null);
+  
+  // Education mode state (read from localStorage)
+  const [educationMode, setEducationMode] = useState(() => {
+    const savedMode = localStorage.getItem('educationMode');
+    return savedMode ? JSON.parse(savedMode) : false;
+  });
+  
   const isButtonDisabled = taskDescription === '' || model === '';
 
   const options = [
     { label: 'ChatGPT', apiName: 'chatgpt', version: 'chatgpt-4' },
-    { label: 'Gemini 1.5 Flash', apiName: 'gemini', version: 'gemini-1.5-flash' },
+    { label: 'Gemini 1.5 Flash', apiName: 'gemini', version: 'gemini-1.5-flash-latest' },
+    { label: 'Gemini 2.0 Flash', apiName: 'gemini', version: 'gemini-2.0-flash' },
   ];
 
   useEffect(() => {
@@ -26,9 +36,9 @@ function GenerateTestsPage() {
     } else {
         setPrompt(localPromptContent);
     }
-}, []);
+  }, []);
 
-const fetchPromptFromBackend = async (fileName) => {
+  const fetchPromptFromBackend = async (fileName) => {
     setIsLoading(true);
     try {
         const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
@@ -41,7 +51,7 @@ const fetchPromptFromBackend = async (fileName) => {
     } finally {
         setIsLoading(false);
     }
-};
+  };
 
   const handleTaskDescriptionChange = (event) => {
     setTaskDescription(event.target.value);
@@ -68,10 +78,21 @@ const fetchPromptFromBackend = async (fileName) => {
     }
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const response = await axios.post(`${backendUrl}/api/${model.apiName}/generate-tests?token=${token}`, { model: model.version, data: `${prompt} \n\n Aqui está uma história de usuário:\n\n "${taskDescription}"` });
+      
+      // Add education mode instruction if enabled
+      let promptText = `${prompt} \n\n Aqui está uma história de usuário:\n\n "${taskDescription}"`;
+      if (educationMode) {
+        promptText += '\n\nPor favor, explique seu raciocínio durante a criação dos casos de teste, incluindo como você identificou os cenários importantes e como eles se relacionam com os requisitos.';
+      }
+      
+      const response = await axios.post(`${backendUrl}/api/${model.apiName}/generate-tests?token=${token}`, { 
+        model: model.version, 
+        data: promptText 
+      });
+      
       setResult(response.data.data);
-      saveGenerationToLocalStorage(response.data.data, 'testcase', model.version);
-      console.log(result)
+      const id = saveGenerationToLocalStorage(response.data.data, 'testcase', model.version);
+      setGenerationId(id);
     } catch (error) {
       setError(error);
       console.error('Erro ao gerar casos de teste: ', error);
@@ -97,7 +118,7 @@ const fetchPromptFromBackend = async (fileName) => {
           </Typography>
         </Box>
 
-        <FormControl required='true' fullWidth variant="outlined" sx={{ mb: 3 }}>
+        <FormControl required fullWidth variant="outlined" sx={{ mb: 3 }}>
           <InputLabel id="model-select-label">Select Model</InputLabel>
           <Select
             labelId="model-select-label"
@@ -117,7 +138,7 @@ const fetchPromptFromBackend = async (fileName) => {
           </Select>
         </FormControl>
 
-        <TextField required='true'
+        <TextField required
           label="Task Description"
           multiline
           rows={6}
@@ -135,7 +156,7 @@ const fetchPromptFromBackend = async (fileName) => {
         </Box>
         
       </Grid2>  
-      <div  hidden={!isLoading}>
+      <div hidden={!isLoading}>
           <CircularProgress />
       </div>
       <Box
@@ -168,6 +189,18 @@ const fetchPromptFromBackend = async (fileName) => {
           }}
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
+          
+          {/* Feedback component */}
+          {generationId && (
+            <Box mt={3}>
+              <FeedbackComponent 
+                generationId={generationId} 
+                type="testcase" 
+                originalContent={result}
+                onRegenerateContent={(regeneratedContent) => setResult(regeneratedContent)}
+              />
+            </Box>
+          )}
         </Box>
       )}
     </Grid2>

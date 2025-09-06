@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
     Box, Button, TextField, Typography, MenuItem, FormControl, InputLabel, Select, Grid2,
-    Alert, Snackbar, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions
+    Alert, Snackbar, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions,
+    FormControlLabel, Switch, useMediaQuery, useTheme
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
+import FeedbackComponent from './FeedbackComponent';
 
 function ImproveTaskPage() {
     const [prompt, setPrompt] = useState('');
@@ -18,6 +20,16 @@ function ImproveTaskPage() {
     const [taskDescription, setTaskDescription] = useState('');
     const [jiraTaskCode, setJiraTaskCode] = useState('');
     const [isJiraLoading, setIsJiraLoading] = useState(false);
+    const [generationId, setGenerationId] = useState(null);
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+
+    // Education mode state (read from localStorage)
+    const [educationMode, setEducationMode] = useState(() => {
+        const savedMode = localStorage.getItem('educationMode');
+        return savedMode ? JSON.parse(savedMode) : false;
+    });
 
     // Novos estados para dialog de atualização JIRA
     const [jiraDialogOpen, setJiraDialogOpen] = useState(false);
@@ -123,11 +135,18 @@ function ImproveTaskPage() {
         try {
             const backendUrl =  'http://localhost:5000';
             const userStory = taskDescription;
+            
+            // Add education mode instruction if enabled
+            let promptText = `${prompt} \n\n Aqui está uma história de usuário:\n\n "${userStory}"`;
+            if (educationMode) {
+                promptText += '\n\nPor favor, explique seu raciocínio durante a análise e mostre o passo a passo de como você chegou às conclusões e sugestões.';
+            }
+            
             const response = await axios.post(
                 `${backendUrl}/api/${model.apiName}/improve-task?token=${token}`,
                 {
                     model: model.version,
-                    data: `${prompt} \n\n Aqui está uma história de usuário:\n\n "${userStory}"`
+                    data: promptText
                 }
             );
             setResult(response.data.data);
@@ -135,12 +154,13 @@ function ImproveTaskPage() {
             const taskInfo = jiraTaskCode
                 ? `JIRA: ${jiraTaskCode} - ${userStory.substring(0, 100)}`
                 : `Manual: ${userStory.substring(0, 100)}`;
-            saveGenerationToLocalStorage(
+            const id = saveGenerationToLocalStorage(
                 response.data.data,
                 'task',
                 model.version,
                 taskInfo
             );
+            setGenerationId(id);
         } catch (error) {
             setError('Erro ao melhorar a tarefa');
             console.error('Erro ao melhorar a tarefa:', error);
@@ -203,21 +223,40 @@ function ImproveTaskPage() {
     return (
         <Grid2
             container
-            spacing={3}
+            spacing={isMobile ? 2 : 3}
             direction="column"
             alignItems="center"
             justifyContent="center"
-            padding={10}
-            style={{ minHeight: '81vh' }}
+            sx={{ 
+                padding: { xs: 2, sm: 4, md: 10 },
+                minHeight: '81vh'
+            }}
+            className="responsive-container"
         >
-            <Grid2 item xs={10} md={6} lg={4} style={{ minWidth: '1000px' }}>
-                <Box textAlign="center">
-                    <Typography variant="h4" gutterBottom>
+            <Grid2 
+                item 
+                xs={12} 
+                sx={{ 
+                    width: '100%',
+                    maxWidth: { xs: '100%', sm: '90%', md: '1000px' }
+                }}
+            >
+                <Box textAlign="center" mb={isMobile ? 2 : 3}>
+                    <Typography 
+                        variant={isMobile ? "h5" : "h4"} 
+                        component="h1"
+                        className="heading-responsive"
+                    >
                         Melhore sua História de Usuário
                     </Typography>
                 </Box>
 
-                <FormControl required fullWidth variant="outlined" sx={{ mb: 3 }}>
+                <FormControl 
+                    required 
+                    fullWidth 
+                    variant="outlined" 
+                    sx={{ mb: { xs: 2, sm: 3 } }}
+                >
                     <InputLabel id="model-select-label">Select Model</InputLabel>
                     <Select
                         labelId="model-select-label"
@@ -237,7 +276,13 @@ function ImproveTaskPage() {
                     </Select>
                 </FormControl>
 
-                <Box display="flex" gap={2} alignItems="center" sx={{ mb: 2 }}>
+                <Box 
+                    display="flex" 
+                    flexDirection={isMobile ? "column" : "row"}
+                    gap={isMobile ? 1 : 2} 
+                    alignItems={isMobile ? "stretch" : "center"} 
+                    sx={{ mb: 2 }}
+                >
                     <TextField
                         label="Código da Task JIRA (ex: SOD-12)"
                         value={jiraTaskCode}
@@ -247,12 +292,15 @@ function ImproveTaskPage() {
                         style={{ flex: 1 }}
                         disabled={!isJiraEnabled}
                         helperText={!isJiraEnabled ? "Desabilitado ao preencher descrição manual" : ""}
+                        fullWidth={isMobile}
                     />
                     <Button
                         variant="outlined"
                         color="secondary"
                         onClick={fetchJiraTaskDescription}
                         disabled={!jiraTaskCode || isJiraLoading || !isJiraEnabled}
+                        fullWidth={isMobile}
+                        sx={{ mt: isMobile ? 1 : 0 }}
                     >
                         {isJiraLoading ? <CircularProgress size={20} /> : 'Buscar JIRA'}
                     </Button>
@@ -262,12 +310,12 @@ function ImproveTaskPage() {
                     required
                     label="Task Description"
                     multiline
-                    rows={6}
+                    rows={isMobile ? 4 : 6}
                     value={taskDescription}
                     onChange={handleTaskDescriptionChange}
                     variant="outlined"
                     fullWidth
-                    sx={{ mb: 3 }}
+                    sx={{ mb: { xs: 2, sm: 3 } }}
                     disabled={!isManualEnabled}
                     helperText={!isManualEnabled ? "Desabilitado ao buscar task do JIRA" : ""}
                 />
@@ -278,6 +326,7 @@ function ImproveTaskPage() {
                         color="primary"
                         disabled={isButtonDisabled || isLoading}
                         onClick={handleSubmit}
+                        size={isMobile ? "medium" : "large"}
                     >
                         {isLoading ? <CircularProgress size={24} /> : 'Submit'}
                     </Button>
@@ -291,10 +340,11 @@ function ImproveTaskPage() {
                     position: 'fixed',
                     bottom: 20,
                     left: '50%',
-                    transform: 'translateX(-22%)',
+                    transform: 'translateX(-50%)',
                     width: '100%',
-                    maxWidth: 600,
+                    maxWidth: { xs: '90%', sm: 600 },
                     px: 2,
+                    zIndex: 1000
                 }}
             >{error && (
                 <Snackbar open={!!error} autoHideDuration={4000} onClose={() => setError(null)}>
@@ -313,16 +363,18 @@ function ImproveTaskPage() {
                 <Box
                     sx={{
                         width: '100%',
-                        maxWidth: '1000px',
-                        marginTop: 4,
+                        maxWidth: { xs: '100%', sm: '90%', md: '1000px' },
+                        marginTop: { xs: 2, sm: 3, md: 4 },
                         backgroundColor: '#fff',
-                        padding: '20px',
+                        padding: { xs: '15px', sm: '20px' },
                         borderRadius: '8px',
                         boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
                         overflowX: 'auto'
                     }}
+                    className="card-responsive"
                 >
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
+                    
                     {/* Botão para atualizar cartão JIRA */}
                     {jiraTaskCode && extractJiraUpdateText() && (
                         <Box textAlign="right" sx={{ mt: 2 }}>
@@ -330,16 +382,35 @@ function ImproveTaskPage() {
                                 variant="contained"
                                 color="secondary"
                                 onClick={handleOpenJiraDialog}
+                                size={isMobile ? "small" : "medium"}
                             >
                                 Atualizar cartão JIRA
                             </Button>
+                        </Box>
+                    )}
+                    
+                    {/* Feedback component */}
+                    {generationId && (
+                        <Box mt={isMobile ? 2 : 3}>
+                            <FeedbackComponent 
+                                generationId={generationId} 
+                                type="task" 
+                                originalContent={result}
+                                onRegenerateContent={(regeneratedContent) => setResult(regeneratedContent)}
+                            />
                         </Box>
                     )}
                 </Box>
             )}
 
             {/* Dialog de confirmação para atualizar cartão JIRA */}
-            <Dialog open={jiraDialogOpen} onClose={handleCloseJiraDialog} maxWidth="md" fullWidth>
+            <Dialog 
+                open={jiraDialogOpen} 
+                onClose={handleCloseJiraDialog} 
+                maxWidth="md" 
+                fullWidth
+                fullScreen={isMobile}
+            >
                 <DialogTitle>Atualizar cartão JIRA ({jiraTaskCode})</DialogTitle>
                 <DialogContent>
                     <Typography variant="subtitle1" gutterBottom>
@@ -352,7 +423,8 @@ function ImproveTaskPage() {
                             padding: 2,
                             minHeight: 120,
                             fontFamily: 'monospace',
-                            whiteSpace: 'pre-wrap'
+                            whiteSpace: 'pre-wrap',
+                            overflowX: 'auto'
                         }}
                     >
                         {extractJiraUpdateText()}
