@@ -4,8 +4,15 @@ const routes = require('./routes');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const cors = require('cors');
+const { testConnection, initDatabase } = require('../config/database');
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Initialize SQLite database
+(async () => {
+  await testConnection();
+  await initDatabase();
+})();
 
 app.use(cors());
 app.use(morgan('combined'));
