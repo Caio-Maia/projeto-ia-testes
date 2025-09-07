@@ -269,37 +269,26 @@
 /* Responsive content area */
 .content-area {
   transition: margin-left 0.3s ease;
-  margin-left: 65px;
+  margin-left: 0;
+  min-height: 100vh;
 }
 
-.content-area.sidebar-open {
-  margin-left: 240px;
-}
-
-@media (max-width: 768px) {
-  .sidebar-drawer.open {
-    width: 200px;
+@media (min-width: 769px) {
+  .content-area {
+    margin-left: 65px;
   }
   
   .content-area.sidebar-open {
-    margin-left: 200px;
+    margin-left: 240px;
   }
 }
 
 @media (max-width: 576px) {
-  .sidebar-drawer.open {
-    width: 100%;
-  }
-  
-  .content-area.sidebar-open {
+  .content-area {
     margin-left: 0;
   }
   
-  .sidebar-drawer.closed {
-    width: 0;
-  }
-  
-  .content-area {
+  .content-area.sidebar-open {
     margin-left: 0;
   }
 }

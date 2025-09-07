@@ -85,6 +85,41 @@ function HomePage() {
               </Link>
             </Grid2>
             <Grid2 item sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
+              <Link to="/generate-code" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
+                <Button 
+                  variant="contained" 
+                  size={isMobile ? "medium" : "large"} 
+                  fullWidth
+                >
+                  Gerar Código de Teste
+                </Button>
+              </Link>
+            </Grid2>
+            <Grid2 item sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
+              <Link to="/analyze-risks" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
+                <Button 
+                  variant="contained" 
+                  color="error"
+                  size={isMobile ? "medium" : "large"} 
+                  fullWidth
+                >
+                  Análise de Riscos
+                </Button>
+              </Link>
+            </Grid2>
+            <Grid2 item sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
+              <Link to="/feedback-dashboard" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
+                <Button 
+                  variant="contained" 
+                  color="success"
+                  size={isMobile ? "medium" : "large"} 
+                  fullWidth
+                >
+                  Dashboard de Feedback
+                </Button>
+              </Link>
+            </Grid2>
+            <Grid2 item sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
               <Link to="/adjust-prompts" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
                 <Button 
                   variant="contained" 

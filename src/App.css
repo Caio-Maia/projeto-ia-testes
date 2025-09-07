@@ -106,6 +106,7 @@ button:hover, .btn-primary:hover {
   background: var(--background-card);
   border-radius: 0 12px 12px 0;
   overflow-x: hidden;
+  overflow-y: auto;
 }
 .sidebar-drawer.open {
   width: 240px;
@@ -123,6 +124,9 @@ button:hover, .btn-primary:hover {
   background: var(--primary-color);
   color: #fff;
   font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .sidebar-item {
@@ -134,6 +138,7 @@ button:hover, .btn-primary:hover {
   cursor: pointer;
   border-radius: 8px;
   transition: background 0.2s, transform 0.1s;
+  text-decoration: none;
 }
 .sidebar-item:hover {
   background: rgba(64, 108, 250, 0.1);
@@ -150,7 +155,7 @@ button:hover, .btn-primary:hover {
 /* Toggle button */
 .toggle-sidebar-btn {
   position: fixed;
-  left: 72px;
+  left: 10px;
   top: 14px;
   z-index: 1300;
   background: var(--primary-color) !important;
@@ -167,9 +172,6 @@ button:hover, .btn-primary:hover {
 .toggle-sidebar-btn:hover {
   background: #3558b9 !important;
   transform: rotate(90deg);
-}
-.sidebar-drawer.open ~ .toggle-sidebar-btn {
-  left: 250px;
 }
 
 /* ===================== */
@@ -202,17 +204,14 @@ button:hover, .btn-primary:hover {
 /* ===================== */
 @media (max-width: 768px) {
   .sidebar-drawer.open {
-    width: 200px;
+    width: 100%;
   }
   .sidebar-drawer.closed {
-    width: 60px;
+    width: 0;
   }
   .toggle-sidebar-btn {
     left: 10px;
     top: 10px;
-  }
-  .sidebar-drawer.open ~ .toggle-sidebar-btn {
-    left: 190px;
   }
 }
 
