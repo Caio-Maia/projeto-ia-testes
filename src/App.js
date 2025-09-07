@@ -71,7 +71,7 @@ function App() {
           sx={{ 
             flexGrow: 1, 
             p: { xs: 1, sm: 2, md: 3 },
-            mt: { xs: 7, sm: 8 },
+            mt: { xs: 2, sm: 3 },
             ml: { 
               xs: 0, 
               sm: sidebarOpen ? '240px' : '65px' 
