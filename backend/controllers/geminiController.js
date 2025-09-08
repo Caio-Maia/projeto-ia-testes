@@ -14,8 +14,8 @@ const improveTaskGemini = async (req, res) => {
     const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${token}`, {
       contents: [{ parts: [{ text: prompt }] }],
     });
-    console.log('Request:', response.config.data);
-    console.log('Status:', response.status );
+    //console.log('Request:', response.config.data);
+    //console.log('Status:', response.status );
     if(response.status == 400) {
       return res.status(400).json(response.data);
     }
