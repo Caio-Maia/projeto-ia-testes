@@ -33,7 +33,7 @@ function App() {
     
     // Set initial sidebar state based on screen size
     setSidebarOpen(!isMobile);
-  }, []);
+  }, [isMobile]);
 
   // Update sidebar state when screen size changes
   useEffect(() => {
