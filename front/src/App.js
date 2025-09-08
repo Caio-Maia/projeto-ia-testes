@@ -30,7 +30,19 @@ function App() {
       // Se nenhum token estiver presente, abrir o diálogo
       setDialogOpen(true);
     }
+    
+    // Set initial sidebar state based on screen size
+    setSidebarOpen(!isMobile);
   }, []);
+
+  // Update sidebar state when screen size changes
+  useEffect(() => {
+    if (!isMobile) {
+      setSidebarOpen(true);
+    } else {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
 
   // Handle sidebar toggle
   const handleSidebarToggle = () => {
@@ -59,7 +71,12 @@ function App() {
           sx={{ 
             flexGrow: 1, 
             p: { xs: 1, sm: 2, md: 3 },
-            mt: { xs: 7, sm: 8 }
+            mt: { xs: 2, sm: 3 },
+            ml: { 
+              xs: 0, 
+              sm: sidebarOpen ? '240px' : '65px' 
+            },
+            transition: 'margin-left 0.3s ease'
           }}
         >
           <div className="responsive-container">

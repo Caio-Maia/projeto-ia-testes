@@ -5,6 +5,7 @@ import {
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import axios from 'axios';
+import { AI_MODELS } from '../utils/aiModels';
 
 function FeedbackComponent({ generationId, type, originalContent, onRegenerateContent }) {
   const [rating, setRating] = useState(null);
@@ -52,18 +53,19 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
         conversationHistory
       });
       
-      setFeedbackId(response.data.feedback._id);
+      const feedbackResponse = response.data.feedback;
+      // Accept both ._id (Mongo-like), or .id (Sequelize)
+      const fId = feedbackResponse ? (feedbackResponse._id || feedbackResponse.id) : null;
+      setFeedbackId(fId);
       setFeedbackSubmitted(true);
-      
       // If it's negative feedback with a comment, show regenerate dialog
-      if (rating === 'negative' && comment.trim() !== '') {
+      if (rating === 'negative' && comment.trim() !== '' && fId) {
         setRegenerateDialogOpen(true);
       } else {
         setTimeout(() => {
           setFeedbackSubmitted(false);
         }, 3000);
       }
-      
       // Reset the form
       setRating(null);
       setComment('');
@@ -78,6 +80,8 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
 
   const handleRegenerateContent = async () => {
     if (!feedbackId || !selectedModel) {
+      console.log('Modelo:', selectedModel);
+      console.log('Feedback ID:', feedbackId);
       setError('Selecione um modelo para regenerar o conteúdo');
       return;
     }
@@ -87,7 +91,9 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
     
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const token = localStorage.getItem(`${selectedModel.split('-')[0]}Token`);
+      // Busca o modelo selecionado no array central para pegar o .apiName
+      const modelDef = AI_MODELS.find(m => m.version === selectedModel);
+      const token = localStorage.getItem(modelDef ? modelDef.apiName + 'Token' : '');
       
       if (!token) {
         setError('Token não encontrado para o modelo selecionado');
@@ -126,6 +132,8 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
 
   const handleModelChange = (model) => {
     setSelectedModel(model);
+    // Ajuda a depurar se o valor está vindo
+    console.log('Modelo selecionado para regenerar:', model);
   };
 
   return (
@@ -209,24 +217,16 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
               Selecione o modelo para regenerar:
             </Typography>
             <Box display="flex" flexDirection="column" gap={1} mt={1}>
-              <Button 
-                variant={selectedModel === 'gpt-3.5-turbo' ? 'contained' : 'outlined'}
-                onClick={() => handleModelChange('gpt-3.5-turbo')}
-              >
-                ChatGPT 3.5
-              </Button>
-              <Button 
-                variant={selectedModel === 'gpt-4' ? 'contained' : 'outlined'}
-                onClick={() => handleModelChange('gpt-4')}
-              >
-                ChatGPT 4
-              </Button>
-              <Button 
-                variant={selectedModel === 'gemini-1.5-flash' ? 'contained' : 'outlined'}
-                onClick={() => handleModelChange('gemini-1.5-flash')}
-              >
-                Gemini 1.5 Flash
-              </Button>
+              {AI_MODELS.map((modelOption) => (
+                <Button
+                  key={modelOption.version}
+                  variant={selectedModel === modelOption.version ? 'contained' : 'outlined'}
+                  onClick={() => handleModelChange(modelOption.version)}
+                  sx={{ textAlign: 'left', justifyContent: 'flex-start' }}
+                >
+                  {modelOption.label}
+                </Button>
+              ))}
             </Box>
           </Box>
         </DialogContent>
@@ -236,7 +236,7 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
             variant="contained" 
             color="primary" 
             onClick={handleRegenerateContent}
-            disabled={isRegenerating || !selectedModel}
+            disabled={isRegenerating || !selectedModel || selectedModel === ''}
           >
             {isRegenerating ? <CircularProgress size={24} /> : 'Regenerar'}
           </Button>

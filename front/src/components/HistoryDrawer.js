@@ -12,19 +12,35 @@ import {
   DialogContent, 
   Box, 
   Typography, 
-  Tabs, 
-  Tab,
   IconButton,
-  ListItemIcon,
-  Tooltip
+  Tooltip,
+  Badge,
+  Divider,
+  FormControl,
+  MenuItem,
+  Select,
+  InputLabel
 } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
+import CloseIcon from '@mui/icons-material/Close';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import CodeIcon from '@mui/icons-material/Code';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 const HistoryDrawer = ({ inSidebar = false, open = true }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedGeneration, setSelectedGeneration] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
+
+  const tabOptions = [
+    { label: 'Todos', value: 0, icon: <HistoryIcon sx={{ mr: 1, mb: '-3px' }} /> },
+    { label: 'Tarefas', value: 1, icon: <AssignmentTurnedInIcon sx={{ mr: 1, mb: '-3px', color: '#1976d2' }} /> },
+    { label: 'Casos de Teste', value: 2, icon: <BugReportIcon sx={{ mr: 1, mb: '-3px', color: '#388e3c' }} /> },
+    { label: 'Código de Teste', value: 3, icon: <CodeIcon sx={{ mr: 1, mb: '-3px', color: '#fbc02d' }} /> },
+    { label: 'Análise de Riscos', value: 4, icon: <WarningAmberIcon sx={{ mr: 1, mb: '-3px', color: '#d84315' }} /> }
+  ];
 
   const handleDrawerOpen = () => setDrawerOpen(true);
   const handleDrawerClose = () => setDrawerOpen(false);
@@ -35,8 +51,8 @@ const HistoryDrawer = ({ inSidebar = false, open = true }) => {
   };
   const handleDialogClose = () => setDialogOpen(false);
   
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
+  const handleTabChange = (event) => {
+    setActiveTab(Number(event.target.value));
   };
 
   const taskGenerations = JSON.parse(localStorage.getItem('taskGenerations')) || [];
@@ -65,49 +81,34 @@ const HistoryDrawer = ({ inSidebar = false, open = true }) => {
   const generations = getActiveGenerations();
   generations.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // Render different button based on whether it's in the sidebar or not
-  const renderButton = () => {
-    if (inSidebar) {
-      return (
-        <ListItem 
-          button 
+  // Render sempre botão visível para uso no Header/app (remover lógica inSidebar)
+  const renderButton = () => (
+    <Box sx={{ position: 'relative', ml: 2 }}>
+      <Tooltip title="Histórico de gerações" arrow>
+        <Button
           onClick={handleDrawerOpen}
           sx={{
-            minHeight: 48,
-            px: 2.5,
-            justifyContent: open ? 'initial' : 'center',
+            borderRadius: 5,
+            boxShadow: 3,
+            background: 'linear-gradient(90deg, #388e3c 30%, #1976d2 120%)',
+            color: 'white',
+            px: 3,
+            py: 1.1,
+            fontWeight: 600,
+            fontSize: 16,
+            transition: '.2s',
+            '&:hover': {
+              background: 'linear-gradient(90deg, #1565c0 70%, #388e3c 120%)',
+              boxShadow: 7
+            }
           }}
+          startIcon={<HistoryIcon sx={{ mb: '-2px' }} />}
         >
-          <ListItemIcon
-            sx={{
-              minWidth: 0,
-              mr: open ? 2 : 'auto',
-              justifyContent: 'center',
-            }}
-          >
-            <Tooltip title={!open ? "Histórico" : ""} placement="right">
-              <HistoryIcon />
-            </Tooltip>
-          </ListItemIcon>
-          {open && <ListItemText primary="Histórico" />}
-        </ListItem>
-      );
-    } else {
-      return (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', pr: 2 }}>
-          <Button 
-            onClick={handleDrawerOpen} 
-            variant="contained" 
-            color="success" 
-            style={{ position: 'fixed' }}
-            startIcon={<HistoryIcon />}
-          >
-            Histórico
-          </Button>
-        </Box>
-      );
-    }
-  };
+          Histórico
+        </Button>
+      </Tooltip>
+    </Box>
+  );
 
   return (
     <>
@@ -120,30 +121,68 @@ const HistoryDrawer = ({ inSidebar = false, open = true }) => {
         onClose={handleDrawerClose} 
         sx={{ width: '400px', flexShrink: 0, '& .MuiDrawer-paper': { width: '400px' } }}
       >
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
-            <Tab label="Todos" />
-            <Tab label="Tarefas" />
-            <Tab label="Casos de Teste" />
-            <Tab label="Código de Teste" />
-            <Tab label="Análise de Riscos" />
-          </Tabs>
+        <Box sx={{ px: 3, pt: 2, pb: 1, bgcolor: '#f5f7fa' }}>
+          <FormControl fullWidth variant="outlined" size="small">
+            <InputLabel id="history-type-select-label" sx={{ fontWeight: 500, fontSize: 15 }}>Tipo</InputLabel>
+            <Select
+              labelId="history-type-select-label"
+              id="history-type-select"
+              value={activeTab}
+              label="Tipo"
+              onChange={handleTabChange}
+              sx={{
+                fontWeight: 600,
+                fontSize: 15,
+                background: 'white',
+                borderRadius: 2,
+                boxShadow: '0 2px 5px #0001',
+                '.MuiSelect-select': { py: 1.2 },
+                minHeight: 46
+              }}
+            >
+              {tabOptions.map(opt => (
+                <MenuItem key={opt.value} value={opt.value} sx={{ fontSize: 15, fontWeight: activeTab === opt.value ? 700 : 500 }}>
+                  <Box display="flex" alignItems="center">{opt.icon} {opt.label}</Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
         
         <List>
           {generations.length > 0 ? (generations.map((gen) => (
-            <ListItem key={gen.id} button onClick={() => handleDialogOpen(gen)}>
-              <ListItemText 
-                primary={`${gen.type} ${gen.id}`} 
+            <ListItem
+              key={gen.id}
+              button
+              onClick={() => handleDialogOpen(gen)}
+              sx={{
+                borderRadius: 2,
+                mb: 0.5,
+                transition: '.15s',
+                '&:hover': {
+                  background: 'rgba(33,150,243,0.08)',
+                  boxShadow: 2
+                },
+                px: 2,
+                py: 1.2
+              }}
+              secondaryAction={
+                <Badge
+                  color={gen.type === 'Tarefa' ? 'primary' : gen.type === 'Caso de Teste' ? 'success' : gen.type === 'Código de Teste' ? 'warning' : 'default'}
+                  badgeContent={gen.type}
+                  sx={{ mr: 1.2 }}
+                />
+              }
+            >
+              <ListItemText
+                primary={<span style={{ fontWeight: 600, fontSize: 16, color: '#111' }}>{gen.description || gen.model}</span>}
                 secondary={
                   <>
-                    <Typography component="span" variant="body2" color="text.primary">
-                      {gen.description || gen.model}
+                    <Typography component="span" variant="caption" color="text.secondary">
+                      {gen.date}
                     </Typography>
-                    <br />
-                    {gen.date}
                   </>
-                } 
+                }
               />
             </ListItem>
           ))): (<ListItem>
@@ -155,18 +194,35 @@ const HistoryDrawer = ({ inSidebar = false, open = true }) => {
 
       {/* Dialog para exibir o conteúdo da geração */}
       <Dialog open={dialogOpen} onClose={handleDialogClose} fullWidth maxWidth={'lg'}>
-        <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h4">{`${selectedGeneration?.type} ${selectedGeneration?.id}`}</Typography>
-          <Button onClick={handleDialogClose} style={{ color: 'grey' }}>
-            x
-          </Button>
-        </Box>
-        <Typography color="textPrimary" variant="body1">{`${selectedGeneration?.model}`}</Typography>
-        {selectedGeneration?.description && (
-          <Typography color="textPrimary" variant="body2">{selectedGeneration.description}</Typography>
-        )}
-        <Typography color="textSecondary" variant="body2">{`${selectedGeneration?.date}`}</Typography>
+        <DialogTitle sx={{ pb: 1.5, mb: 0 }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Box>
+              <Typography variant="h5" fontWeight={700}>{selectedGeneration?.description || selectedGeneration?.type}</Typography>
+              <Typography color="textSecondary" variant="caption">
+                {`${selectedGeneration?.date}`}
+              </Typography>
+            </Box>
+            <IconButton
+              onClick={handleDialogClose}
+              sx={{
+                ml: 2,
+                borderRadius: '50%',
+                background: '#f3f3f3',
+                boxShadow: '0 2px 6px #0002',
+                transition: '.18s',
+                '&:hover': {
+                  background: '#ffcdd2',
+                  color: '#b71c1c'
+                },
+                width: 42,
+                height: 42
+              }}
+            >
+              <CloseIcon sx={{ fontSize: 30 }} />
+            </IconButton>
+          </Box>
+        <Typography color="textPrimary" variant="body2">{selectedGeneration?.model}</Typography>
+        <Divider sx={{ mt: 1, mb: 0.5 }} />
         </DialogTitle>
         <DialogContent>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedGeneration?.generation}</ReactMarkdown>

@@ -2,14 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-    Box, Button, TextField, Typography, MenuItem, FormControl, InputLabel, Select, Grid2,
+    Box, Button, TextField, Typography, MenuItem, FormControl, InputLabel, Select, Grid,
     Alert, Snackbar, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions,
-    FormControlLabel, Switch, useMediaQuery, useTheme
+    useMediaQuery, useTheme
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
 import FeedbackComponent from './FeedbackComponent';
+import { AI_MODELS } from '../utils/aiModels';
+import { addVersion, getVersions, restoreVersion } from '../utils/generationHistory';
 
 function ImproveTaskPage() {
     const [prompt, setPrompt] = useState('');
@@ -17,16 +20,17 @@ function ImproveTaskPage() {
     const [model, setModel] = useState({ apiName: '', version: '' });
     const [error, setError] = useState(null);
     const [result, setResult] = useState('');
+    const [showHistory, setShowHistory] = useState(false);
+    const [versions, setVersions] = useState([]);
     const [taskDescription, setTaskDescription] = useState('');
     const [jiraTaskCode, setJiraTaskCode] = useState('');
     const [isJiraLoading, setIsJiraLoading] = useState(false);
     const [generationId, setGenerationId] = useState(null);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
     // Education mode state (read from localStorage)
-    const [educationMode, setEducationMode] = useState(() => {
+    const [educationMode] = useState(() => {
         const savedMode = localStorage.getItem('educationMode');
         return savedMode ? JSON.parse(savedMode) : false;
     });
@@ -42,12 +46,7 @@ function ImproveTaskPage() {
 
     // Só permite submit se um dos campos estiver preenchido e modelo selecionado
     const isButtonDisabled = (!taskDescription && !jiraTaskCode) || model.apiName === '';
-
-    const options = [
-        { label: 'ChatGPT', apiName: 'chatgpt', version: 'chatgpt-4' },
-        { label: 'Gemini 1.5 Flash', apiName: 'gemini', version: 'gemini-1.5-flash-latest' },
-        { label: 'Gemini 2.0 Flash', apiName: 'gemini', version: 'gemini-2.0-flash' },
-    ];
+    const options = AI_MODELS;
 
     useEffect(() => {
         const localPromptContent = localStorage.getItem('taskModelPrompt');
@@ -137,20 +136,37 @@ function ImproveTaskPage() {
             const userStory = taskDescription;
             
             // Add education mode instruction if enabled
-            let promptText = `${prompt} \n\n Aqui está uma história de usuário:\n\n "${userStory}"`;
+            let promptText = `${prompt}
+
+Aqui está uma história de usuário:
+
+"${userStory}"
+`;
             if (educationMode) {
-                promptText += '\n\nPor favor, explique seu raciocínio durante a análise e mostre o passo a passo de como você chegou às conclusões e sugestões.';
+                promptText += `
+
+---
+## Modo Educacional:
+- Explique passo a passo como a IA chegou nas sugestões de melhoria.
+- Dê dicas e explique conceitos teóricos envolvidos (por que cada critério/caso é importante? O que é um teste negativo? Por que valores-limite?)
+- Liste conceitos e práticas recomendadas citadas no texto.
+- Sugira estudos/leituras sobre BDD, critérios de aceitação, valores-limite e testes.
+- As explicações devem ser claras e direcionadas para o aprendizado prático de QA e requisitos.
+`;
             }
             
             const response = await axios.post(
                 `${backendUrl}/api/${model.apiName}/improve-task?token=${token}`,
                 {
                     model: model.version,
-                    data: promptText
+                    data: promptText,
+                    educationMode // Sinaliza explicitamente para o backend também
                 }
             );
             setResult(response.data.data);
-
+            if (generationId) {
+                addVersion(generationId, response.data.data, { type: 'task', model: model.version });
+            }
             const taskInfo = jiraTaskCode
                 ? `JIRA: ${jiraTaskCode} - ${userStory.substring(0, 100)}`
                 : `Manual: ${userStory.substring(0, 100)}`;
@@ -161,6 +177,7 @@ function ImproveTaskPage() {
                 taskInfo
             );
             setGenerationId(id);
+            setVersions(getVersions(id));
         } catch (error) {
             setError('Erro ao melhorar a tarefa');
             console.error('Erro ao melhorar a tarefa:', error);
@@ -220,8 +237,27 @@ function ImproveTaskPage() {
         }
     };
 
+    const handleRegeneratedContent = (regeneratedContent) => {
+        if (generationId && result) {
+            addVersion(generationId, result, { type: 'task', model: model.version });
+        }
+        setResult(regeneratedContent);
+        if (generationId) setVersions(getVersions(generationId));
+    };
+    const openVersionsModal = () => {
+        if (generationId) setVersions(getVersions(generationId));
+        setShowHistory(true);
+    };
+    const closeVersionsModal = () => setShowHistory(false);
+    const handleRestore = idx => {
+        if (!generationId) return;
+        const v = restoreVersion(generationId, idx);
+        if (v && v.content) setResult(v.content);
+        setShowHistory(false);
+    };
+
     return (
-        <Grid2
+        <Grid
             container
             spacing={isMobile ? 2 : 3}
             direction="column"
@@ -233,7 +269,7 @@ function ImproveTaskPage() {
             }}
             className="responsive-container"
         >
-            <Grid2 
+            <Grid 
                 item 
                 xs={12} 
                 sx={{ 
@@ -250,6 +286,13 @@ function ImproveTaskPage() {
                         Melhore sua História de Usuário
                     </Typography>
                 </Box>
+                {generationId && getVersions(generationId).length > 0 && (
+                    <Box my={2} display="flex" justifyContent="center">
+                        <Button variant="outlined" color="secondary" onClick={openVersionsModal}>
+                          Ver versões anteriores
+                        </Button>
+                    </Box>
+                )}
 
                 <FormControl 
                     required 
@@ -331,7 +374,7 @@ function ImproveTaskPage() {
                         {isLoading ? <CircularProgress size={24} /> : 'Submit'}
                     </Button>
                 </Box>
-            </Grid2>
+            </Grid>
             <div hidden={!isLoading}>
                 <CircularProgress />
             </div>
@@ -373,8 +416,43 @@ function ImproveTaskPage() {
                     }}
                     className="card-responsive"
                 >
+                    {/* Modo Educacional - Tooltips, dicas e estudo */}
+                    {educationMode && (
+                        <Box mb={3}>
+                            <Box display="flex" gap={2} alignItems="center" mb={1}>
+                                <InfoOutlinedIcon color="primary" />
+                                <Typography variant="subtitle1" color="primary">
+                                    Modo Educacional!
+                                </Typography>
+                            </Box>
+                            <Box mb={2}>
+                                <Typography variant="body2"><b>💡 Dica:</b> Explique passo a passo seu raciocínio para construir critérios de aceitação e casos de teste robustos.</Typography>
+                                <Typography variant="body2"><b>🧩 Conceito:</b> Diferencie testes positivos (usuário faz ação certa) e negativos (usuário erra ou há exceção).</Typography>
+                                <Typography variant="body2"><b>🛡️ Cobertura:</b> Explore valores-limite e partições de equivalência para garantir qualidade.</Typography>
+                            </Box>
+                            <Box mb={2}>
+                                <Typography variant="body2" color="textSecondary" sx={{ fontStyle: 'italic' }}>
+                                    Explicação e raciocínio fornecidos pela IA abaixo 👇:
+                                </Typography>
+                            </Box>
+                        </Box>
+                    )}
+
+                    {/* Apresentação do resultado e explicação */}
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
-                    
+                    {educationMode && (
+                        <Box mt={3}>
+                            <Typography variant="subtitle2" color="primary">Sugestões de Estudo:</Typography>
+                            <ul style={{ color: '#1565c0', margin: 0, paddingLeft: '1.3em' }}>
+                                <li>Valores-limite</li>
+                                <li>Particionamento de Equivalência</li>
+                                <li>Critérios de Aceitação</li>
+                                <li>Behavior Driven Development (BDD)</li>
+                                <li>Tipos de Testes (Positivo x Negativo)</li>
+                            </ul>
+                        </Box>
+                    )}
+
                     {/* Botão para atualizar cartão JIRA */}
                     {jiraTaskCode && extractJiraUpdateText() && (
                         <Box textAlign="right" sx={{ mt: 2 }}>
@@ -396,10 +474,28 @@ function ImproveTaskPage() {
                                 generationId={generationId} 
                                 type="task" 
                                 originalContent={result}
-                                onRegenerateContent={(regeneratedContent) => setResult(regeneratedContent)}
+                                onRegenerateContent={handleRegeneratedContent}
                             />
                         </Box>
                     )}
+                    <Dialog open={showHistory} onClose={closeVersionsModal} fullWidth maxWidth="md">
+                        <DialogTitle>Versões anteriores desta tarefa</DialogTitle>
+                        <DialogContent>
+                            {versions.length === 0 && <Typography>Nenhuma versão salva.</Typography>}
+                            {versions.map((v, idx) => (
+                                <Box key={idx} mb={3} p={2} sx={{ border: '1px solid #eee', borderRadius: 2, background: '#f9f9f9' }}>
+                                    <Typography variant="caption">{v.date && (new Date(v.date)).toLocaleString()}</Typography>
+                                    <Box mt={1} mb={1}>
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{v.content || ''}</ReactMarkdown>
+                                    </Box>
+                                    <Button variant="outlined" size="small" onClick={() => handleRestore(idx)}>Restaurar esta versão</Button>
+                                </Box>
+                            ))}
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={closeVersionsModal} color="primary">Fechar</Button>
+                        </DialogActions>
+                    </Dialog>
                 </Box>
             )}
 
@@ -442,7 +538,7 @@ function ImproveTaskPage() {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Grid2>
+        </Grid>
     );
 }
 

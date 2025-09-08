@@ -1,33 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Button, TextField, Typography, MenuItem, FormControl, InputLabel, Select, Grid2,  Alert, Snackbar, CircularProgress } from '@mui/material';
+import { Box, Button, TextField, Typography, MenuItem, FormControl, InputLabel, Select, Grid,  Alert, Snackbar, CircularProgress } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
 import FeedbackComponent from './FeedbackComponent';
+import { addVersion, getVersions, restoreVersion } from '../utils/generationHistory';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import { AI_MODELS } from '../utils/aiModels';
 
 function GenerateTestsPage() {
   const [prompt, setPrompt] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [model, setModel] = useState({ apiName: '', version: '' });
   const [result, setResult] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
+  const [versions, setVersions] = useState([]);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [generationId, setGenerationId] = useState(null);
   
   // Education mode state (read from localStorage)
-  const [educationMode, setEducationMode] = useState(() => {
+  const [educationMode] = useState(() => {
     const savedMode = localStorage.getItem('educationMode');
     return savedMode ? JSON.parse(savedMode) : false;
   });
   
   const isButtonDisabled = taskDescription === '' || model === '';
-
-  const options = [
-    { label: 'ChatGPT', apiName: 'chatgpt', version: 'chatgpt-4' },
-    { label: 'Gemini 1.5 Flash', apiName: 'gemini', version: 'gemini-1.5-flash-latest' },
-    { label: 'Gemini 2.0 Flash', apiName: 'gemini', version: 'gemini-2.0-flash' },
-  ];
+  const options = AI_MODELS;
 
   useEffect(() => {
     const localPromptContent = localStorage.getItem('testCasesModelPrompt');
@@ -85,14 +88,24 @@ function GenerateTestsPage() {
         promptText += '\n\nPor favor, explique seu raciocínio durante a criação dos casos de teste, incluindo como você identificou os cenários importantes e como eles se relacionam com os requisitos.';
       }
       
-      const response = await axios.post(`${backendUrl}/api/${model.apiName}/generate-tests?token=${token}`, { 
-        model: model.version, 
-        data: promptText 
+      let educationalPrompt = '';
+      if (educationMode) {
+        educationalPrompt += `\n\n---\nModo Educacional Ativo:\n- Explique para cada caso de teste gerado o porquê da sua existência e importância.\n- Dê dicas teóricas e boas práticas de QA.\n- Destaque conceitos como valor-limite, equivalência, teste positivo/negativo, BDD.\n- Indique sugestões de estudos/leituras ao final sobre testes e critérios de aceitação.\n`;
+      }
+      const response = await axios.post(`${backendUrl}/api/${model.apiName}/generate-tests?token=${token}`, {
+        model: model.version,
+        data: promptText + (educationMode ? educationalPrompt : ''),
+        educationMode,
+        promptSupplement: educationMode ? educationalPrompt : undefined
       });
       
       setResult(response.data.data);
+      if (generationId) {
+        addVersion(generationId, response.data.data, { type: 'testcase', model: model.version });
+      }
       const id = saveGenerationToLocalStorage(response.data.data, 'testcase', model.version);
       setGenerationId(id);
+      setVersions(getVersions(id));
     } catch (error) {
       setError(error);
       console.error('Erro ao gerar casos de teste: ', error);
@@ -101,8 +114,28 @@ function GenerateTestsPage() {
     }
   };
 
+  const handleRegeneratedContent = (regeneratedContent) => {
+    if (generationId && result) {
+      addVersion(generationId, result, { type: 'testcase', model: model.version });
+    }
+    setResult(regeneratedContent);
+    if (generationId) setVersions(getVersions(generationId));
+  };
+
+  const openVersionsModal = () => {
+    if (generationId) setVersions(getVersions(generationId));
+    setShowHistory(true);
+  };
+  const closeVersionsModal = () => setShowHistory(false);
+  const handleRestore = idx => {
+    if (!generationId) return;
+    const v = restoreVersion(generationId, idx);
+    if (v && v.content) setResult(v.content);
+    setShowHistory(false);
+  };
+
   return (
-    <Grid2
+    <Grid
       container
       spacing={3}
       direction="column"
@@ -111,12 +144,19 @@ function GenerateTestsPage() {
       padding={10}
       style={{ minHeight: '81vh' }}
     >
-      <Grid2 item xs={10} md={6} lg={4} style={{minWidth: '1000px'}}>
+      <Grid size={{xs:10, md:6, lg:4}} style={{minWidth: '1000px'}}>
         <Box textAlign="center">
           <Typography variant="h4" gutterBottom>
             Gerar Casos de Teste
           </Typography>
         </Box>
+        {generationId && getVersions(generationId).length > 0 && (
+            <Box my={2} display="flex" justifyContent="center">
+                <Button variant="outlined" color="secondary" onClick={openVersionsModal}>
+                  Ver versões anteriores
+                </Button>
+            </Box>
+        )}
 
         <FormControl required fullWidth variant="outlined" sx={{ mb: 3 }}>
           <InputLabel id="model-select-label">Select Model</InputLabel>
@@ -155,7 +195,7 @@ function GenerateTestsPage() {
           </Button>
         </Box>
         
-      </Grid2>  
+      </Grid>  
       <div hidden={!isLoading}>
           <CircularProgress />
       </div>
@@ -197,13 +237,32 @@ function GenerateTestsPage() {
                 generationId={generationId} 
                 type="testcase" 
                 originalContent={result}
-                onRegenerateContent={(regeneratedContent) => setResult(regeneratedContent)}
+                onRegenerateContent={handleRegeneratedContent}
               />
             </Box>
           )}
+
+          <Dialog open={showHistory} onClose={closeVersionsModal} fullWidth maxWidth="md">
+            <DialogTitle>Versões anteriores deste caso de teste</DialogTitle>
+            <DialogContent>
+              {versions.length === 0 && <Typography>Nenhuma versão salva.</Typography>}
+              {versions.map((v, idx) => (
+                <Box key={idx} mb={3} p={2} sx={{ border: '1px solid #eee', borderRadius: 2, background: '#f9f9f9' }}>
+                  <Typography variant="caption">{v.date && (new Date(v.date)).toLocaleString()}</Typography>
+                  <Box mt={1} mb={1}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{v.content || ''}</ReactMarkdown>
+                  </Box>
+                  <Button variant="outlined" size="small" onClick={() => handleRestore(idx)}>Restaurar esta versão</Button>
+                </Box>
+              ))}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={closeVersionsModal} color="primary">Fechar</Button>
+            </DialogActions>
+          </Dialog>
         </Box>
       )}
-    </Grid2>
+    </Grid>
   );
 }
 

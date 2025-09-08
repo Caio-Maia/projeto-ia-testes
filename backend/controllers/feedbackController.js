@@ -144,36 +144,50 @@ const regenerateContent = async (req, res) => {
     } else if (model.startsWith('gemini')) {
       // Use Gemini API
       const geminiMessages = conversationHistory.map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }]
       }));
-      
+
       response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${token}`, {
         contents: geminiMessages
       });
-      
+
       if (!response.data.candidates || !response.data.candidates[0] || !response.data.candidates[0].content || !response.data.candidates[0].content.parts[0].text) {
         return res.status(400).json({ error: 'Não foi possível obter uma resposta válida do Gemini' });
       }
-      
+
       const regeneratedContent = response.data.candidates[0].content.parts[0].text;
-      
+
       // Update conversation history
       const updatedHistory = [...conversationHistory, {
         role: 'assistant',
         content: regeneratedContent
       }];
-      
+
       await feedback.update({
         conversationHistory: updatedHistory
       });
-      
+
       res.json({ data: regeneratedContent, conversationHistory: updatedHistory });
     } else {
       return res.status(400).json({ error: 'Modelo não suportado' });
     }
   } catch (error) {
-    console.error('Error regenerating content:', error);
-    res.status(500).json({ error: 'Error regenerating content' });
+    if (error.response && error.response.status === 400) {
+      console.error('Erro 400 (bad request) recebido da API IA:');
+      console.error(JSON.stringify(error.response.data, null, 2));
+      return res.status(400).json({
+        error: error.response.data.error || 'Erro 400 na requisição ao provedor IA',
+        provider: error.response.data
+      });
+    }
+    // Log detalhadamente outros erros
+    if(error.response) {
+      console.error('Erro de response:', error.response.status, error.response.data);
+    } else {
+      console.error('Erro desconhecido:', error.message);
+    }
+    return res.status(500).json({ error: 'Error regenerating content' });
   }
 };
 

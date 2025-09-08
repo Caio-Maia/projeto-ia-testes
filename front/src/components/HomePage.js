@@ -1,13 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Button from '@mui/material/Button';
-import Grid2 from '@mui/material/Grid2';
-import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
+import Grid from '@mui/material/Grid';
+import { Typography, useMediaQuery, useTheme } from '@mui/material';
 
 function HomePage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
   
   return (
     <div className="responsive-container text-center spacing-md">
@@ -22,7 +21,7 @@ function HomePage() {
       </Typography>
 
       {/* Container principal com duas colunas */}
-      <Grid2 
+      <Grid 
         container 
         spacing={{ xs: 2, sm: 3, md: 4 }} 
         justifyContent="center" 
@@ -30,7 +29,7 @@ function HomePage() {
         sx={{ mt: { xs: 2, sm: 4, md: 6 } }}
       >
         {/* Coluna da Imagem (esquerda) */}
-        <Grid2 item xs={12} md={6} className="flex-center">
+        <Grid size={{xs:12, md:6}} className="flex-center">
           <img 
             src='/undraw.svg'
             alt="Imagem ilustrativa"
@@ -40,10 +39,10 @@ function HomePage() {
               marginBottom: isMobile ? '20px' : '0'
             }}
           />
-        </Grid2>
+        </Grid>
 
         {/* Coluna das opções (direita) */}
-        <Grid2 item xs={12} md={6}>
+        <Grid size={{xs:12, md:6}}>
           <Typography 
             variant="h6" 
             component="p" 
@@ -56,13 +55,13 @@ function HomePage() {
           </Typography>
           
           {/* Botões em forma de lista, com largura responsiva */}
-          <Grid2 
+          <Grid 
             container 
             direction="column" 
             spacing={{ xs: 1, sm: 2 }} 
             alignItems="center"
           >
-            <Grid2 item sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
+            <Grid sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
               <Link to="/improve-task" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
                 <Button 
                   variant="contained" 
@@ -72,8 +71,8 @@ function HomePage() {
                   Melhorar Tarefa
                 </Button>
               </Link>
-            </Grid2>
-            <Grid2 item sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
+            </Grid>
+            <Grid sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
               <Link to="/generate-tests" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
                 <Button 
                   variant="contained" 
@@ -83,8 +82,43 @@ function HomePage() {
                   Gerar Casos de Teste
                 </Button>
               </Link>
-            </Grid2>
-            <Grid2 item sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
+            </Grid>
+            <Grid sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
+              <Link to="/generate-code" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
+                <Button 
+                  variant="contained" 
+                  size={isMobile ? "medium" : "large"} 
+                  fullWidth
+                >
+                  Gerar Código de Teste
+                </Button>
+              </Link>
+            </Grid>
+            <Grid sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
+              <Link to="/analyze-risks" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
+                <Button 
+                  variant="contained" 
+                  color="error"
+                  size={isMobile ? "medium" : "large"} 
+                  fullWidth
+                >
+                  Análise de Riscos
+                </Button>
+              </Link>
+            </Grid>
+            <Grid sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
+              <Link to="/feedback-dashboard" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
+                <Button 
+                  variant="contained" 
+                  color="success"
+                  size={isMobile ? "medium" : "large"} 
+                  fullWidth
+                >
+                  Dashboard de Feedback
+                </Button>
+              </Link>
+            </Grid>
+            <Grid sx={{ width: '100%', maxWidth: { xs: '100%', sm: '280px' } }}>
               <Link to="/adjust-prompts" style={{ textDecoration: 'none', width: '100%', display: 'block' }}>
                 <Button 
                   variant="contained" 
@@ -95,10 +129,10 @@ function HomePage() {
                   Ajustar Prompts
                 </Button>
               </Link>
-            </Grid2>
-          </Grid2>
-        </Grid2>
-      </Grid2>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Grid>
     </div>
   );
 }
