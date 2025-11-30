@@ -212,7 +212,7 @@ const Sidebar = ({ open, onToggle, isMobile, onNavigate }) => {
           })}
           
           {/* History component integrated into sidebar */}
-          <HistoryDrawer inSidebar={true} open={open} />
+          <HistoryDrawer inSidebar={true} open={open} sidebarOpen={open} />
         </List>
       </Box>
 

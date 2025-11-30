@@ -14,7 +14,7 @@ import {
   Typography, 
   IconButton,
   Tooltip,
-  Badge,
+  Chip,
   Divider,
   FormControl,
   MenuItem,
@@ -28,7 +28,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import CodeIcon from '@mui/icons-material/Code';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
-const HistoryDrawer = ({ inSidebar = false, open = true }) => {
+const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedGeneration, setSelectedGeneration] = useState(null);
@@ -81,34 +81,71 @@ const HistoryDrawer = ({ inSidebar = false, open = true }) => {
   const generations = getActiveGenerations();
   generations.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // Render sempre botão visível para uso no Header/app (remover lógica inSidebar)
-  const renderButton = () => (
-    <Box sx={{ position: 'relative', ml: 2 }}>
-      <Tooltip title="Histórico de gerações" arrow>
-        <Button
-          onClick={handleDrawerOpen}
-          sx={{
-            borderRadius: 5,
-            boxShadow: 3,
-            background: 'linear-gradient(90deg, #388e3c 30%, #1976d2 120%)',
-            color: 'white',
-            px: 3,
-            py: 1.1,
-            fontWeight: 600,
-            fontSize: 16,
-            transition: '.2s',
-            '&:hover': {
-              background: 'linear-gradient(90deg, #1565c0 70%, #388e3c 120%)',
-              boxShadow: 7
-            }
-          }}
-          startIcon={<HistoryIcon sx={{ mb: '-2px' }} />}
-        >
-          Histórico
-        </Button>
-      </Tooltip>
-    </Box>
-  );
+  // Render button that adapts based on sidebar state
+  const renderButton = () => {
+    // When in sidebar and sidebar is closed, show only icon
+    if (inSidebar && !sidebarOpen) {
+      return (
+        <Box sx={{ position: 'relative', px: 0.5, mx: 0.5 }}>
+          <Tooltip title="Histórico de gerações" arrow placement="right">
+            <IconButton
+              onClick={handleDrawerOpen}
+              sx={{
+                borderRadius: 2,
+                boxShadow: 3,
+                background: 'linear-gradient(90deg, #388e3c 30%, #1976d2 120%)',
+                color: 'white',
+                p: 1.2,
+                fontWeight: 600,
+                fontSize: 16,
+                transition: '.2s',
+                minWidth: 48,
+                minHeight: 48,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #1565c0 70%, #388e3c 120%)',
+                  boxShadow: 7
+                }
+              }}
+            >
+              <HistoryIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      );
+    }
+
+    // When in sidebar and sidebar is open, or when not in sidebar, show full button
+    return (
+      <Box sx={{ position: 'relative', ml: inSidebar ? 0 : 2 }}>
+        <Tooltip title="Histórico de gerações" arrow>
+          <Button
+            onClick={handleDrawerOpen}
+            sx={{
+              borderRadius: 5,
+              boxShadow: 3,
+              background: 'linear-gradient(90deg, #388e3c 30%, #1976d2 120%)',
+              color: 'white',
+              px: 3,
+              py: 1.1,
+              fontWeight: 600,
+              fontSize: 16,
+              transition: '.2s',
+              '&:hover': {
+                background: 'linear-gradient(90deg, #1565c0 70%, #388e3c 120%)',
+                boxShadow: 7
+              }
+            }}
+            startIcon={<HistoryIcon sx={{ mb: '-2px' }} />}
+          >
+            Histórico
+          </Button>
+        </Tooltip>
+      </Box>
+    );
+  };
 
   return (
     <>
@@ -164,15 +201,11 @@ const HistoryDrawer = ({ inSidebar = false, open = true }) => {
                   boxShadow: 2
                 },
                 px: 2,
-                py: 1.2
+                py: 1.2,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}
-              secondaryAction={
-                <Badge
-                  color={gen.type === 'Tarefa' ? 'primary' : gen.type === 'Caso de Teste' ? 'success' : gen.type === 'Código de Teste' ? 'warning' : 'default'}
-                  badgeContent={gen.type}
-                  sx={{ mr: 1.2 }}
-                />
-              }
             >
               <ListItemText
                 primary={<span style={{ fontWeight: 600, fontSize: 16, color: '#111' }}>{gen.description || gen.model}</span>}
@@ -183,6 +216,25 @@ const HistoryDrawer = ({ inSidebar = false, open = true }) => {
                     </Typography>
                   </>
                 }
+              />
+              <Chip
+                label={gen.type}
+                size="small"
+                variant="outlined"
+                color={gen.type === 'Tarefa' ? 'primary' : gen.type === 'Caso de Teste' ? 'success' : gen.type === 'Código de Teste' ? 'warning' : 'default'}
+                sx={{
+                  ml: 1,
+                  flexShrink: 0,
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  maxWidth: '120px',
+                  '& .MuiChip-label': {
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    px: 1
+                  }
+                }}
               />
             </ListItem>
           ))): (<ListItem>
