@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   Drawer, 
   List, 
@@ -33,13 +34,59 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedGeneration, setSelectedGeneration] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
+  const { t } = useLanguage();
+
+  // Map of type strings to canonical keys for consistent color/styling
+  const getCanonicalTypeKey = (typeString) => {
+    if (!typeString) return null;
+    const normalized = String(typeString).toLowerCase().trim();
+    
+    const typeMap = {
+      'tarefa': 'task',
+      'tarefas': 'task',
+      'task': 'task',
+      'tasks': 'task',
+      'caso de teste': 'testCase',
+      'casos de teste': 'testCase',
+      'test case': 'testCase',
+      'test cases': 'testCase',
+      'codigo de teste': 'testCode',
+      'código de teste': 'testCode',
+      'test code': 'testCode',
+      'analise de riscos': 'riskAnalysis',
+      'análise de riscos': 'riskAnalysis',
+      'analysis of risks': 'riskAnalysis',
+      'risk analysis': 'riskAnalysis',
+    };
+    
+    return typeMap[normalized] || null;
+  };
+
+  // Get translated label for a generation type
+  const getTypeLabel = (gen) => {
+    const typeKey = getCanonicalTypeKey(gen.type);
+    if (typeKey === 'task') return t('common.task');
+    if (typeKey === 'testCase') return t('common.testCase');
+    if (typeKey === 'testCode') return t('common.testCode');
+    if (typeKey === 'riskAnalysis') return t('common.riskAnalysis');
+    return gen.type || t('common.history');
+  };
+
+  // Get color variant for chip based on canonical type
+  const getTypeColor = (gen) => {
+    const typeKey = getCanonicalTypeKey(gen.type);
+    if (typeKey === 'task') return 'primary';
+    if (typeKey === 'testCase') return 'success';
+    if (typeKey === 'testCode') return 'warning';
+    return 'default';
+  };
 
   const tabOptions = [
-    { label: 'Todos', value: 0, icon: <HistoryIcon sx={{ mr: 1, mb: '-3px' }} /> },
-    { label: 'Tarefas', value: 1, icon: <AssignmentTurnedInIcon sx={{ mr: 1, mb: '-3px', color: '#1976d2' }} /> },
-    { label: 'Casos de Teste', value: 2, icon: <BugReportIcon sx={{ mr: 1, mb: '-3px', color: '#388e3c' }} /> },
-    { label: 'Código de Teste', value: 3, icon: <CodeIcon sx={{ mr: 1, mb: '-3px', color: '#fbc02d' }} /> },
-    { label: 'Análise de Riscos', value: 4, icon: <WarningAmberIcon sx={{ mr: 1, mb: '-3px', color: '#d84315' }} /> }
+    { label: t('common.all'), value: 0, icon: <HistoryIcon sx={{ mr: 1, mb: '-3px' }} /> },
+    { label: t('common.task'), value: 1, icon: <AssignmentTurnedInIcon sx={{ mr: 1, mb: '-3px', color: '#1976d2' }} /> },
+    { label: t('common.testCase'), value: 2, icon: <BugReportIcon sx={{ mr: 1, mb: '-3px', color: '#388e3c' }} /> },
+    { label: t('common.testCode'), value: 3, icon: <CodeIcon sx={{ mr: 1, mb: '-3px', color: '#fbc02d' }} /> },
+    { label: t('common.riskAnalysis'), value: 4, icon: <WarningAmberIcon sx={{ mr: 1, mb: '-3px', color: '#d84315' }} /> }
   ];
 
   const handleDrawerOpen = () => setDrawerOpen(true);
@@ -160,12 +207,12 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
       >
         <Box sx={{ px: 3, pt: 2, pb: 1, bgcolor: '#f5f7fa' }}>
           <FormControl fullWidth variant="outlined" size="small">
-            <InputLabel id="history-type-select-label" sx={{ fontWeight: 500, fontSize: 15 }}>Tipo</InputLabel>
+            <InputLabel id="history-type-select-label" sx={{ fontWeight: 500, fontSize: 15 }}>{t('common.generationType')}</InputLabel>
             <Select
               labelId="history-type-select-label"
               id="history-type-select"
               value={activeTab}
-              label="Tipo"
+              label={t('common.generationType')}
               onChange={handleTabChange}
               sx={{
                 fontWeight: 600,
@@ -218,10 +265,10 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
                 }
               />
               <Chip
-                label={gen.type}
+                label={getTypeLabel(gen)}
                 size="small"
                 variant="outlined"
-                color={gen.type === 'Tarefa' ? 'primary' : gen.type === 'Caso de Teste' ? 'success' : gen.type === 'Código de Teste' ? 'warning' : 'default'}
+                color={getTypeColor(gen)}
                 sx={{
                   ml: 1,
                   flexShrink: 0,
@@ -238,7 +285,7 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
               />
             </ListItem>
           ))): (<ListItem>
-            <ListItemText primary="Nenhum histórico disponível" />
+            <ListItemText primary={t('common.noHistoryAvailable')} />
           </ListItem>
         )}
         </List>

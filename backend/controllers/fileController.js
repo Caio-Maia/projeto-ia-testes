@@ -4,11 +4,28 @@ const path = require('path');
 // Função para ler o conteúdo de um arquivo
 const getFileContent = (req, res) => {
     const { filename } = req.params;
-    const filePath = path.join(__dirname, `../models/${filename}.md`);
+    const { language } = req.query;
+    
+    // Determinar o sufixo do idioma
+    const languageSuffix = language && language !== 'pt-BR' ? `.${language}` : '';
+    const filePath = path.join(__dirname, `../models/${filename}${languageSuffix}.md`);
 
     // Verifica se o arquivo existe
     if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ message: 'Arquivo não encontrado' });
+        // Se o arquivo com idioma específico não existir, tenta o padrão (pt-BR)
+        const defaultPath = path.join(__dirname, `../models/${filename}.md`);
+        if (!fs.existsSync(defaultPath)) {
+            return res.status(404).json({ message: 'Arquivo não encontrado' });
+        }
+        
+        // Lê o arquivo padrão
+        fs.readFile(defaultPath, 'utf8', (err, data) => {
+            if (err) {
+                return res.status(500).json({ message: 'Erro ao ler o arquivo', error: err });
+            }
+            res.status(200).json({ content: data, prompt: data });
+        });
+        return;
     }
 
     // Lê o conteúdo do arquivo
@@ -16,7 +33,7 @@ const getFileContent = (req, res) => {
         if (err) {
             return res.status(500).json({ message: 'Erro ao ler o arquivo', error: err });
         }
-        res.status(200).json({ content: data });
+        res.status(200).json({ content: data, prompt: data });
     });
 };
 

@@ -7,11 +7,14 @@ import GenerateTestsPage from './components/GenerateTestsPage';
 import CodeGenerationPage from './components/CodeGenerationPage';
 import RiskAnalysisPage from './components/RiskAnalysisPage';
 import FeedbackDashboard from './components/FeedbackDashboard';
+import DocumentationPage from './components/DocumentationPage';
 import Footer from './components/Footer';
 import Sidebar from './components/Sidebar';
 import TokenDialog from './components/TokenDialog';
 import PromptPage from './components/PromptPage';
 import EducationModeToggle from './components/EducationModeToggle';
+import LanguageSelector from './components/LanguageSelector';
+import { LanguageProvider } from './contexts/LanguageContext';
 import './App.css';
 import './styles/global.css';
 
@@ -57,54 +60,59 @@ function App() {
   };
 
   return (
-    <div className="app-container">
-      <Router>
-        <Sidebar 
-          open={sidebarOpen} 
-          onToggle={handleSidebarToggle} 
-          isMobile={isMobile}
-          onNavigate={handleNavigation}
-        />
-        <Box 
-          component="main" 
-          className={`content-area ${sidebarOpen ? 'sidebar-open' : ''}`}
-          sx={{ 
-            flexGrow: 1, 
-            p: { xs: 1, sm: 2, md: 3 },
-            mt: { xs: 2, sm: 3 },
-            ml: { 
-              xs: 0, 
-              sm: sidebarOpen ? '240px' : '65px' 
-            },
-            transition: 'margin-left 0.3s ease'
-          }}
-        >
-          <div className="responsive-container">
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                justifyContent: 'flex-end', 
-                mb: 2,
-                flexWrap: 'wrap'
-              }}
-            >
-              <EducationModeToggle />
-            </Box>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/improve-task" element={<ImproveTaskPage />} />
-              <Route path="/generate-tests" element={<GenerateTestsPage />} />
-              <Route path="/generate-code" element={<CodeGenerationPage />} />
-              <Route path="/analyze-risks" element={<RiskAnalysisPage />} />
-              <Route path="/feedback-dashboard" element={<FeedbackDashboard />} />
-              <Route path="/adjust-prompts" element={<PromptPage />} />
-            </Routes>
-            <Footer />
-          </div>
-        </Box>
-      </Router>
-      <TokenDialog open={dialogOpen} onClose={setDialogOpen} permitClose={false}/>
-    </div>
+    <LanguageProvider>
+      <div className="app-container">
+        <Router>
+          <Sidebar 
+            open={sidebarOpen} 
+            onToggle={handleSidebarToggle} 
+            isMobile={isMobile}
+            onNavigate={handleNavigation}
+          />
+          <Box 
+            component="main" 
+            className={`content-area ${sidebarOpen ? 'sidebar-open' : ''}`}
+            sx={{ 
+              flexGrow: 1, 
+              p: { xs: 1, sm: 2, md: 3 },
+              mt: { xs: 2, sm: 3 },
+              ml: { 
+                xs: 0, 
+                sm: sidebarOpen ? '240px' : '65px' 
+              },
+              transition: 'margin-left 0.3s ease'
+            }}
+          >
+            <div className="responsive-container">
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'flex-end', 
+                  mb: 2,
+                  flexWrap: 'wrap',
+                  gap: 2
+                }}
+              >
+                <LanguageSelector />
+                <EducationModeToggle />
+              </Box>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/improve-task" element={<ImproveTaskPage />} />
+                <Route path="/generate-tests" element={<GenerateTestsPage />} />
+                <Route path="/generate-code" element={<CodeGenerationPage />} />
+                <Route path="/analyze-risks" element={<RiskAnalysisPage />} />
+                <Route path="/feedback-dashboard" element={<FeedbackDashboard />} />
+                <Route path="/documentation" element={<DocumentationPage />} />
+                <Route path="/adjust-prompts" element={<PromptPage />} />
+              </Routes>
+              <Footer />
+            </div>
+          </Box>
+        </Router>
+        <TokenDialog open={dialogOpen} onClose={setDialogOpen} permitClose={false}/>
+      </div>
+    </LanguageProvider>
   );
 }
 

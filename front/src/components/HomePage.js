@@ -7,9 +7,11 @@ import {
   useMediaQuery, 
   useTheme, 
   Box, 
-  Card,
+  Card, 
+  CardContent,
   Divider,
-  Container
+  Container,
+  LinearProgress
 } from '@mui/material';
 import {
   FaTasks,
@@ -20,232 +22,462 @@ import {
   FaCog,
   FaRobot,
   FaLightbulb,
-  FaCheckCircle
+  FaCheckCircle,
+  FaGraduationCap,
+  FaZap,
+  FaShield,
+  FaUsers,
+  FaClock,
+  FaArrowRight,
+  FaStar
 } from 'react-icons/fa';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function HomePage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useLanguage();
   
   const features = [
     {
       icon: FaTasks,
-      title: 'Melhorar Tarefa',
-      description: 'Refine e melhore suas tarefas com sugestões inteligentes de IA',
+      titleKey: 'improveTask',
+      descKey: 'improveTaskDesc',
       path: '/improve-task',
-      color: '#406cfa'
+      color: '#3b82f6',
+      emoji: '📝'
     },
     {
       icon: FaClipboardList,
-      title: 'Gerar Casos de Teste',
-      description: 'Crie casos de teste abrangentes automaticamente',
+      titleKey: 'generateTests',
+      descKey: 'generateTestsDesc',
       path: '/generate-tests',
-      color: '#388e3c'
+      color: '#22c55e',
+      emoji: '✅'
     },
     {
       icon: FaCode,
-      title: 'Gerar Código de Teste',
-      description: 'Gere código de teste pronto para usar em seus projetos',
+      titleKey: 'generateCode',
+      descKey: 'generateCodeDesc',
       path: '/generate-code',
-      color: '#fbc02d'
+      color: '#fbc02d',
+      emoji: '💻'
     },
     {
       icon: FaExclamationTriangle,
-      title: 'Análise de Riscos',
-      description: 'Identifique e analise riscos potenciais em suas tarefas',
+      titleKey: 'analyzeRisks',
+      descKey: 'analyzeRisksDesc',
       path: '/analyze-risks',
-      color: '#d84315'
+      color: '#d84315',
+      emoji: '⚠️'
     },
     {
       icon: FaChartBar,
-      title: 'Dashboard de Feedback',
-      description: 'Visualize métricas e feedback de suas gerações',
+      titleKey: 'feedbackDashboard',
+      descKey: 'feedbackDashboardDesc',
       path: '/feedback-dashboard',
-      color: '#1976d2'
+      color: '#3b82f6',
+      emoji: '📊'
     },
     {
       icon: FaCog,
-      title: 'Ajustar Prompts',
-      description: 'Customize os prompts para melhor atender suas necessidades',
+      titleKey: 'adjustPrompts',
+      descKey: 'adjustPromptsDesc',
       path: '/adjust-prompts',
-      color: '#f57c00'
+      color: '#f57c00',
+      emoji: '⚙️'
     }
   ];
 
   const howItWorks = [
     {
       step: 1,
-      title: 'Insira sua Tarefa',
-      description: 'Descreva a tarefa ou funcionalidade que deseja testar',
-      icon: FaLightbulb
+      icon: FaLightbulb,
+      titleKey: 'step1Title',
+      descKey: 'step1Desc'
     },
     {
       step: 2,
-      title: 'Escolha a IA',
-      description: 'Selecione entre ChatGPT, Gemini ou outro modelo disponível',
-      icon: FaRobot
+      icon: FaRobot,
+      titleKey: 'step2Title',
+      descKey: 'step2Desc'
     },
     {
       step: 3,
-      title: 'Gere Resultados',
-      description: 'A IA processará e gerará casos de teste, código e análises',
-      icon: FaCheckCircle
+      icon: FaCheckCircle,
+      titleKey: 'step3Title',
+      descKey: 'step3Desc'
     }
   ];
 
+  const stats = [
+    { label: 'Modelos IA', value: '2', icon: '🤖' },
+    { label: 'Frameworks', value: '5+', icon: '⚙️' },
+    { label: 'Integrações', value: '1', icon: '🔗' },
+    { label: 'Idiomas', value: '2', icon: '🌍' }
+  ];
+
   return (
-    <Box sx={{ width: '100%', pb: 4 }}>
-      {/* Hero Section */}
+    <Box sx={{ width: '100%', pb: 4, background: '#ffffff' }}>
+      {/* Hero Section - Melhorada */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #406cfa 0%, #6eafd8 100%)',
+          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1e40af 100%)',
           color: 'white',
-          py: { xs: 4, sm: 6, md: 8 },
-          mb: { xs: 3, sm: 4, md: 6 },
-          borderRadius: { xs: 0, sm: 2 },
-          textAlign: 'center',
-          boxShadow: '0 8px 32px rgba(64, 108, 250, 0.2)'
+          py: { xs: 6, sm: 8, md: 12 },
+          position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+            pointerEvents: 'none'
+          }
         }}
       >
-        <Container maxWidth="lg">
-          <Typography 
-            variant={isMobile ? 'h4' : 'h3'} 
-            component="h1" 
-            sx={{ 
-              fontWeight: 'bold',
-              mb: 2,
-              letterSpacing: '0.5px'
-            }}
-          >
-            🚀 Gerador Inteligente de Tarefas e Testes
-          </Typography>
-          <Typography 
-            variant={isMobile ? 'body1' : 'h6'} 
-            sx={{ 
-              mb: 3,
-              opacity: 0.95,
-              maxWidth: '600px',
-              mx: 'auto',
-              lineHeight: 1.6
-            }}
-          >
-            Potencialize seus testes com IA. Gere casos de teste, código e análises de risco automaticamente.
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/improve-task" style={{ textDecoration: 'none' }}>
-              <Button 
-                variant="contained" 
-                size={isMobile ? "medium" : "large"}
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+          <Grid container spacing={4} alignItems="center">
+            <Grid item xs={12} md={6}>
+              <Box sx={{ mb: { xs: 2, md: 0 } }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <Box sx={{ fontSize: '2rem' }}></Box>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      background: 'rgba(255,255,255,0.2)', 
+                      px: 2, 
+                      py: 0.75,
+                      borderRadius: '20px',
+                      fontWeight: 600
+                    }}
+                  >
+                    IA-Powered QA Automation
+                  </Typography>
+                </Box>
+                <Typography 
+                  variant={isMobile ? 'h4' : 'h3'} 
+                  component="h1" 
+                  sx={{ 
+                    fontWeight: 'bold',
+                    mb: 2,
+                    letterSpacing: '0.5px',
+                    lineHeight: 1.2
+                  }}
+                >
+                  {t('home.title')}
+                </Typography>
+                <Typography 
+                  variant={isMobile ? 'body1' : 'h6'} 
+                  sx={{ 
+                    mb: 4,
+                    opacity: 0.95,
+                    lineHeight: 1.8,
+                    maxWidth: '100%'
+                  }}
+                >
+                  {t('home.subtitle')}
+                </Typography>
+                
+                {/* Stats */}
+                <Grid container spacing={2} sx={{ mb: 4 }}>
+                  {stats.map((stat, idx) => (
+                    <Grid item xs={6} sm={3} key={idx}>
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                          {stat.value}
+                        </Typography>
+                        <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                          {stat.label}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Link to="/improve-task" style={{ textDecoration: 'none' }}>
+                    <Button 
+                      variant="contained" 
+                      size={isMobile ? "medium" : "large"}
+                      sx={{
+                        background: '#ffffff',
+                        color: '#3b82f6',
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        px: 4,
+                        py: 1.5,
+                        borderRadius: '8px',
+                        fontSize: { xs: '0.95rem', md: '1rem' },
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        '&:hover': {
+                          background: '#f3f4f6',
+                          transform: 'translateY(-3px)',
+                          boxShadow: '0 12px 28px rgba(0,0,0,0.2)'
+                        },
+                        transition: '0.3s ease-in-out'
+                      }}
+                    >
+                      {t('home.startButton')} <FaArrowRight size={14} />
+                    </Button>
+                  </Link>
+                  <Link to="/feedback-dashboard" style={{ textDecoration: 'none' }}>
+                    <Button 
+                      variant="outlined" 
+                      size={isMobile ? "medium" : "large"}
+                      sx={{
+                        borderColor: '#ffffff',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        px: 4,
+                        py: 1.5,
+                        borderRadius: '8px',
+                        fontSize: { xs: '0.95rem', md: '1rem' },
+                        '&:hover': {
+                          background: 'rgba(255,255,255,0.15)',
+                          borderColor: '#ffffff',
+                          transform: 'translateY(-3px)'
+                        },
+                        transition: '0.3s ease-in-out'
+                      }}
+                    >
+                      {t('home.dashboardButton')}
+                    </Button>
+                  </Link>
+                </Box>
+              </Box>
+            </Grid>
+            
+            {/* Illustration / Visual Element */}
+            <Grid item xs={12} md={6} sx={{ display: { xs: 'none', md: 'block' }, position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', height: '100%' }}>
+              <Box
                 sx={{
-                  background: 'white',
-                  color: '#406cfa',
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    background: '#f0f0f0',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 16px rgba(0,0,0,0.2)'
-                  },
-                  transition: 'all 0.3s ease'
+                  fontSize: '120px',
+                  opacity: 0.15,
+                  animation: 'float 3s ease-in-out infinite',
+                  position: 'absolute',
+                  right: '100px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  '@keyframes float': {
+                    '0%, 100%': { transform: 'translateY(-50%)' },
+                    '50%': { transform: 'translateY(calc(-50% + 20px))' }
+                  }
                 }}
               >
-                Começar Agora
-              </Button>
-            </Link>
-            <Link to="/feedback-dashboard" style={{ textDecoration: 'none' }}>
-              <Button 
-                variant="outlined" 
-                size={isMobile ? "medium" : "large"}
-                sx={{
-                  borderColor: 'white',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    background: 'rgba(255,255,255,0.1)',
-                    transform: 'translateY(-2px)'
-                  },
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                Ver Dashboard
-              </Button>
-            </Link>
-          </Box>
+                🤖
+              </Box>
+            </Grid>
+          </Grid>
         </Container>
       </Box>
 
       <Container maxWidth="lg">
+        {/* O que a aplicação faz - Seção Nova */}
+        <Box sx={{ my: { xs: 6, sm: 8, md: 12 } }}>
+          <Typography 
+            variant="h5" 
+            component="h2"
+            sx={{ 
+              fontWeight: 700,
+              mb: 1,
+              textAlign: 'center',
+              color: '#1f2937'
+            }}
+          >
+            {t('home.whatYouCanDo')}
+          </Typography>
+          <Typography 
+            variant="body1"
+            sx={{ 
+              textAlign: 'center',
+              color: '#6b7280',
+              mb: 6,
+              maxWidth: '700px',
+              mx: 'auto'
+            }}
+          >
+            {t('home.whatYouCanDoDesc')}
+          </Typography>
+          
+          <Grid container spacing={{ xs: 2, sm: 3, md: 3 }} sx={{ justifyContent: 'center', maxWidth: '1000px', mx: 'auto' }}>
+            {features.map((feature, index) => (
+              <Grid item xs={12} sm={6} md={4} key={index} sx={{ display: 'flex' }}>
+                <Link to={feature.path} style={{ textDecoration: 'none', display: 'flex', width: '100%' }}>
+                  <Card
+                    sx={{
+                      width: '100%',
+                      height: '240px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      p: 2.5,
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
+                      transition: '0.3s ease-in-out',
+                      cursor: 'pointer',
+                      border: `2px solid ${feature.color}20`,
+                      background: '#ffffff',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '4px',
+                        background: feature.color,
+                        borderRadius: '12px 12px 0 0',
+                        transform: 'scaleX(0)',
+                        transformOrigin: 'left',
+                        transition: 'transform 0.3s ease-in-out'
+                      },
+                      '&:hover': {
+                        boxShadow: `0 16px 32px ${feature.color}20`,
+                        transform: 'translateY(-8px)',
+                        borderColor: feature.color,
+                        '&::before': {
+                          transform: 'scaleX(1)'
+                        }
+                      }
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        fontSize: '2rem',
+                        mb: 1,
+                        lineHeight: 1
+                      }}
+                    >
+                      {feature.emoji}
+                    </Box>
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        fontWeight: 700, 
+                        mb: 0.75, 
+                        color: '#1f2937',
+                        fontSize: '0.95rem',
+                        lineHeight: 1.3
+                      }}
+                    >
+                      {t(`home.${feature.titleKey}`)}
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: '#6b7280', 
+                        lineHeight: 1.5,
+                        flexGrow: 1,
+                        mb: 1,
+                        fontSize: '0.8rem'
+                      }}
+                    >
+                      {t(`home.${feature.descKey}`)}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        color: feature.color,
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        transition: '0.2s ease-in-out',
+                        mt: 'auto'
+                      }}
+                    >
+                      {t('home.explore')} <FaArrowRight size={10} />
+                    </Box>
+                  </Card>
+                </Link>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+
+        <Divider sx={{ my: { xs: 4, sm: 6, md: 8 } }} />
+
         {/* Como Funciona */}
         <Box sx={{ mb: { xs: 6, sm: 8, md: 10 } }}>
           <Typography 
             variant="h5" 
             component="h2"
             sx={{ 
-              fontWeight: 'bold',
-              mb: 4,
+              fontWeight: 700,
+              mb: 1,
               textAlign: 'center',
-              color: '#232b33'
+              color: '#1f2937'
             }}
           >
-            ⚡ Como Funciona
+            {t('home.howItWorksTitle')}
+          </Typography>
+          <Typography 
+            variant="body1"
+            sx={{ 
+              textAlign: 'center',
+              color: '#6b7280',
+              mb: 4,
+              maxWidth: '700px',
+              mx: 'auto'
+            }}
+          >
+            {t('home.howItWorksDesc')}
           </Typography>
           
-          <Grid container spacing={{ xs: 2, sm: 3, md: 4 }} justifyContent="center">
+          <Grid container spacing={3} justifyContent="center" sx={{ maxWidth: '1200px', mx: 'auto' }}>
             {howItWorks.map((item, index) => {
               const Icon = item.icon;
               return (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
+                <Grid item xs={12} sm={12} md={4} key={index} sx={{ display: 'flex' }}>
                   <Card
                     sx={{
-                      height: '100%',
+                      p: 3,
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
+                      border: '1px solid #e5e7eb',
+                      background: '#f9fafb',
+                      transition: '0.3s ease-in-out',
+                      width: '100%',
                       display: 'flex',
                       flexDirection: 'column',
-                      alignItems: 'center',
-                      textAlign: 'center',
-                      p: 3,
-                      borderRadius: 2,
-                      boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
-                      transition: 'all 0.3s ease',
-                      border: '2px solid transparent',
                       '&:hover': {
-                        boxShadow: '0 8px 24px rgba(64, 108, 250, 0.15)',
-                        borderColor: '#406cfa',
+                        boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+                        borderColor: '#3b82f6',
                         transform: 'translateY(-4px)'
                       }
                     }}
                   >
-                    <Box
-                      sx={{
-                        width: 60,
-                        height: 60,
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #406cfa 0%, #6eafd8 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mb: 2,
-                        color: 'white',
-                        fontSize: '28px'
-                      }}
-                    >
-                      <Icon />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                      <Box
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '22px',
+                          fontWeight: 700,
+                          flexShrink: 0
+                        }}
+                      >
+                        {item.step}
+                      </Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937', fontSize: '1rem' }}>
+                        {t(`home.${item.titleKey}`)}
+                      </Typography>
                     </Box>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ fontWeight: 'bold', mb: 1, color: '#232b33' }}
-                    >
-                      Passo {item.step}
-                    </Typography>
-                    <Typography 
-                      variant="subtitle1" 
-                      sx={{ fontWeight: 600, mb: 1, color: '#406cfa' }}
-                    >
-                      {item.title}
-                    </Typography>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ color: '#666', lineHeight: 1.6 }}
-                    >
-                      {item.description}
+                    <Typography variant="body2" sx={{ color: '#6b7280', lineHeight: 1.7, flexGrow: 1 }}>
+                      {t(`home.${item.descKey}`)}
                     </Typography>
                   </Card>
                 </Grid>
@@ -254,106 +486,7 @@ function HomePage() {
           </Grid>
         </Box>
 
-        <Divider sx={{ my: { xs: 4, sm: 6, md: 4 } }} />
-
-        {/* Funcionalidades */}
-        <Box sx={{ mb: { xs: 61, sm: 8, md: 13 } }}>
-          <Typography 
-            variant="h5" 
-            component="h2"
-            sx={{ 
-              fontWeight: 'bold',
-              mb: 2,
-              textAlign: 'center',
-              color: '#232b33'
-            }}
-          >
-            🎯 Funcionalidades Principais
-          </Typography>
-          
-          <Grid container spacing={{ xs: 2, sm: 3, md: 8 }} justifyContent="center">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
-                  <Link to={feature.path} style={{ textDecoration: 'none' }}>
-                    <Card
-                      sx={{
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        p: 3,
-                        borderRadius: 2,
-                        boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer',
-                        border: `2px solid ${feature.color}20`,
-                        '&:hover': {
-                          boxShadow: `0 12px 32px ${feature.color}30`,
-                          transform: 'translateY(-8px)',
-                          borderColor: feature.color
-                        }
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 50,
-                          height: 50,
-                          borderRadius: '12px',
-                          background: `${feature.color}15`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          mb: 2,
-                          color: feature.color,
-                          fontSize: '24px'
-                        }}
-                      >
-                        <Icon />
-                      </Box>
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          fontWeight: 'bold', 
-                          mb: 1, 
-                          color: '#232b33',
-                          fontSize: { xs: '1rem', sm: '1.1rem' }
-                        }}
-                      >
-                        {feature.title}
-                      </Typography>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          color: '#666', 
-                          lineHeight: 1.6,
-                          flexGrow: 1
-                        }}
-                      >
-                        {feature.description}
-                      </Typography>
-                      <Box
-                        sx={{
-                          mt: 2,
-                          pt: 2,
-                          borderTop: `1px solid ${feature.color}30`,
-                          color: feature.color,
-                          fontWeight: 'bold',
-                          fontSize: '0.9rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1
-                        }}
-                      >
-                        Explorar →
-                      </Box>
-                    </Card>
-                  </Link>
-                </Grid>
-              );
-            })}
-          </Grid>
-        </Box>
+        <Divider sx={{ my: { xs: 4, sm: 6, md: 8 } }} />
 
         {/* Benefícios */}
         <Box sx={{ mb: { xs: 6, sm: 8, md: 10 } }}>
@@ -361,70 +494,71 @@ function HomePage() {
             variant="h5" 
             component="h2"
             sx={{ 
-              fontWeight: 'bold',
-              mb: 4,
+              fontWeight: 700,
+              mb: 1,
               textAlign: 'center',
-              color: '#232b33'
+              color: '#1f2937'
             }}
           >
-            ✨ Por que usar nosso app?
+            {t('home.whyUseApp')}
+          </Typography>
+          <Typography 
+            variant="body1"
+            sx={{ 
+              textAlign: 'center',
+              color: '#6b7280',
+              mb: 4,
+              maxWidth: '700px',
+              mx: 'auto'
+            }}
+          >
+            {t('home.whyUseAppDesc')}
           </Typography>
           
-          <Grid container spacing={{ xs: 2, sm: 3 }} justifyContent="center">
+          <Grid container spacing={3} justifyContent="center">
             {[
-              { title: 'Economia de Tempo', desc: 'Gere testes em segundos, não em horas' },
-              { title: 'Qualidade Garantida', desc: 'Testes abrangentes e bem estruturados' },
-              { title: 'IA Inteligente', desc: 'Powered by ChatGPT e Gemini' },
-              { title: 'Histórico Completo', desc: 'Acesse todas as suas gerações anteriores' },
-              { title: 'Análise de Riscos', desc: 'Identifique problemas antes que ocorram' },
-              { title: 'Customizável', desc: 'Ajuste prompts conforme sua necessidade' }
+              { icon: '⚡', titleKey: 'timeSaving', descKey: 'timeSavingDesc' },
+              { icon: '✅', titleKey: 'qualityGuaranteed', descKey: 'qualityGuaranteedDesc' },
+              { icon: '🤖', titleKey: 'aiPowered', descKey: 'aiPoweredDesc' },
+              { icon: '📚', titleKey: 'completeHistory', descKey: 'completeHistoryDesc' },
+              { icon: '⚠️', titleKey: 'riskAnalysis', descKey: 'riskAnalysisDesc' },
+              { icon: '🎯', titleKey: 'customizable', descKey: 'customizableDesc' },
+              { icon: '🎓', titleKey: 'educationalMode', descKey: 'educationalModeDesc' },
+              { icon: '🔗', titleKey: 'jiRAIntegration', descKey: 'jiRAIntegrationDesc' }
             ].map((benefit, index) => (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
+              <Grid item xs={12} sm={6} md={3} key={index} sx={{ display: 'flex' }}>
                 <Box
                   sx={{
                     p: 2.5,
-                    borderRadius: 2,
-                    background: '#f9fbfc',
-                    border: '1px solid #e0e7ff',
+                    borderRadius: '10px',
+                    background: '#f9fafb',
+                    border: '1px solid #e5e7eb',
                     display: 'flex',
                     gap: 2,
                     alignItems: 'flex-start',
-                    transition: 'all 0.3s ease',
+                    transition: '0.3s ease-in-out',
+                    width: '100%',
                     '&:hover': {
-                      background: '#f0f4ff',
-                      borderColor: '#406cfa',
-                      boxShadow: '0 4px 12px rgba(64, 108, 250, 0.1)'
+                      background: '#f3f4f6',
+                      borderColor: '#3b82f6',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.1)'
                     }
                   }}
                 >
-                  <Box
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #406cfa 0%, #6eafd8 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      flexShrink: 0
-                    }}
-                  >
-                    ✓
-                  </Box>
-                  <Box>
+                  <Box sx={{ fontSize: '1.8rem', flexShrink: 0 }}>{benefit.icon}</Box>
+                  <Box sx={{ width: '100%' }}>
                     <Typography 
-                      variant="subtitle1" 
-                      sx={{ fontWeight: 'bold', color: '#232b33', mb: 0.5 }}
+                      variant="subtitle2" 
+                      sx={{ fontWeight: 700, color: '#1f2937', mb: 0.5 }}
                     >
-                      {benefit.title}
+                      {t(`home.${benefit.titleKey}`)}
                     </Typography>
                     <Typography 
-                      variant="body2" 
-                      sx={{ color: '#666' }}
+                      variant="caption" 
+                      sx={{ color: '#6b7280', lineHeight: 1.5 }}
                     >
-                      {benefit.desc}
+                      {t(`home.${benefit.descKey}`)}
                     </Typography>
                   </Box>
                 </Box>
@@ -433,84 +567,99 @@ function HomePage() {
           </Grid>
         </Box>
 
-        {/* CTA Final */}
+        {/* CTA Final - Melhorada */}
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #406cfa 0%, #6eafd8 100%)',
-            borderRadius: 3,
-            p: { xs: 3, sm: 4, md: 5 },
+            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            borderRadius: '16px',
+            p: { xs: 4, sm: 5, md: 6 },
             textAlign: 'center',
             color: 'white',
-            boxShadow: '0 8px 32px rgba(64, 108, 250, 0.2)'
+            boxShadow: '0 20px 40px rgba(59, 130, 246, 0.2)',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: '-50%',
+              right: '-20%',
+              width: '400px',
+              height: '400px',
+              background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+              borderRadius: '50%',
+              pointerEvents: 'none'
+            }
           }}
         >
-          <Typography 
-            variant="h5" 
-            sx={{ fontWeight: 'bold', mb: 2 }}
-          >
-            Pronto para começar?
-          </Typography>
-          <Typography 
-            variant="body1" 
-            sx={{ mb: 3, opacity: 0.95 }}
-          >
-            Escolha uma funcionalidade abaixo e comece a gerar testes inteligentes agora mesmo!
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/improve-task" style={{ textDecoration: 'none' }}>
-              <Button 
-                variant="contained" 
-                size={isMobile ? "medium" : "large"}
-                sx={{
-                  background: 'white',
-                  color: '#406cfa',
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    background: '#f0f0f0',
-                    transform: 'translateY(-2px)'
-                  },
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                Melhorar Tarefa
-              </Button>
-            </Link>
-            <Link to="/generate-tests" style={{ textDecoration: 'none' }}>
-              <Button 
-                variant="contained" 
-                size={isMobile ? "medium" : "large"}
-                sx={{
-                  background: 'white',
-                  color: '#406cfa',
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    background: '#f0f0f0',
-                    transform: 'translateY(-2px)'
-                  },
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                Gerar Testes
-              </Button>
-            </Link>
-            <Link to="/generate-code" style={{ textDecoration: 'none' }}>
-              <Button 
-                variant="contained" 
-                size={isMobile ? "medium" : "large"}
-                sx={{
-                  background: 'white',
-                  color: '#406cfa',
-                  fontWeight: 'bold',
-                  '&:hover': {
-                    background: '#f0f0f0',
-                    transform: 'translateY(-2px)'
-                  },
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                Gerar Código
-              </Button>
-            </Link>
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
+            <Typography 
+              variant="h4" 
+              sx={{ fontWeight: 700, mb: 2 }}
+            >
+              {t('home.readyToStart')}
+            </Typography>
+            <Typography 
+              variant="body1" 
+              sx={{ mb: 4, opacity: 0.95, fontSize: '1.1rem' }}
+            >
+              {t('home.readyToStartDesc')}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link to="/improve-task" style={{ textDecoration: 'none' }}>
+                <Button 
+                  variant="contained" 
+                  size={isMobile ? "medium" : "large"}
+                  sx={{
+                    background: '#ffffff',
+                    color: '#3b82f6',
+                    fontWeight: 700,
+                    textTransform: 'none',
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    '&:hover': {
+                      background: '#f3f4f6',
+                      transform: 'scale(1.05)',
+                      boxShadow: '0 12px 28px rgba(0,0,0,0.2)'
+                    },
+                    transition: '0.3s ease-in-out'
+                  }}
+                >
+                  Melhorar Tarefa <FaArrowRight size={16} />
+                </Button>
+              </Link>
+              <Link to="/generate-tests" style={{ textDecoration: 'none' }}>
+                <Button 
+                  variant="contained" 
+                  size={isMobile ? "medium" : "large"}
+                  sx={{
+                    background: '#ffffff',
+                    color: '#3b82f6',
+                    fontWeight: 700,
+                    textTransform: 'none',
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    '&:hover': {
+                      background: '#f3f4f6',
+                      transform: 'scale(1.05)',
+                      boxShadow: '0 12px 28px rgba(0,0,0,0.2)'
+                    },
+                    transition: '0.3s ease-in-out'
+                  }}
+                >
+                  Gerar Testes <FaArrowRight size={16} />
+                </Button>
+              </Link>
+            </Box>
           </Box>
         </Box>
       </Container>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Snackbar, Alert, Typography, Paper, CircularProgress, Container } from '@mui/material';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function PromptPage() {
+    const { t, language } = useLanguage();
     const [selectedFile, setSelectedFile] = useState(''); // Nome do arquivo selecionado
     const [content, setContent] = useState('');  // Conteúdo do arquivo
     const [isLoading, setIsLoading] = useState(false);  // Controle de carregamento
@@ -17,14 +19,14 @@ function PromptPage() {
             try {
                 console.log(process.env.REACT_APP_BACKEND_URL)
                 const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-                const response = await axios.get(`${backendUrl}/api/files/${fileName}`);
+                const response = await axios.get(`${backendUrl}/api/files/${fileName}?language=${language}`);
                 const promptContent = response.data.content;
                 setContent(promptContent);
                 localStorage.setItem(`${fileName}Prompt`, promptContent);
             } catch (error) {
                 console.error('Erro ao buscar o conteúdo do arquivo:', error);
                 setContent(''); // Limpa o conteúdo no caso de erro
-                showSnackbar('Erro ao carregar o conteúdo do arquivo.', 'error');
+                showSnackbar(t('promptPage.errorLoading'), 'error');
             } finally {
                 setIsLoading(false);
             }
@@ -44,7 +46,7 @@ function PromptPage() {
 
     const handleSave = () => {
         localStorage.setItem(`${selectedFile}Prompt`, content);
-        showSnackbar('Conteúdo salvo com sucesso!', 'success');
+        showSnackbar(t('promptPage.saveSuccess'), 'success');
     };
 
     const showSnackbar = (message, severity) => {
@@ -61,11 +63,11 @@ function PromptPage() {
         <Container maxWidth="sm" style={{ marginTop: '40px' }}>
             <Paper elevation={3} style={{ padding: '20px', backgroundColor: '#f5f5f5' }}>
                 <Typography variant="h4" align="center" gutterBottom>
-                    Edição de Prompt
+                    {t('promptPage.title')}
                 </Typography>
 
                 <FormControl fullWidth margin="normal">
-                    <InputLabel shrink={!!selectedFile}>Selecione o arquivo</InputLabel>
+                    <InputLabel shrink={!!selectedFile}>{t('promptPage.selectFile')}</InputLabel>
                     <Select
                         value={selectedFile}
                         onChange={(e) => setSelectedFile(e.target.value)}
@@ -86,7 +88,7 @@ function PromptPage() {
                 ) : selectedFile ? (
                     <div>
                         <TextField
-                            label="Conteúdo do Arquivo"
+                            label={t('promptPage.fileContent')}
                             fullWidth
                             multiline
                             rows={10}
@@ -102,12 +104,12 @@ function PromptPage() {
                             style={{ marginTop: '20px', width: '100%' }}
                             disabled={!selectedFile}
                         >
-                            Salvar
+                            {t('common.save')}
                         </Button>
                     </div>
                 ) : (
                     <Typography variant="body1" color="textSecondary" align="center" style={{ marginTop: '20px' }}>
-                        Selecione um arquivo para editar
+                        {t('promptPage.selectFileToEdit')}
                     </Typography>
                 )}
             </Paper>

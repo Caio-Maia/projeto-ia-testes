@@ -2,11 +2,18 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Box, Typography, Paper, CircularProgress, Alert, Divider,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Card, CardContent,
+  Grid, Chip, Rating
 } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
+import { useLanguage } from '../contexts/LanguageContext';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 function FeedbackDashboard() {
+  const { t } = useLanguage();
   const [stats, setStats] = useState([]);
   const [recent, setRecent] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,28 +36,28 @@ function FeedbackDashboard() {
       setStats(statsRes.data);
       setRecent(recentRes.data);
     } catch (err) {
-      setError('Erro ao carregar dados de feedback');
+      setError(t('feedbackDashboard.errorLoading'));
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const pieData = (t) => {
-    if (!t) return [];
-    const pos = t.ratings.find(r => r.rating === 'positive')?.count || 0;
-    const neg = t.ratings.find(r => r.rating === 'negative')?.count || 0;
+  const pieData = (stat) => {
+    if (!stat) return [];
+    const pos = stat.ratings.find(r => r.rating === 'positive')?.count || 0;
+    const neg = stat.ratings.find(r => r.rating === 'negative')?.count || 0;
     return [
-      { id: 0, value: pos, label: 'Positivo', color: '#4caf50' },
-      { id: 1, value: neg, label: 'Negativo', color: '#f44336' }
+      { id: 0, value: pos, label: t('feedbackDashboard.positive'), color: '#4caf50' },
+      { id: 1, value: neg, label: t('feedbackDashboard.negative'), color: '#f44336' }
     ];
   };
 
   const typeMap = {
-    task: 'Tarefas',
-    testcase: 'Casos de Teste',
-    code: 'Código de Teste',
-    risk: 'Análise de Riscos',
+    task: t('feedbackDashboard.tasks'),
+    testcase: t('feedbackDashboard.testCases'),
+    code: t('feedbackDashboard.testCode'),
+    risk: t('feedbackDashboard.riskAnalysis'),
   };
 
   const formatDate = (dateString) => {
@@ -76,112 +83,230 @@ function FeedbackDashboard() {
   }
 
   return (
-    <Box p={{xs: 1, sm: 3, md: 6}} maxWidth={900} margin="0 auto">
-      {/* Título */}
-      <Paper elevation={3} sx={{ p: 4, mb: 4, textAlign: 'center', bgcolor: '#f4f8fb' }}>
-        <Typography variant="h4" fontWeight={700} mb={1} color="primary.main">
-          Dashboard de Feedback
-        </Typography>
-        <Typography variant="subtitle1" color="text.secondary">
-          Veja o desempenho dos recursos por feedback dos usuários e os comentários mais recentes.
-        </Typography>
-      </Paper>
+    <Box sx={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f5f7fa 0%, #f0f3f7 100%)', py: 4 }}>
+      <Box p={{xs: 2, sm: 3, md: 6}} maxWidth={1200} margin="0 auto">
+        {/* Header Hero */}
+        <Paper 
+          elevation={0}
+          sx={{ 
+            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            p: 4, 
+            mb: 5, 
+            borderRadius: 3,
+            color: '#ffffff',
+            textAlign: 'center',
+          }}
+        >
+          <Box display="flex" alignItems="center" justifyContent="center" gap={1.5} mb={1}>
+            <TrendingUpIcon sx={{ fontSize: 36 }} />
+            <Typography variant="h3" fontWeight={800}>
+              {t('feedbackDashboard.title')}
+            </Typography>
+          </Box>
+          <Typography variant="h6" sx={{ fontWeight: 400, opacity: 0.95 }}>
+            {t('feedbackDashboard.subtitle')}
+          </Typography>
+        </Paper>
 
-      {/* Gráficos centralizados */}
-      {stats.map((stat) => {
-        const data = pieData(stat);
-        const total = stat.total || 0;
-        const pos = stat.ratings.find(r => r.rating === 'positive')?.count || 0;
-        const posPerc = total > 0 ? Math.round((pos / total) * 100) : 0;
-        const label = typeMap[stat._id] || stat._id;
+        {/* Stats Cards */}
+        {stats.length > 0 && (
+          <Grid container spacing={3} sx={{ mb: 5 }}>
+            {stats.map((stat) => {
+              const data = pieData(stat);
+              const total = stat.total || 0;
+              const pos = stat.ratings.find(r => r.rating === 'positive')?.count || 0;
+              const posPerc = total > 0 ? Math.round((pos / total) * 100) : 0;
+              const label = typeMap[stat._id] || stat._id;
 
-        return (
-          <Paper 
-            key={stat._id}
-            elevation={4} 
+              return (
+                <Grid item xs={12} sm={6} md={4} key={stat._id}>
+                  <Paper 
+                    elevation={0}
+                    sx={{ 
+                      p: 3, 
+                      borderRadius: 2.5,
+                      border: '1px solid #e2e8f0',
+                      background: '#ffffff',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: '0 12px 24px rgba(59, 130, 246, 0.15)',
+                        transform: 'translateY(-4px)',
+                      }
+                    }}
+                  >
+                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+                      <AssignmentIcon sx={{ color: '#3b82f6', fontSize: 24 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                        {label}
+                      </Typography>
+                    </Box>
+                    
+                    {total > 0 ? (
+                      <>
+                        <Box display="flex" justifyContent="center" mb={2}>
+                          <PieChart
+                            series={[{ data, innerRadius: 40, paddingAngle: 2, cornerRadius: 7 }]} 
+                            width={200} 
+                            height={140} 
+                            legend={{ hidden: true }}
+                          />
+                        </Box>
+                        
+                        <Divider sx={{ my: 2 }} />
+                        
+                        <Box display="flex" alignItems="center" gap={1} mb={1}>
+                          <ThumbUpIcon sx={{ color: '#4ade80', fontSize: 20 }} />
+                          <Typography variant="h6" sx={{ fontWeight: 700, color: '#22c55e' }}>
+                            {posPerc}%
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            aprovação
+                          </Typography>
+                        </Box>
+                        
+                        <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
+                          Total: <strong>{total}</strong> {t('feedbackDashboard.feedbacksReceived')}
+                        </Typography>
+                      </>
+                    ) : (
+                      <Box py={3} textAlign="center">
+                        <Typography variant="body2" color="textSecondary">
+                          {t('feedbackDashboard.noFeedback')}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Paper>
+                </Grid>
+              );
+            })}
+          </Grid>
+        )}
+
+        {/* Recent Feedback Section */}
+        <Paper 
+          elevation={0}
+          sx={{ 
+            borderRadius: 3,
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Section Header */}
+          <Box 
             sx={{ 
-              p: 3, 
-              mb: 5, 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              border: '2px solid #e3f2fd' 
+              background: 'linear-gradient(135deg, #f5f7fa 0%, #f1f5f9 100%)',
+              p: 3,
+              borderBottom: '2px solid #e2e8f0',
             }}
           >
-            <Typography variant="h6" color="primary" fontWeight="bold" mb={2}>
-              {label}
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ThumbUpIcon sx={{ color: '#3b82f6' }} />
+              {t('feedbackDashboard.recentComments')}
             </Typography>
-            {total > 0 ? (
-              <>
-                <PieChart
-                  series={[{ data, innerRadius: 35, paddingAngle: 3, cornerRadius: 7 }]} 
-                  width={200} 
-                  height={160} 
-                  legend={{ hidden: true }}
-                />
-                <Typography variant="h6" fontWeight={700} sx={{ color: '#4caf50', mt: 1 }}>
-                  {posPerc}% <span style={{fontWeight:400, color:'#111'}}>aprovam</span>
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {total} feedbacks recebidos
-                </Typography>
-              </>
-            ) : (
-              <Typography variant="body2" color="text.secondary" mt={4}>Nenhum feedback recebido</Typography>
-            )}
-          </Paper>
-        );
-      })}
+          </Box>
 
-      {/* Divider e tabela */}
-      <Box mb={2} mt={5}>
-        <Divider textAlign="left">
-          <Typography variant="h6" fontWeight={600} color="primary.main">Comentários Recentes</Typography>
-        </Divider>
-      </Box>
-
-      <Paper elevation={2} sx={{ p: { xs: 1, sm: 3 }, background: 'white', boxShadow: '0 2px 12px #e3eaf2' }}>
-        {recent.length > 0 ? (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ background: '#e3f2fd' }}>
-                  <TableCell><b>Tipo</b></TableCell>
-                  <TableCell><b>Avaliação</b></TableCell>
-                  <TableCell><b>Comentário</b></TableCell>
-                  <TableCell><b>Data</b></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {recent.map((f, i) => (
-                  <TableRow key={f._id || i} sx={{ background: i % 2 === 0 ? '#f7fbff' : 'white' }}>
-                    <TableCell>{typeMap[f.type] || f.type}</TableCell>
-                    <TableCell>
-                      {f.rating === 'positive' ? (
-                        <Box display="flex" alignItems="center">
-                          <Box width={8} height={8} borderRadius={99} bgcolor="#4caf50" mr={1}></Box>
-                          <Typography color="success.main" fontWeight={600}>Positivo</Typography>
-                        </Box>
-                      ) : (
-                        <Box display="flex" alignItems="center">
-                          <Box width={8} height={8} borderRadius={99} bgcolor="#f44336" mr={1}></Box>
-                          <Typography color="error.main" fontWeight={600}>Negativo</Typography>
-                        </Box>
-                      )}
+          {/* Table Content */}
+          {recent.length > 0 ? (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ background: '#f8f9fa', borderBottom: '2px solid #e2e8f0' }}>
+                    <TableCell sx={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>
+                      Tipo
                     </TableCell>
-                    <TableCell>{f.comment || <i style={{color:'#999'}}>—</i>}</TableCell>
-                    <TableCell>{formatDate(f.createdAt)}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>
+                      Avaliação
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>
+                      Comentário
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>
+                      Data
+                    </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Typography variant="body1" color="text.secondary" align="center">
-            Nenhum comentário recente
-          </Typography>
-        )}
-      </Paper>
+                </TableHead>
+                <TableBody>
+                  {recent.map((f, i) => (
+                    <TableRow 
+                      key={f._id || i} 
+                      sx={{ 
+                        background: i % 2 === 0 ? '#ffffff' : '#f8f9fa',
+                        borderBottom: '1px solid #e2e8f0',
+                        transition: 'background 0.2s ease',
+                        '&:hover': {
+                          background: '#f0f4f8',
+                        }
+                      }}
+                    >
+                      <TableCell>
+                        <Chip
+                          label={typeMap[f.type] || f.type}
+                          variant="outlined"
+                          size="small"
+                          sx={{ 
+                            fontWeight: 600, 
+                            borderColor: '#cbd5e1',
+                            color: '#475569'
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          {f.rating === 'positive' ? (
+                            <>
+                              <ThumbUpIcon sx={{ color: '#4ade80', fontSize: 18 }} />
+                              <Typography sx={{ fontWeight: 600, color: '#22c55e' }}>
+                                Útil
+                              </Typography>
+                            </>
+                          ) : (
+                            <>
+                              <ThumbDownIcon sx={{ color: '#f87171', fontSize: 18 }} />
+                              <Typography sx={{ fontWeight: 600, color: '#ef4444' }}>
+                                Melhorar
+                              </Typography>
+                            </>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            color: f.comment ? '#475569' : '#cbd5e1',
+                            fontStyle: f.comment ? 'normal' : 'italic',
+                            maxWidth: 300,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {f.comment || '—'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.85rem' }}>
+                          {formatDate(f.createdAt)}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Box py={6} textAlign="center">
+              <AssignmentIcon sx={{ fontSize: 48, color: '#cbd5e1', mb: 2 }} />
+              <Typography variant="h6" color="textSecondary" sx={{ fontWeight: 600 }}>
+                {t('feedbackDashboard.noComments')}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Os feedbacks aparecerão aqui quando começarem a chegar
+              </Typography>
+            </Box>
+          )}
+        </Paper>
+      </Box>
     </Box>
   );
 }

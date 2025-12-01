@@ -2,13 +2,16 @@
 
 export const AI_MODELS = [
   //ChatGpt
-  { label: 'ChatGPT', apiName: 'chatgpt', version: 'chatgpt-4' },
+  { label: 'ChatGPT 4.1', apiName: 'chatgpt', version: 'gpt-4.1' },
+  { label: 'ChatGPT 5', apiName: 'chatgpt', version: 'gpt-5' },
+  { label: 'ChatGPT 5 Mini', apiName: 'chatgpt', version: 'gpt-5-mini' },
+  { label: 'ChatGPT 5 Nano', apiName: 'chatgpt', version: 'gpt-5-nano' },
+  { label: 'ChatGPT 5.1', apiName: 'chatgpt', version: 'gpt-5.1' },
+  { label: 'ChatGPT 5 Pro', apiName: 'chatgpt', version: 'gpt-5-pro' },
 
   //Gemini
-  { label: 'Gemini 1.5 Flash', apiName: 'gemini', version: 'gemini-1.5-flash-latest' },
-  { label: 'Gemini 2.0 Flash', apiName: 'gemini', version: 'gemini-2.0-flash' },
-  { label: 'Gemini 2.0 Flash Lite', apiName: 'gemini', version: 'gemini-2.0-flash-lite' },
   { label: 'Gemini 2.5 Flash Lite', apiName: 'gemini', version: 'gemini-2.5-flash-lite' },
   { label: 'Gemini 2.5 Flash', apiName: 'gemini', version: 'gemini-2.5-flash' },
   { label: 'Gemini 2.5 Pro', apiName: 'gemini', version: 'gemini-2.5-pro' },
+  { label: 'Gemini 3.0 Pro Preview', apiName: 'gemini', version: 'gemini-3.0-pro-preview' },
 ];

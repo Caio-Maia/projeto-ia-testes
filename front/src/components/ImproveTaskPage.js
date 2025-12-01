@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import {
     Box, Button, TextField, Typography, MenuItem, FormControl, InputLabel, Select, Grid,
@@ -11,11 +11,15 @@ import remarkGfm from 'remark-gfm';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
 import FeedbackComponent from './FeedbackComponent';
+import ModelSelector from './ModelSelector';
 import { AI_MODELS } from '../utils/aiModels';
 import { addVersion, getVersions, restoreVersion } from '../utils/generationHistory';
+import { useLanguage } from '../contexts/LanguageContext';
+import { usePrompt } from '../hooks/usePrompt';
 
 function ImproveTaskPage() {
-    const [prompt, setPrompt] = useState('');
+    const { t } = useLanguage();
+    const { prompt } = usePrompt('taskModel');
     const [isLoading, setIsLoading] = useState(false);
     const [model, setModel] = useState({ apiName: '', version: '' });
     const [error, setError] = useState(null);
@@ -48,33 +52,10 @@ function ImproveTaskPage() {
     const isButtonDisabled = (!taskDescription && !jiraTaskCode) || model.apiName === '';
     const options = AI_MODELS;
 
-    useEffect(() => {
-        const localPromptContent = localStorage.getItem('taskModelPrompt');
-        if (!localPromptContent) {
-            fetchPromptFromBackend('taskModel');
-        } else {
-            setPrompt(localPromptContent);
-        }
-    }, []);
-
-    const fetchPromptFromBackend = async (fileName) => {
-        setIsLoading(true);
-        try {
-            const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-            const response = await axios.get(`${backendUrl}/api/files/${fileName}`);
-            const promptContent = response.data.content;
-            setPrompt(promptContent);
-            localStorage.setItem('taskModelPrompt', promptContent);
-        } catch (error) {
-            console.error('Erro ao buscar o conteúdo do arquivo:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
+    
     const handleModelChange = (event) => {
-        const { apiName, version } = event.target.value;
-        setModel({ apiName, version });
+        const selectedModel = event.target.value;
+        setModel(selectedModel);
     };
 
     const handleTaskDescriptionChange = (event) => {
@@ -97,7 +78,7 @@ function ImproveTaskPage() {
             const jiraEmail = localStorage.getItem('jiraEmail');
             const jiraBaseUrl = localStorage.getItem('jiraBaseUrl');
             if (!jiraToken || !jiraEmail || !jiraBaseUrl) {
-                setError('Credenciais do JIRA não configuradas.');
+                setError(t('improveTask.jiraNotConfigured'));
                 setIsJiraLoading(false);
                 return;
             }
@@ -110,11 +91,11 @@ function ImproveTaskPage() {
                     jiraBaseUrl
                 }
             );
-            if (!response.data.fields.description.content[0].content[0].text) setError('Descrição não encontrada para esta task.');
+            if (!response.data.fields.description.content[0].content[0].text) setError(t('improveTask.descriptionNotFound'));
             const description = 'Titulo: '+ response.data.fields.summary + '\n\nDescrição: ' + response.data.fields.description.content[0].content[0].text || '';
             setTaskDescription(description);
         } catch (err) {
-            setError('Erro ao buscar descrição no backend. Verifique o código e as credenciais.');
+            setError(t('improveTask.errorFetchingJira'));
             console.error(err);
         } finally {
             setIsJiraLoading(false);
@@ -146,13 +127,7 @@ Aqui está uma história de usuário:
                 promptText += `
 
 ---
-## Modo Educacional:
-- Explique passo a passo como a IA chegou nas sugestões de melhoria.
-- Dê dicas e explique conceitos teóricos envolvidos (por que cada critério/caso é importante? O que é um teste negativo? Por que valores-limite?)
-- Liste conceitos e práticas recomendadas citadas no texto.
-- Sugira estudos/leituras sobre BDD, critérios de aceitação, valores-limite e testes.
-- As explicações devem ser claras e direcionadas para o aprendizado prático de QA e requisitos.
-`;
+## ${t('improveTask.educationalPrompt')}`;
             }
             
             const response = await axios.post(
@@ -179,7 +154,7 @@ Aqui está uma história de usuário:
             setGenerationId(id);
             setVersions(getVersions(id));
         } catch (error) {
-            setError('Erro ao melhorar a tarefa');
+            setError(t('improveTask.errorImproving'));
             console.error('Erro ao melhorar a tarefa:', error);
         } finally {
             setIsLoading(false);
@@ -282,42 +257,41 @@ Aqui está uma história de usuário:
                         variant={isMobile ? "h5" : "h4"} 
                         component="h1"
                         className="heading-responsive"
+                        sx={{ fontWeight: 700, color: '#1f2937' }}
                     >
-                        Melhore sua História de Usuário
+                        {t('improveTask.title')}
                     </Typography>
                 </Box>
                 {generationId && getVersions(generationId).length > 0 && (
                     <Box my={2} display="flex" justifyContent="center">
-                        <Button variant="outlined" color="secondary" onClick={openVersionsModal}>
-                          Ver versões anteriores
+                        <Button 
+                          variant="outlined" 
+                          color="primary"
+                          onClick={openVersionsModal}
+                          sx={{
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            borderColor: '#3b82f6',
+                            color: '#3b82f6',
+                            '&:hover': {
+                              backgroundColor: '#f0f9ff',
+                              borderColor: '#2563eb',
+                              color: '#2563eb',
+                              transition: '0.2s ease-in-out'
+                            }
+                          }}
+                        >
+                          {t('common.previousVersions')}
                         </Button>
                     </Box>
                 )}
 
-                <FormControl 
-                    required 
-                    fullWidth 
-                    variant="outlined" 
-                    sx={{ mb: { xs: 2, sm: 3 } }}
-                >
-                    <InputLabel id="model-select-label">Select Model</InputLabel>
-                    <Select
-                        labelId="model-select-label"
-                        id="model-select"
-                        value={model}
-                        onChange={handleModelChange}
-                        label="Select Model"
-                        renderValue={(selected) =>
-                            selected.apiName ? `${selected.apiName} (${selected.version})` : ''
-                        }
-                    >
-                        {options.map((option) => (
-                            <MenuItem key={option.apiName} value={option}>
-                                {option.label}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+                <ModelSelector
+                    value={model}
+                    onChange={handleModelChange}
+                    label={t('common.selectModel')}
+                    required
+                />
 
                 <Box 
                     display="flex" 
@@ -327,31 +301,47 @@ Aqui está uma história de usuário:
                     sx={{ mb: 2 }}
                 >
                     <TextField
-                        label="Código da Task JIRA (ex: SOD-12)"
+                        label={t('improveTask.jiraCode')}
                         value={jiraTaskCode}
                         onChange={handleJiraTaskCodeChange}
                         variant="outlined"
                         size="small"
                         style={{ flex: 1 }}
                         disabled={!isJiraEnabled}
-                        helperText={!isJiraEnabled ? "Desabilitado ao preencher descrição manual" : ""}
+                        helperText={!isJiraEnabled ? t('improveTask.disabledManual') : ""}
                         fullWidth={isMobile}
                     />
                     <Button
                         variant="outlined"
-                        color="secondary"
+                        color="primary"
                         onClick={fetchJiraTaskDescription}
                         disabled={!jiraTaskCode || isJiraLoading || !isJiraEnabled}
                         fullWidth={isMobile}
-                        sx={{ mt: isMobile ? 1 : 0 }}
+                        sx={{ 
+                            mt: isMobile ? 1 : 0,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            borderColor: '#3b82f6',
+                            color: '#3b82f6',
+                            '&:hover': {
+                              backgroundColor: '#f0f9ff',
+                              borderColor: '#2563eb',
+                              color: '#2563eb',
+                              transition: '0.2s ease-in-out'
+                            },
+                            '&:disabled': {
+                              borderColor: '#d1d5db',
+                              color: '#9ca3af'
+                            }
+                        }}
                     >
-                        {isJiraLoading ? <CircularProgress size={20} /> : 'Buscar JIRA'}
+                        {isJiraLoading ? <CircularProgress size={20} /> : t('improveTask.fetchJira')}
                     </Button>
                 </Box>
 
                 <TextField
                     required
-                    label="Task Description"
+                    label={t('improveTask.taskDescription')}
                     multiline
                     rows={isMobile ? 4 : 6}
                     value={taskDescription}
@@ -360,7 +350,7 @@ Aqui está uma história de usuário:
                     fullWidth
                     sx={{ mb: { xs: 2, sm: 3 } }}
                     disabled={!isManualEnabled}
-                    helperText={!isManualEnabled ? "Desabilitado ao buscar task do JIRA" : ""}
+                    helperText={!isManualEnabled ? t('improveTask.disabledJira') : ""}
                 />
 
                 <Box textAlign="center">
@@ -370,8 +360,24 @@ Aqui está uma história de usuário:
                         disabled={isButtonDisabled || isLoading}
                         onClick={handleSubmit}
                         size={isMobile ? "medium" : "large"}
+                        sx={{
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          padding: '10px 32px',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                            boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+                            transform: 'translateY(-2px)',
+                            transition: '0.2s ease-in-out'
+                          },
+                          '&:disabled': {
+                            background: '#d1d5db',
+                            color: '#9ca3af'
+                          }
+                        }}
                     >
-                        {isLoading ? <CircularProgress size={24} /> : 'Submit'}
+                        {isLoading ? <CircularProgress size={24} /> : t('common.submit')}
                     </Button>
                 </Box>
             </Grid>
@@ -400,7 +406,7 @@ Aqui está uma história de usuário:
                 autoHideDuration={4000}
                 onClose={() => setJiraUpdateSuccess(false)}
             >
-                <Alert severity="success">Cartão JIRA atualizado com sucesso!</Alert>
+                <Alert severity="success">{t('improveTask.jiraUpdateSuccess')}</Alert>
             </Snackbar>
             {result && (
                 <Box
@@ -411,8 +417,13 @@ Aqui está uma história de usuário:
                         backgroundColor: '#fff',
                         padding: { xs: '15px', sm: '20px' },
                         borderRadius: '8px',
-                        boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
-                        overflowX: 'auto'
+                        border: '1px solid #e5e7eb',
+                        boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
+                        overflowX: 'auto',
+                        '&:hover': {
+                          boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+                          transition: '0.2s ease-in-out'
+                        }
                     }}
                     className="card-responsive"
                 >
@@ -422,13 +433,13 @@ Aqui está uma história de usuário:
                             <Box display="flex" gap={2} alignItems="center" mb={1}>
                                 <InfoOutlinedIcon color="primary" />
                                 <Typography variant="subtitle1" color="primary">
-                                    Modo Educacional!
+                                    {t('improveTask.educationalMode')}
                                 </Typography>
                             </Box>
                             <Box mb={2}>
-                                <Typography variant="body2"><b>💡 Dica:</b> Explique passo a passo seu raciocínio para construir critérios de aceitação e casos de teste robustos.</Typography>
-                                <Typography variant="body2"><b>🧩 Conceito:</b> Diferencie testes positivos (usuário faz ação certa) e negativos (usuário erra ou há exceção).</Typography>
-                                <Typography variant="body2"><b>🛡️ Cobertura:</b> Explore valores-limite e partições de equivalência para garantir qualidade.</Typography>
+                                <Typography variant="body2"><b>{t('improveTask.tip')}</b> Explique passo a passo seu raciocínio para construir critérios de aceitação e casos de teste robustos.</Typography>
+                                <Typography variant="body2"><b>{t('improveTask.concept')}</b> Diferencie testes positivos (usuário faz ação certa) e negativos (usuário erra ou há exceção).</Typography>
+                                <Typography variant="body2"><b>{t('improveTask.coverage')}</b> Explore valores-limite e partições de equivalência para garantir qualidade.</Typography>
                             </Box>
                             <Box mb={2}>
                                 <Typography variant="body2" color="textSecondary" sx={{ fontStyle: 'italic' }}>
@@ -442,7 +453,7 @@ Aqui está uma história de usuário:
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
                     {educationMode && (
                         <Box mt={3}>
-                            <Typography variant="subtitle2" color="primary">Sugestões de Estudo:</Typography>
+                            <Typography variant="subtitle2" color="primary">{t('improveTask.studySuggestions')}:</Typography>
                             <ul style={{ color: '#1565c0', margin: 0, paddingLeft: '1.3em' }}>
                                 <li>Valores-limite</li>
                                 <li>Particionamento de Equivalência</li>
@@ -458,11 +469,22 @@ Aqui está uma história de usuário:
                         <Box textAlign="right" sx={{ mt: 2 }}>
                             <Button
                                 variant="contained"
-                                color="secondary"
+                                color="primary"
                                 onClick={handleOpenJiraDialog}
                                 size={isMobile ? "small" : "medium"}
+                                sx={{
+                                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                  fontWeight: 600,
+                                  textTransform: 'none',
+                                  '&:hover': {
+                                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                    boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+                                    transform: 'translateY(-2px)',
+                                    transition: '0.2s ease-in-out'
+                                  }
+                                }}
                             >
-                                Atualizar cartão JIRA
+                                {t('improveTask.updateJira')}
                             </Button>
                         </Box>
                     )}
@@ -479,21 +501,52 @@ Aqui está uma história de usuário:
                         </Box>
                     )}
                     <Dialog open={showHistory} onClose={closeVersionsModal} fullWidth maxWidth="md">
-                        <DialogTitle>Versões anteriores desta tarefa</DialogTitle>
+                        <DialogTitle>{t('improveTask.previousVersions')}</DialogTitle>
                         <DialogContent>
-                            {versions.length === 0 && <Typography>Nenhuma versão salva.</Typography>}
+                            {versions.length === 0 && <Typography>{t('common.noVersions')}</Typography>}
                             {versions.map((v, idx) => (
-                                <Box key={idx} mb={3} p={2} sx={{ border: '1px solid #eee', borderRadius: 2, background: '#f9f9f9' }}>
+                                <Box key={idx} mb={3} p={2} sx={{ border: '1px solid #e5e7eb', borderRadius: '8px', background: '#f9fafb' }}>
                                     <Typography variant="caption">{v.date && (new Date(v.date)).toLocaleString()}</Typography>
                                     <Box mt={1} mb={1}>
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{v.content || ''}</ReactMarkdown>
                                     </Box>
-                                    <Button variant="outlined" size="small" onClick={() => handleRestore(idx)}>Restaurar esta versão</Button>
+                                    <Button 
+                                      variant="outlined" 
+                                      size="small" 
+                                      onClick={() => handleRestore(idx)}
+                                      sx={{
+                                        fontWeight: 600,
+                                        textTransform: 'none',
+                                        borderColor: '#3b82f6',
+                                        color: '#3b82f6',
+                                        '&:hover': {
+                                          backgroundColor: '#f0f9ff',
+                                          borderColor: '#2563eb',
+                                          color: '#2563eb',
+                                          transition: '0.2s ease-in-out'
+                                        }
+                                      }}
+                                    >
+                                      {t('common.restoreVersion')}
+                                    </Button>
                                 </Box>
                             ))}
                         </DialogContent>
                         <DialogActions>
-                            <Button onClick={closeVersionsModal} color="primary">Fechar</Button>
+                            <Button 
+                              onClick={closeVersionsModal} 
+                              color="primary"
+                              sx={{
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                '&:hover': {
+                                  backgroundColor: '#f0f9ff',
+                                  transition: '0.2s ease-in-out'
+                                }
+                              }}
+                            >
+                              {t('common.close')}
+                            </Button>
                         </DialogActions>
                     </Dialog>
                 </Box>
@@ -507,10 +560,10 @@ Aqui está uma história de usuário:
                 fullWidth
                 fullScreen={isMobile}
             >
-                <DialogTitle>Atualizar cartão JIRA ({jiraTaskCode})</DialogTitle>
+                <DialogTitle>{t('improveTask.jiraUpdateTitle')} ({jiraTaskCode})</DialogTitle>
                 <DialogContent>
                     <Typography variant="subtitle1" gutterBottom>
-                        O texto abaixo será enviado para o cartão JIRA:
+                        {t('improveTask.jiraUpdateText')}
                     </Typography>
                     <Box
                         sx={{
@@ -527,14 +580,38 @@ Aqui está uma história de usuário:
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseJiraDialog} disabled={jiraUpdateLoading}>Cancelar</Button>
+                    <Button 
+                      onClick={handleCloseJiraDialog} 
+                      disabled={jiraUpdateLoading}
+                      sx={{
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        color: '#6b7280',
+                        '&:hover': {
+                          backgroundColor: '#f3f4f6',
+                          transition: '0.2s ease-in-out'
+                        }
+                      }}
+                    >
+                      {t('common.cancel')}
+                    </Button>
                     <Button
                         onClick={handleConfirmJiraUpdate}
                         variant="contained"
                         color="primary"
                         disabled={jiraUpdateLoading}
+                        sx={{
+                          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          '&:hover': {
+                            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                            boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+                            transition: '0.2s ease-in-out'
+                          }
+                        }}
                     >
-                        {jiraUpdateLoading ? <CircularProgress size={20} /> : 'Confirmar atualização'}
+                        {jiraUpdateLoading ? <CircularProgress size={20} /> : t('improveTask.confirmUpdate')}
                     </Button>
                 </DialogActions>
             </Dialog>

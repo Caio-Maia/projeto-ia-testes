@@ -97,7 +97,7 @@ const regenerateContent = async (req, res) => {
     const { feedbackId, model } = req.body;
     const token = req.query.token;
 
-    if (!feedbackId || !model || !token) {
+    if (!feedbackId || !model) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -117,14 +117,22 @@ const regenerateContent = async (req, res) => {
     });
 
     let response;
-    if (model.startsWith('gpt')) {
-      // Use ChatGPT API
+    const apiName = model.apiName || model; // Suporta tanto objeto { apiName, version } quanto string
+    
+    if (apiName === 'chatgpt') {
+      // Use ChatGPT API with chat completions (standard endpoint)
+      const chatgptToken = token || process.env.CHATGPT_API_KEY;
+      
+      if (!chatgptToken) {
+        return res.status(401).json({ error: 'ChatGPT API key not configured' });
+      }
+
       response = await axios.post('https://api.openai.com/v1/chat/completions', {
-        model: model,
+        model: model.version || model, // Usar versão do modelo (ex: gpt-4-turbo)
         messages: conversationHistory
       }, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${chatgptToken}`
         }
       });
       
@@ -141,14 +149,19 @@ const regenerateContent = async (req, res) => {
       });
       
       res.json({ data: regeneratedContent, conversationHistory: updatedHistory });
-    } else if (model.startsWith('gemini')) {
+    } else if (apiName === 'gemini') {
       // Use Gemini API
+      if (!token) {
+        return res.status(401).json({ error: 'Gemini token not provided' });
+      }
+
       const geminiMessages = conversationHistory.map(msg => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }]
       }));
 
-      response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${token}`, {
+      const modelVersion = model.version || model;
+      response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${modelVersion}:generateContent?key=${token}`, {
         contents: geminiMessages
       });
 

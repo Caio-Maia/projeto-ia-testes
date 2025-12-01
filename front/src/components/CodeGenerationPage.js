@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import {
-  Box, Button, TextField, Typography, MenuItem, FormControl, InputLabel, Select, Grid,
-  Alert, Snackbar, CircularProgress
+  Box, Button, TextField, Typography, Grid,
+  Alert, Snackbar, CircularProgress, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
 import FeedbackComponent from './FeedbackComponent';
-import { AI_MODELS } from '../utils/aiModels';
+import ModelSelector from './ModelSelector';
 import { addVersion, getVersions, restoreVersion } from '../utils/generationHistory';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function CodeGenerationPage() {
+  const { t } = useLanguage();
   const [testCases, setTestCases] = useState('');
   const [framework, setFramework] = useState('');
   const [language, setLanguage] = useState('JavaScript');
@@ -32,7 +34,6 @@ function CodeGenerationPage() {
   });
   
   const isButtonDisabled = testCases === '' || framework === '' || model.apiName === '';
-  const options = AI_MODELS;
 
   const frameworkOptions = [
     'Jest',
@@ -66,8 +67,8 @@ function CodeGenerationPage() {
   };
 
   const handleModelChange = (event) => {
-    const { apiName, version } = event.target.value;
-    setModel({ apiName, version });
+    const selectedModel = event.target.value;
+    setModel(selectedModel);
   };
 
   const handleSubmit = async (e) => {
@@ -75,13 +76,16 @@ function CodeGenerationPage() {
     setError(null);
     e.preventDefault();
     
-    let token;
-    if (model.apiName === 'gemini') {
-      token = localStorage.getItem('geminiToken');
-    } else if (model.apiName === 'chatgpt') {
-      token = localStorage.getItem('chatgptToken');
-    } else {
-      setError('Sem token para realizar requisição');
+    // Validar modelo selecionado
+    if (!model || !model.apiName) {
+      setError(t('generateCode.selectModel') || 'Por favor, selecione um modelo');
+      setIsLoading(false);
+      return;
+    }
+    
+    let token = localStorage.getItem(`${model.apiName}Token`);
+    if (!token) {
+      setError(t('generateCode.tokenNotFound') || 'Token não configurado para ' + model.apiName);
       setIsLoading(false);
       return;
     }
@@ -91,7 +95,7 @@ function CodeGenerationPage() {
       // PROMPT EDUCACIONAL
       let educationalPrompt = '';
       if (educationMode) {
-        educationalPrompt += `\n\n---\nModo Educacional Ativo:\n- Explique passo a passo como construiu o código de teste.\n- Adicione comentários didáticos no código mostrando a lógica de cada etapa, função e verificação.\n- Destaque boas práticas e conceitos fundamentais (ex: DRY, modularidade, clareza, validação de cenário positivo/negativo).\n- Ao final, sugira tópicos para estudo: cobertura de testes, valores-limite, BDD, frameworks de teste, etc.\n`;
+        educationalPrompt += `\n\n---\n${t('generateCode.educationalPrompt')}\n`;
       }
       const response = await axios.post(
         `${backendUrl}/api/${model.apiName}/generate-test-code?token=${token}`,
@@ -117,7 +121,7 @@ function CodeGenerationPage() {
       // update versions
       setVersions(getVersions(id));
     } catch (error) {
-      setError('Erro ao gerar código de teste');
+      setError(t('generateCode.errorGenerating'));
       console.error('Erro ao gerar código de teste:', error);
     } finally {
       setIsLoading(false);
@@ -161,40 +165,43 @@ function CodeGenerationPage() {
     >
       <Grid size={{ xs:10, md:6, lg:4 }} style={{ minWidth: '1000px' }}>
         <Box textAlign="center">
-          <Typography variant="h4" gutterBottom>
-            Gerar Código de Teste
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: '#1f2937' }}>
+            {t('generateCode.title')}
           </Typography>
         </Box>
         {generationId && getVersions(generationId).length > 0 && (
             <Box my={2} display="flex" justifyContent="center">
-                <Button variant="outlined" color="secondary" onClick={openVersionsModal}>
-                  Ver versões anteriores
+                <Button 
+                  variant="outlined" 
+                  color="primary"
+                  onClick={openVersionsModal}
+                  sx={{
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    borderColor: '#3b82f6',
+                    color: '#3b82f6',
+                    '&:hover': {
+                      backgroundColor: '#f0f9ff',
+                      borderColor: '#2563eb',
+                      color: '#2563eb',
+                      transition: '0.2s ease-in-out'
+                    }
+                  }}
+                >
+                  {t('common.previousVersions')}
                 </Button>
             </Box>
         )}
 
-        <FormControl required fullWidth variant="outlined" sx={{ mb: 3 }}>
-          <InputLabel id="model-select-label">Selecione o Modelo</InputLabel>
-          <Select
-            labelId="model-select-label"
-            id="model-select"
-            value={model}
-            onChange={handleModelChange}
-            label="Selecione o Modelo"
-            renderValue={(selected) =>
-              selected.apiName ? `${selected.apiName} (${selected.version})` : ''
-            }
-          >
-            {options.map((option) => (
-              <MenuItem key={option.apiName} value={option}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <ModelSelector
+          value={model}
+          onChange={handleModelChange}
+          label={t('common.selectModel')}
+          required
+        />
 
         <FormControl required fullWidth variant="outlined" sx={{ mb: 3 }}>
-          <InputLabel id="framework-select-label">Framework de Teste</InputLabel>
+          <InputLabel id="framework-select-label">{t('generateCode.framework')}</InputLabel>
           <Select
             labelId="framework-select-label"
             id="framework-select"
@@ -211,7 +218,7 @@ function CodeGenerationPage() {
         </FormControl>
 
         <FormControl fullWidth variant="outlined" sx={{ mb: 3 }}>
-          <InputLabel id="language-select-label">Linguagem</InputLabel>
+          <InputLabel id="language-select-label">{t('generateCode.language')}</InputLabel>
           <Select
             labelId="language-select-label"
             id="language-select"
@@ -229,7 +236,7 @@ function CodeGenerationPage() {
 
         <TextField
           required
-          label="Casos de Teste"
+          label={t('generateCode.testCases')}
           multiline
           rows={8}
           value={testCases}
@@ -237,7 +244,7 @@ function CodeGenerationPage() {
           variant="outlined"
           fullWidth
           sx={{ mb: 3 }}
-          placeholder="Cole aqui seus casos de teste gerados anteriormente..."
+          placeholder={t('generateCode.testCasesPlaceholder')}
         />
 
         <Box textAlign="center">
@@ -246,8 +253,24 @@ function CodeGenerationPage() {
             color="primary"
             disabled={isButtonDisabled || isLoading}
             onClick={handleSubmit}
+            sx={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              fontWeight: 600,
+              textTransform: 'none',
+              padding: '10px 32px',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+                transform: 'translateY(-2px)',
+                transition: '0.2s ease-in-out'
+              },
+              '&:disabled': {
+                background: '#d1d5db',
+                color: '#9ca3af'
+              }
+            }}
           >
-            {isLoading ? <CircularProgress size={24} /> : 'Gerar Código'}
+            {isLoading ? <CircularProgress size={24} /> : t('generateCode.submit')}
           </Button>
         </Box>
       </Grid>
@@ -283,8 +306,13 @@ function CodeGenerationPage() {
             backgroundColor: '#fff',
             padding: '20px',
             borderRadius: '8px',
-            boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
-            overflowX: 'auto'
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
+            overflowX: 'auto',
+            '&:hover': {
+              boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+              transition: '0.2s ease-in-out'
+            }
           }}
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
@@ -302,21 +330,52 @@ function CodeGenerationPage() {
           )}
 
           <Dialog open={showHistory} onClose={closeVersionsModal} fullWidth maxWidth="md">
-            <DialogTitle>Versões anteriores deste código</DialogTitle>
+            <DialogTitle>{t('generateCode.previousVersions')}</DialogTitle>
             <DialogContent>
-              {versions.length === 0 && <Typography>Nenhuma versão salva.</Typography>}
+              {versions.length === 0 && <Typography>{t('common.noVersions')}</Typography>}
               {versions.map((v, idx) => (
-                <Box key={idx} mb={3} p={2} sx={{ border: '1px solid #eee', borderRadius: 2, background: '#f9f9f9' }}>
+                <Box key={idx} mb={3} p={2} sx={{ border: '1px solid #e5e7eb', borderRadius: '8px', background: '#f9fafb' }}>
                   <Typography variant="caption">{v.date && (new Date(v.date)).toLocaleString()}</Typography>
                   <Box mt={1} mb={1}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{v.content || ''}</ReactMarkdown>
                   </Box>
-                  <Button variant="outlined" size="small" onClick={() => handleRestore(idx)}>Restaurar esta versão</Button>
+                  <Button 
+                    variant="outlined" 
+                    size="small" 
+                    onClick={() => handleRestore(idx)}
+                    sx={{
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      borderColor: '#3b82f6',
+                      color: '#3b82f6',
+                      '&:hover': {
+                        backgroundColor: '#f0f9ff',
+                        borderColor: '#2563eb',
+                        color: '#2563eb',
+                        transition: '0.2s ease-in-out'
+                      }
+                    }}
+                  >
+                    {t('common.restoreVersion')}
+                  </Button>
                 </Box>
               ))}
             </DialogContent>
             <DialogActions>
-              <Button onClick={closeVersionsModal} color="primary">Fechar</Button>
+              <Button 
+                onClick={closeVersionsModal} 
+                color="primary"
+                sx={{
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  '&:hover': {
+                    backgroundColor: '#f0f9ff',
+                    transition: '0.2s ease-in-out'
+                  }
+                }}
+              >
+                {t('common.close')}
+              </Button>
             </DialogActions>
           </Dialog>
         </Box>

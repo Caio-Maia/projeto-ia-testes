@@ -2,16 +2,18 @@
 /* 🎨 APP.CSS MELHORADO */
 /* ===================== */
 :root {
-  --primary-color: #406cfa;
-  --primary-gradient: linear-gradient(90deg, #446bfa 0%, #6eafd8 100%);
-  --secondary-color: #f7c873;
-  --danger-color: #e74c3c;
-  --background-main: #f9fbfc;
+  --primary-color: #3b82f6;
+  --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --secondary-color: #22c55e;
+  --danger-color: #ef4444;
+  --background-main: #f9fafb;
   --background-card: #fff;
-  --text-main: #232b33;
-  --text-secondary: #406cfa;
-  --border-radius: 12px;
-  --shadow-soft: 0 2px 12px rgba(50, 71, 101, 0.08);
+  --text-main: #1f2937;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --border-radius: 8px;
+  --shadow-soft: 0 4px 12px rgba(50, 71, 101, 0.08);
+  --shadow-hover: 0 10px 24px rgba(59, 130, 246, 0.15);
   --font-main: 'Roboto', 'Segoe UI', Arial, sans-serif;
 }
 
@@ -32,7 +34,9 @@ body, .app-container {
 /* ===================== */
 /* 🔘 BOTÕES GERAIS */
 /* ===================== */
-button, .MuiButton-root, .btn-primary {
+/* IMPORTANTE: NÃO formatar .MuiButton-root globalmente para não sobrescrever estilos customizados */
+
+.btn-primary {
   background: var(--primary-gradient);
   color: #fff;
   border: none;
@@ -44,17 +48,18 @@ button, .MuiButton-root, .btn-primary {
   box-shadow: var(--shadow-soft);
   transition: background 0.2s, transform 0.1s;
 }
-button:hover, .btn-primary:hover {
-  background: #3558b9;
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   transform: scale(1.02);
 }
 
 .btn-secondary {
   background: var(--secondary-color);
-  color: #232b33;
+  color: #fff;
 }
 .btn-secondary:hover {
-  background: #e5b75e;
+  background: #16a34a;
 }
 
 .btn-danger {
@@ -62,17 +67,20 @@ button:hover, .btn-primary:hover {
   color: #fff;
 }
 .btn-danger:hover {
-  background: #c0392b;
+  background: #dc2626;
 }
 
 .btn-outline {
   background: transparent;
   border: 2px solid var(--primary-color);
   color: var(--primary-color);
+  font-weight: 600;
+  transition: 0.2s ease-in-out;
 }
 .btn-outline:hover {
   background: var(--primary-color);
   color: #fff;
+  transform: translateY(-2px);
 }
 
 /* ===================== */
@@ -180,7 +188,7 @@ button:hover, .btn-primary:hover {
   justify-content: center;
   align-items: center;
   padding: 18px 0;
-  background: linear-gradient(90deg, #406cfa 0%, #6eafd8 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: #fff;
   font-size: 0.95rem;
   letter-spacing: 0.4px;
@@ -192,7 +200,7 @@ button:hover, .btn-primary:hover {
   margin: 0 8px;
 }
 .footer-responsive a:hover {
-  color: var(--secondary-color);
+  color: #22c55e;
 }
 
 /* ===================== */
@@ -262,7 +270,7 @@ button:hover, .btn-primary:hover {
 
 .header-toggle-btn:hover {
   transform: scale(1.1);
-  color: var(--secondary-color);
+  color: #22c55e;
 }
 
 .header-nav {
@@ -278,8 +286,8 @@ button:hover, .btn-primary:hover {
 }
 
 .header-nav a:hover {
-  color: var(--secondary-color);
-  border-bottom: 2px solid var(--secondary-color);
+  color: #22c55e;
+  border-bottom: 2px solid #22c55e;
 }
 
 @media (max-width: 768px) {

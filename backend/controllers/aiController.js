@@ -15,12 +15,12 @@ class AIController {
     if (modelType === 'chatgpt') {
       return {
         apiKey: process.env.CHATGPT_API_KEY || req.headers['x-chatgpt-api-key'],
-        model: req.body.modelVersion || 'gpt-3.5-turbo'
+        model: req.body.modelVersion || 'gpt-5-nano'
       };
     } else if (modelType === 'gemini') {
       return {
         apiKey: req.query.token || process.env.GEMINI_API_KEY || req.headers['x-gemini-api-key'],
-        model: req.body.modelVersion || 'gemini-1.5-flash'
+        model: req.body.modelVersion || 'gemini-2.5-flash-lite'
       };
     }
     

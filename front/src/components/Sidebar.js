@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useLanguage } from "../contexts/LanguageContext";
 import { 
   FaHome, 
   FaTasks, 
@@ -7,26 +8,32 @@ import {
   FaCode, 
   FaExclamationTriangle, 
   FaChartBar, 
-  FaCog
+  FaCog,
+  FaKey,
+  FaBook
 } from "react-icons/fa";
-import { Box, List, ListItem, ListItemIcon, ListItemText, Tooltip, Divider, Typography } from "@mui/material";
+import { Box, List, ListItem, ListItemIcon, ListItemText, Tooltip, Divider, Typography, Button } from "@mui/material";
 import HistoryDrawer from "./HistoryDrawer";
+import TokenDialog from "./TokenDialog";
 import "../App.css";
 
 const Sidebar = ({ open, onToggle, isMobile, onNavigate }) => {
   const location = useLocation();
+  const { t } = useLanguage();
+  const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
 
   const primaryMenuItems = [
-    { path: "/", icon: FaHome, label: "Início" },
-    { path: "/improve-task", icon: FaTasks, label: "Melhorar Tarefa" },
-    { path: "/generate-tests", icon: FaClipboardList, label: "Gerar Casos de Teste" },
-    { path: "/generate-code", icon: FaCode, label: "Gerar Código" },
-    { path: "/analyze-risks", icon: FaExclamationTriangle, label: "Análise de Riscos" }
+    { path: "/", icon: FaHome, label: t('sidebar.home') },
+    { path: "/improve-task", icon: FaTasks, label: t('sidebar.improveTask') },
+    { path: "/generate-tests", icon: FaClipboardList, label: t('sidebar.generateTests') },
+    { path: "/generate-code", icon: FaCode, label: t('sidebar.generateCode') },
+    { path: "/analyze-risks", icon: FaExclamationTriangle, label: t('sidebar.analyzeRisks') }
   ];
 
   const secondaryMenuItems = [
-    { path: "/feedback-dashboard", icon: FaChartBar, label: "Dashboard Feedback" },
-    { path: "/adjust-prompts", icon: FaCog, label: "Ajustar Prompts" }
+    { path: "/feedback-dashboard", icon: FaChartBar, label: t('sidebar.feedbackDashboard') },
+    { path: "/documentation", icon: FaBook, label: t('sidebar.documentation') || 'Documentation' },
+    { path: "/adjust-prompts", icon: FaCog, label: t('sidebar.adjustPrompts') }
   ];
 
   const handleItemClick = () => {
@@ -55,9 +62,9 @@ const Sidebar = ({ open, onToggle, isMobile, onNavigate }) => {
           top: 0,
           left: 0,
           height: '100vh',
-          backgroundColor: '#2c3e50',
-          boxShadow: '0 2px 12px rgba(50, 71, 101, 0.08)',
-          borderRadius: '0 12px 12px 0',
+          backgroundColor: '#1f2937',
+          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)',
+          borderRadius: '0 8px 8px 0',
           zIndex: 1200,
           overflow: 'hidden',
           cursor: open ? 'default' : 'pointer'
@@ -67,8 +74,8 @@ const Sidebar = ({ open, onToggle, isMobile, onNavigate }) => {
         <Box 
           className="sidebar-header"
           sx={{
-            backgroundColor: '#34495e',
-            borderBottom: '1px solid #3d566e'
+            backgroundColor: '#111827',
+            borderBottom: '1px solid #374151'
           }}
         >
           {open && (
@@ -93,17 +100,17 @@ const Sidebar = ({ open, onToggle, isMobile, onNavigate }) => {
                   minHeight: 48,
                   px: 2,
                   mx: 0.5,
-                  borderRadius: 2,
+                  borderRadius: '6px',
                   mb: 0.5,
-                  backgroundColor: isActive ? 'rgba(52, 152, 219, 0.2)' : 'transparent',
-                  color: isActive ? '#3498db' : '#ecf0f1',
+                  backgroundColor: isActive ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                  color: isActive ? '#3b82f6' : '#d1d5db',
                   textDecoration: 'none',
                   '&:hover': {
-                    backgroundColor: 'rgba(52, 152, 219, 0.15)',
-                    color: '#3498db',
+                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                    color: '#3b82f6',
                     transform: 'translateX(3px)'
                   },
-                  transition: 'all 0.2s ease'
+                  transition: '0.2s ease-in-out'
                 }}
               >
                 <ListItemIcon
@@ -138,18 +145,18 @@ const Sidebar = ({ open, onToggle, isMobile, onNavigate }) => {
         {/* Divider */}
         {open && (
           <Box sx={{ px: 2, py: 1 }}>
-            <Divider sx={{ backgroundColor: '#3d566e' }} />
+            <Divider sx={{ backgroundColor: '#374151' }} />
             <Typography 
               variant="caption" 
               sx={{ 
-                color: '#95a5a6', 
+                color: '#6b7280', 
                 fontSize: '0.75rem',
                 fontWeight: 500,
                 mt: 1,
                 display: 'block'
               }}
             >
-              CONFIGURAÇÕES
+              {t('common.settings')}
             </Typography>
           </Box>
         )}
@@ -170,17 +177,17 @@ const Sidebar = ({ open, onToggle, isMobile, onNavigate }) => {
                   minHeight: 48,
                   px: 2,
                   mx: 0.5,
-                  borderRadius: 2,
+                  borderRadius: '6px',
                   mb: 0.5,
-                  backgroundColor: isActive ? 'rgba(52, 152, 219, 0.2)' : 'transparent',
-                  color: isActive ? '#3498db' : '#ecf0f1',
+                  backgroundColor: isActive ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                  color: isActive ? '#3b82f6' : '#d1d5db',
                   textDecoration: 'none',
                   '&:hover': {
-                    backgroundColor: 'rgba(52, 152, 219, 0.15)',
-                    color: '#3498db',
+                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                    color: '#3b82f6',
                     transform: 'translateX(3px)'
                   },
-                  transition: 'all 0.2s ease'
+                  transition: '0.2s ease-in-out'
                 }}
               >
                 <ListItemIcon
@@ -214,7 +221,50 @@ const Sidebar = ({ open, onToggle, isMobile, onNavigate }) => {
           {/* History component integrated into sidebar */}
           <HistoryDrawer inSidebar={true} open={open} sidebarOpen={open} />
         </List>
+
+        {/* Token Configuration Button */}
+        <Box sx={{ position: 'absolute', bottom: 20, left: 0, right: 0, px: 1, display: 'flex', justifyContent: 'center' }}>
+          <Tooltip title={!open ? t('common.tokens') || 'API Tokens' : ""} placement="right">
+            <Button
+              variant={open ? "contained" : "text"}
+              color="primary"
+              onClick={() => setTokenDialogOpen(true)}
+              startIcon={open ? <FaKey size={16} /> : undefined}
+              sx={{
+                minHeight: 48,
+                minWidth: open ? 'auto' : 48,
+                px: open ? 2 : 0,
+                borderRadius: '6px',
+                background: open ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'transparent',
+                color: open ? '#fff' : '#d1d5db',
+                fontWeight: 600,
+                textTransform: 'none',
+                '&:hover': {
+                  background: open ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' : 'rgba(59, 130, 246, 0.15)',
+                  color: '#3b82f6',
+                  boxShadow: open ? '0 10px 24px rgba(59, 130, 246, 0.15)' : 'none',
+                  transition: '0.2s ease-in-out'
+                },
+                transition: '0.2s ease-in-out',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+            >
+              {!open ? (
+                <FaKey size={20} />
+              ) : t('common.tokens')}
+            </Button>
+          </Tooltip>
+        </Box>
       </Box>
+
+      {/* TokenDialog Component */}
+      <TokenDialog 
+        open={tokenDialogOpen} 
+        onClose={() => setTokenDialogOpen(false)}
+        permitClose={true}
+      />
 
       {/* Overlay for mobile */}
       {isMobile && open && (

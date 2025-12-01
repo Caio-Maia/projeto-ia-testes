@@ -5,7 +5,7 @@ class GeminiModel extends AIModel {
   constructor(config) {
     super(config);
     this.apiKey = config.apiKey;
-    this.model = config.model || 'gemini-1.5-flash';
+    this.model = config.model || 'gemini-2.5-flash-lite';
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
   }
 

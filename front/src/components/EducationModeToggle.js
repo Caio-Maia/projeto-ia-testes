@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FormControlLabel, Switch, Tooltip, Box, Typography } from '@mui/material';
+import { useLanguage } from '../contexts/LanguageContext';
 import SchoolIcon from '@mui/icons-material/School';
 
 function EducationModeToggle() {
+  const { t } = useLanguage();
+  
   // Initialize from localStorage or default to false
   const [educationMode, setEducationMode] = useState(() => {
     const savedMode = localStorage.getItem('educationMode');
@@ -22,8 +25,8 @@ function EducationModeToggle() {
     <Box display="flex" alignItems="center">
       <Tooltip title={
         educationMode 
-          ? "Modo educacional ativado: A IA explicará o raciocínio por trás das respostas" 
-          : "Modo educacional desativado: A IA fornecerá apenas as respostas"
+          ? t('common.educationModeEnabled')
+          : t('common.educationModeDisabled')
       }>
         <FormControlLabel
           control={
@@ -37,7 +40,7 @@ function EducationModeToggle() {
             <Box display="flex" alignItems="center">
               <SchoolIcon color={educationMode ? "primary" : "disabled"} sx={{ mr: 1 }} />
               <Typography variant="body2">
-                Modo Educacional
+                {t('common.educationMode')}
               </Typography>
             </Box>
           }

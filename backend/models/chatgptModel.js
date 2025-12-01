@@ -5,7 +5,7 @@ class ChatGPTModel extends AIModel {
   constructor(config) {
     super(config);
     this.apiKey = config.apiKey;
-    this.model = config.model || 'gpt-3.5-turbo';
+    this.model = config.model || 'gpt-5-nano';
     this.baseUrl = 'https://api.openai.com/v1/chat/completions';
   }
 

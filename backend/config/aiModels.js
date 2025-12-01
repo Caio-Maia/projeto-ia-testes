@@ -8,21 +8,39 @@ const aiModelsConfig = {
   chatgpt: {
     versions: [
       {
-        id: 'gpt-3.5-turbo',
-        name: 'GPT-3.5 Turbo',
-        description: 'Fast and cost-effective model for most use cases',
-        isDefault: true
-      },
-      {
-        id: 'gpt-4',
-        name: 'GPT-4',
-        description: 'More capable model for complex tasks',
+        id: 'gpt-4.1',
+        name: 'ChatGPT 4.1',
+        description: 'Latest GPT-4.1 model with enhanced capabilities',
         isDefault: false
       },
       {
-        id: 'gpt-4-turbo',
-        name: 'GPT-4 Turbo',
-        description: 'Latest GPT-4 model with improved performance',
+        id: 'gpt-5',
+        name: 'ChatGPT 5',
+        description: 'GPT-5 model with advanced reasoning and capabilities',
+        isDefault: false
+      },
+      {
+        id: 'gpt-5-mini',
+        name: 'ChatGPT 5 Mini',
+        description: 'Lightweight GPT-5 model for efficient processing',
+        isDefault: false
+      },
+      {
+        id: 'gpt-5-nano',
+        name: 'ChatGPT 5 Nano',
+        description: 'Ultra-lightweight GPT-5 model for fast responses',
+        isDefault: true
+      },
+      {
+        id: 'gpt-5.1',
+        name: 'ChatGPT 5.1',
+        description: 'Latest GPT-5.1 model with improved performance',
+        isDefault: false
+      },
+      {
+        id: 'gpt-5-pro',
+        name: 'ChatGPT 5 Pro',
+        description: 'High-capability GPT-5 Pro model for complex tasks',
         isDefault: false
       }
     ],
@@ -35,21 +53,27 @@ const aiModelsConfig = {
   gemini: {
     versions: [
       {
-        id: 'gemini-1.0-pro',
-        name: 'Gemini 1.0 Pro',
-        description: 'Original Gemini model',
-        isDefault: false
-      },
-      {
-        id: 'gemini-1.5-flash',
-        name: 'Gemini 1.5 Flash',
-        description: 'Fast and efficient model for most use cases',
+        id: 'gemini-2.5-flash-lite',
+        name: 'Gemini 2.5 Flash Lite',
+        description: 'Lightweight model with improved efficiency',
         isDefault: true
       },
       {
-        id: 'gemini-1.5-pro',
-        name: 'Gemini 1.5 Pro',
-        description: 'More capable model for complex tasks',
+        id: 'gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
+        description: 'Fast model with balanced performance',
+        isDefault: false
+      },
+      {
+        id: 'gemini-2.5-pro',
+        name: 'Gemini 2.5 Pro',
+        description: 'High-capability model for complex tasks',
+        isDefault: false
+      },
+      {
+        id: 'gemini-3.0-pro-preview',
+        name: 'Gemini 3.0 Pro Preview',
+        description: 'Latest Gemini 3.0 model in preview (experimental)',
         isDefault: false
       }
     ],

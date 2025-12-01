@@ -2,7 +2,8 @@ const axios = require('axios');
 
 // Generate test code using ChatGPT
 const generateTestCodeChatGPT = async (req, res) => {
-  const { testCases, framework, language } = req.body;
+  const { testCases, framework, language, model } = req.body;
+  const chatgptModel = model || 'gpt-5-nano';
   
   if (!testCases || !framework) {
     return res.status(400).json({ error: 'Test cases and framework are required' });
@@ -12,7 +13,7 @@ const generateTestCodeChatGPT = async (req, res) => {
     const prompt = `Generate ${language || 'JavaScript'} test code using the ${framework} framework for the following test cases:\n\n${testCases}\n\nPlease provide complete, runnable test code with proper setup and teardown if needed.`;
     
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: 'gpt-3.5-turbo',
+      model: chatgptModel,
       messages: [{ role: 'user', content: prompt }]
     }, {
       headers: {
@@ -29,8 +30,8 @@ const generateTestCodeChatGPT = async (req, res) => {
 
 // Generate test code using Gemini
 const generateTestCodeGemini = async (req, res) => {
-  const { testCases, framework, language } = req.body;
-  const model = req.body.model || 'gemini-1.5-flash';
+  const { testCases, framework, language, model } = req.body;
+  const geminiModel = model || 'gemini-2.5-flash-lite';
   const token = req.query.token;
   
   if (!testCases || !framework) {
@@ -44,7 +45,7 @@ const generateTestCodeGemini = async (req, res) => {
   try {
     const prompt = `Generate ${language || 'JavaScript'} test code using the ${framework} framework for the following test cases:\n\n${testCases}\n\nPlease provide complete, runnable test code with proper setup and teardown if needed.`;
     
-    const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${token}`, {
+    const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${token}`, {
       contents: [{ parts: [{ text: prompt }] }],
     });
     
@@ -72,11 +73,12 @@ const analyzeRisks = async (req, res) => {
   try {
     let riskAnalysis;
     
-    if (model === 'chatgpt') {
+    if (model === 'chatgpt' || model?.startsWith('gpt-')) {
+      const chatgptModel = model === 'chatgpt' ? 'gpt-5-nano' : model;
       const prompt = `Analyze the following feature and identify potential implementation risks, quality concerns, and possible bugs:\n\n${feature}\n\nProvide a detailed analysis with specific risks categorized by severity (High, Medium, Low) and include recommendations for mitigation.`;
       
       const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-        model: 'gpt-3.5-turbo',
+        model: chatgptModel,
         messages: [{ role: 'user', content: prompt }]
       }, {
         headers: {
@@ -86,14 +88,15 @@ const analyzeRisks = async (req, res) => {
       
       riskAnalysis = response.data.choices[0].message.content;
       res.json(riskAnalysis);
-    } else if (model === 'gemini') {
+    } else if (model === 'gemini' || model?.startsWith('gemini-')) {
       if (!token) {
         return res.status(401).json({ error: 'Token não fornecido' });
       }
       
+      const geminiModel = model === 'gemini' ? 'gemini-2.5-flash-lite' : model;
       const prompt = `Analyze the following feature and identify potential implementation risks, quality concerns, and possible bugs:\n\n${feature}\n\nProvide a detailed analysis with specific risks categorized by severity (High, Medium, Low) and include recommendations for mitigation.`;
       
-      const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${token}`, {
+      const response = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${token}`, {
         contents: [{ parts: [{ text: prompt }] }],
       });
       

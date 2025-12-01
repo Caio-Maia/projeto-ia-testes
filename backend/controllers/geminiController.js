@@ -3,7 +3,7 @@ const { readMarkdownFile } = require('../utils');
 
 const improveTaskGemini = async (req, res) => {
   const prompt = req.body.data;
-  const model = req.body.model === undefined ? 'gemini-1.5-flash' : req.body.model;
+  const model = req.body.model === undefined ? 'gemini-2.5-flash-lite' : req.body.model;
   const token = req.query.token;
 
   if (!token) {
@@ -39,7 +39,7 @@ const improveTaskGemini = async (req, res) => {
 
 const generateTestsGemini = async (req, res) => {
   const prompt = req.body.data;
-  const model = req.body.model === undefined ? 'gemini-1.5-flash' : req.body.model;
+  const model = req.body.model === undefined ? 'gemini-2.5-flash-lite' : req.body.model;
   const token = req.query.token;
 
   if (!token) {
