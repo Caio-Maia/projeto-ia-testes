@@ -742,7 +742,9 @@ npm start`}</code>
                 </Typography>
                 <Box
                   component="a"
-                  href="/docs/SETUP.md"
+                  href="https://github.com/Caio-Maia/projeto-ia-testes/blob/main/docs/SETUP.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   sx={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 600 }}
                 >
                   {isPT ? 'Acessar →' : 'Access →'}
@@ -763,7 +765,9 @@ npm start`}</code>
                 </Typography>
                 <Box
                   component="a"
-                  href="/docs/API.md"
+                  href="https://github.com/Caio-Maia/projeto-ia-testes/blob/main/docs/API.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   sx={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 600 }}
                 >
                   {isPT ? 'Acessar →' : 'Access →'}
@@ -784,7 +788,9 @@ npm start`}</code>
                 </Typography>
                 <Box
                   component="a"
-                  href="/docs/CONTRIBUTING.md"
+                  href="https://github.com/Caio-Maia/projeto-ia-testes/blob/main/docs/CONTRIBUTING.md"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   sx={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 600 }}
                 >
                   {isPT ? 'Acessar →' : 'Access →'}

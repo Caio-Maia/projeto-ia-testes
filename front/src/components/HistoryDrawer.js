@@ -134,7 +134,7 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
     if (inSidebar && !sidebarOpen) {
       return (
         <Box sx={{ position: 'relative', px: 0.5, mx: 0.5 }}>
-          <Tooltip title="Histórico de gerações" arrow placement="right">
+          <Tooltip title={t('common.history')} arrow placement="right">
             <IconButton
               onClick={handleDrawerOpen}
               sx={{
@@ -167,7 +167,7 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
     // When in sidebar and sidebar is open, or when not in sidebar, show full button
     return (
       <Box sx={{ position: 'relative', ml: inSidebar ? 0 : 2 }}>
-        <Tooltip title="Histórico de gerações" arrow>
+        <Tooltip title={t('common.history')} arrow>
           <Button
             onClick={handleDrawerOpen}
             sx={{
@@ -187,7 +187,7 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
             }}
             startIcon={<HistoryIcon sx={{ mb: '-2px' }} />}
           >
-            Histórico
+            {t('common.history')}
           </Button>
         </Tooltip>
       </Box>
