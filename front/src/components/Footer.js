@@ -7,7 +7,7 @@ import packageJson from "../../package.json";
 import "../App.css";
 
 const Footer = () => {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const currentYear = new Date().getFullYear();
   const version = packageJson.version;
   

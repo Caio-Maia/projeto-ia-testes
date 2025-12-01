@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
-  Box, Typography, Button, TextField, Snackbar, Alert, IconButton, Paper, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions,
+  Box, Typography, Button, TextField, Snackbar, Alert, Paper, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions,
   Card, CardContent, Divider
 } from '@mui/material';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
@@ -9,7 +9,6 @@ import FeedbackIcon from '@mui/icons-material/Feedback';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import axios from 'axios';
-import { AI_MODELS } from '../utils/aiModels';
 import ModelSelector from './ModelSelector';
 
 function FeedbackComponent({ generationId, type, originalContent, onRegenerateContent }) {

@@ -7,11 +7,9 @@ import {
   useMediaQuery, 
   useTheme, 
   Box, 
-  Card, 
-  CardContent,
+  Card,
   Divider,
-  Container,
-  LinearProgress
+  Container
 } from '@mui/material';
 import {
   FaTasks,
@@ -23,13 +21,7 @@ import {
   FaRobot,
   FaLightbulb,
   FaCheckCircle,
-  FaGraduationCap,
-  FaZap,
-  FaShield,
-  FaUsers,
-  FaClock,
-  FaArrowRight,
-  FaStar
+  FaArrowRight
 } from 'react-icons/fa';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -279,126 +271,104 @@ function HomePage() {
       </Box>
 
       <Container maxWidth="lg">
-        {/* O que a aplicação faz - Seção Nova */}
-        <Box sx={{ my: { xs: 6, sm: 8, md: 12 } }}>
+        <Divider sx={{ my: { xs: 4, sm: 6, md: 8 } }} />
+
+        {/* Funcionalidades */}
+        <Box sx={{ mb: { xs: 6, sm: 8, md: 13 } }}>
           <Typography 
             variant="h5" 
             component="h2"
             sx={{ 
-              fontWeight: 700,
-              mb: 1,
+              fontWeight: 'bold',
+              mb: 2,
               textAlign: 'center',
-              color: '#1f2937'
+              color: '#232b33'
             }}
           >
-            {t('home.whatYouCanDo')}
-          </Typography>
-          <Typography 
-            variant="body1"
-            sx={{ 
-              textAlign: 'center',
-              color: '#6b7280',
-              mb: 6,
-              maxWidth: '700px',
-              mx: 'auto'
-            }}
-          >
-            {t('home.whatYouCanDoDesc')}
+            🎯 {t('home.mainFeatures')}
           </Typography>
           
-          <Grid container spacing={{ xs: 2, sm: 3, md: 3 }} sx={{ justifyContent: 'center', maxWidth: '1000px', mx: 'auto' }}>
-            {features.map((feature, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index} sx={{ display: 'flex' }}>
-                <Link to={feature.path} style={{ textDecoration: 'none', display: 'flex', width: '100%' }}>
-                  <Card
-                    sx={{
-                      width: '100%',
-                      height: '240px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      p: 2.5,
-                      borderRadius: '12px',
-                      boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
-                      transition: '0.3s ease-in-out',
-                      cursor: 'pointer',
-                      border: `2px solid ${feature.color}20`,
-                      background: '#ffffff',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '4px',
-                        background: feature.color,
-                        borderRadius: '12px 12px 0 0',
-                        transform: 'scaleX(0)',
-                        transformOrigin: 'left',
-                        transition: 'transform 0.3s ease-in-out'
-                      },
-                      '&:hover': {
-                        boxShadow: `0 16px 32px ${feature.color}20`,
-                        transform: 'translateY(-8px)',
-                        borderColor: feature.color,
-                        '&::before': {
-                          transform: 'scaleX(1)'
-                        }
-                      }
-                    }}
-                  >
-                    <Box
+          <Grid container spacing={{ xs: 2, sm: 3, md: 8 }} justifyContent="center">
+            {features.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <Grid item xs={12} sm={6} md={4} key={index}>
+                  <Link to={feature.path} style={{ textDecoration: 'none' }}>
+                    <Card
                       sx={{
-                        fontSize: '2rem',
-                        mb: 1,
-                        lineHeight: 1
-                      }}
-                    >
-                      {feature.emoji}
-                    </Box>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        fontWeight: 700, 
-                        mb: 0.75, 
-                        color: '#1f2937',
-                        fontSize: '0.95rem',
-                        lineHeight: 1.3
-                      }}
-                    >
-                      {t(`home.${feature.titleKey}`)}
-                    </Typography>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: '#6b7280', 
-                        lineHeight: 1.5,
-                        flexGrow: 1,
-                        mb: 1,
-                        fontSize: '0.8rem'
-                      }}
-                    >
-                      {t(`home.${feature.descKey}`)}
-                    </Typography>
-                    <Box
-                      sx={{
+                        height: '100%',
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        color: feature.color,
-                        fontWeight: 600,
-                        fontSize: '0.8rem',
-                        transition: '0.2s ease-in-out',
-                        mt: 'auto'
+                        flexDirection: 'column',
+                        p: 3,
+                        borderRadius: 2,
+                        boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        border: `2px solid ${feature.color}20`,
+                        '&:hover': {
+                          boxShadow: `0 12px 32px ${feature.color}30`,
+                          transform: 'translateY(-8px)',
+                          borderColor: feature.color
+                        }
                       }}
                     >
-                      {t('home.explore')} <FaArrowRight size={10} />
-                    </Box>
-                  </Card>
-                </Link>
-              </Grid>
-            ))}
+                      <Box
+                        sx={{
+                          width: 50,
+                          height: 50,
+                          borderRadius: '12px',
+                          background: `${feature.color}15`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          mb: 2,
+                          color: feature.color,
+                          fontSize: '24px'
+                        }}
+                      >
+                        <Icon />
+                      </Box>
+                      <Typography 
+                        variant="h6" 
+                        sx={{ 
+                          fontWeight: 'bold', 
+                          mb: 1, 
+                          color: '#232b33',
+                          fontSize: { xs: '1rem', sm: '1.1rem' }
+                        }}
+                      >
+                        {t(`home.${feature.titleKey}`)}
+                      </Typography>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: '#666', 
+                          lineHeight: 1.6,
+                          flexGrow: 1
+                        }}
+                      >
+                        {t(`home.${feature.descKey}`)}
+                      </Typography>
+                      <Box
+                        sx={{
+                          mt: 2,
+                          pt: 2,
+                          borderTop: `1px solid ${feature.color}30`,
+                          color: feature.color,
+                          fontWeight: 'bold',
+                          fontSize: '0.9rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}
+                      >
+                        {t('home.explore')} →
+                      </Box>
+                    </Card>
+                  </Link>
+                </Grid>
+              );
+            })}
           </Grid>
         </Box>
 
@@ -433,7 +403,6 @@ function HomePage() {
           
           <Grid container spacing={3} justifyContent="center" sx={{ maxWidth: '1200px', mx: 'auto' }}>
             {howItWorks.map((item, index) => {
-              const Icon = item.icon;
               return (
                 <Grid item xs={12} sm={12} md={4} key={index} sx={{ display: 'flex' }}>
                   <Card

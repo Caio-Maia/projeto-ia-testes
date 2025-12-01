@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Box, Typography, Paper, CircularProgress, Alert, Divider,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Card, CardContent,
-  Grid, Chip, Rating
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Grid, Chip
 } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useLanguage } from '../contexts/LanguageContext';

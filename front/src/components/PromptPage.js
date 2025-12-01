@@ -42,7 +42,7 @@ function PromptPage() {
         } else {
             setContent(''); // Limpa o conteúdo quando nenhum arquivo é selecionado
         }
-    }, [selectedFile]);
+    }, [selectedFile, language, t]);
 
     const handleSave = () => {
         localStorage.setItem(`${selectedFile}Prompt`, content);

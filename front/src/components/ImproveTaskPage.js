@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import {
-    Box, Button, TextField, Typography, MenuItem, FormControl, InputLabel, Select, Grid,
+    Box, Button, TextField, Typography, Grid,
     Alert, Snackbar, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions,
     useMediaQuery, useTheme
 } from '@mui/material';
@@ -12,7 +12,6 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
-import { AI_MODELS } from '../utils/aiModels';
 import { addVersion, getVersions, restoreVersion } from '../utils/generationHistory';
 import { useLanguage } from '../contexts/LanguageContext';
 import { usePrompt } from '../hooks/usePrompt';
@@ -50,7 +49,6 @@ function ImproveTaskPage() {
 
     // Só permite submit se um dos campos estiver preenchido e modelo selecionado
     const isButtonDisabled = (!taskDescription && !jiraTaskCode) || model.apiName === '';
-    const options = AI_MODELS;
 
     
     const handleModelChange = (event) => {

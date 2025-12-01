@@ -4,11 +4,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  ListSubheader,
   Box,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { getGroupedModelsForMenu } from '../utils/modelUtils';
@@ -28,8 +25,6 @@ import { AI_MODELS } from '../utils/aiModels';
 function ModelSelector({ value, onChange, label = 'Select Model', required = true, disabled = false }) {
   const groupedModels = useMemo(() => getGroupedModelsForMenu(), []);
   const [expandedGroups, setExpandedGroups] = useState({});
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Converter objeto modelo para string ID
   const getModelId = (model) => {

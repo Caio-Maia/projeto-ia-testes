@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Box, Button, TextField, Typography, Grid,  Alert, Snackbar, CircularProgress, useMediaQuery, useTheme } from '@mui/material';
+import { Box, Button, TextField, Typography, Grid,  Alert, Snackbar, CircularProgress } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
@@ -11,15 +11,12 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
-import { AI_MODELS } from '../utils/aiModels';
 import { useLanguage } from '../contexts/LanguageContext';
 import { usePrompt } from '../hooks/usePrompt';
 
 function GenerateTestsPage() {
   const { t } = useLanguage();
   const { prompt } = usePrompt('testCasesModel');
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [taskDescription, setTaskDescription] = useState('');
   const [jiraTaskCode, setJiraTaskCode] = useState('');
   const [isJiraLoading, setIsJiraLoading] = useState(false);

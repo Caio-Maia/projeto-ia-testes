@@ -29,8 +29,7 @@ const translations = {
       adjustPrompts: 'Ajustar Prompts',
       adjustPromptsDesc: 'Customize os prompts para melhor atender suas necessidades',
       explore: 'Explorar ',
-      
-      benefits: '✨ Por que usar nosso app?',
+      mainFeatures: 'Funcionalidades Principais',
       timeSaving: 'Economia de Tempo',
       timeSavingDesc: 'Gere testes em segundos, não em horas',
       qualityGuaranteed: 'Qualidade Garantida',
@@ -261,8 +260,7 @@ const translations = {
       adjustPrompts: 'Adjust Prompts',
       adjustPromptsDesc: 'Customize prompts to better meet your needs',
       explore: 'Explore ',
-      
-      benefits: '✨ Why use our app?',
+      mainFeatures: 'Main Features',
       timeSaving: 'Time Saving',
       timeSavingDesc: 'Generate tests in seconds, not hours',
       qualityGuaranteed: 'Quality Guaranteed',

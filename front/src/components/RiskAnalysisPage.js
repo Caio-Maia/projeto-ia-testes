@@ -9,7 +9,6 @@ import remarkGfm from 'remark-gfm';
 import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
-import { AI_MODELS } from '../utils/aiModels';
 import { addVersion, getVersions, restoreVersion } from '../utils/generationHistory';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';

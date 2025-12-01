@@ -11,7 +11,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Divider,
   Card,
   CardContent,
   Grid,
@@ -19,9 +18,6 @@ import {
 import {
   FaBook,
   FaTerminal,
-  FaGitAlt,
-  FaLightbulb,
-  FaCheckCircle,
   FaArrowRight,
   FaDatabase,
   FaShieldAlt,
@@ -47,7 +43,7 @@ function TabPanel(props) {
 }
 
 function DocumentationPage() {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const [tabValue, setTabValue] = useState(0);
   const isPT = language === 'pt-BR';
 
