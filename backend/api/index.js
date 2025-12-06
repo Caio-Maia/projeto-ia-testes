@@ -2,7 +2,6 @@ const url = require('url');
 require('dotenv').config();
 const express = require('express');
 const routes = require('./routes');
-const morgan = require('morgan');
 const cors = require('cors');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
@@ -10,12 +9,17 @@ const { ipKeyGenerator } = require('express-rate-limit');
 const csrf = require('csurf');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
+const { logger } = require('../utils/logger');
+const { errorHandler, notFoundHandler } = require('../middlewares/errorHandler');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Log security info
-console.log('🔒 Segurança ativa:', 'CORS, Rate Limit, Helmet, CSRF');
-console.log('🌐 Frontend URL:', process.env.FRONTEND_URL || 'http://localhost:3000');
+logger.info({ 
+  security: ['CORS', 'Rate Limit', 'Helmet', 'CSRF'],
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
+}, 'Server starting with security features');
 
 app.use(cors());
 
@@ -191,20 +195,31 @@ const apiLimiter = rateLimit({
 // Apply global limiter first (protects all routes)
 app.use(globalLimiter);
 
-morgan.token('url-sanitized', (req) => {
-  const parsedUrl = url.parse(req.originalUrl, true);
+// Request logging with Pino
+app.use((req, res, next) => {
+  const startTime = Date.now();
   
-  // Remove o token das queries
-  if (parsedUrl.query.token) {
-    parsedUrl.query.token = '***';
-  }
-
-  // Reconstrói a URL sem o token real
-  const sanitizedQuery = new URLSearchParams(parsedUrl.query).toString();
-  return parsedUrl.pathname + (sanitizedQuery ? `?${sanitizedQuery}` : '');
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    const logData = {
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      duration: `${duration}ms`,
+    };
+    
+    // Log level based on status code
+    if (res.statusCode >= 500) {
+      logger.error(logData, 'Request failed');
+    } else if (res.statusCode >= 400) {
+      logger.warn(logData, 'Request error');
+    } else {
+      logger.info(logData, 'Request completed');
+    }
+  });
+  
+  next();
 });
-
-app.use(morgan(':method :url-sanitized :status :res[content-length] - :response-time ms'));
 
 app.use(express.json());
 app.use(cookieParser());
@@ -268,27 +283,28 @@ app.get('/api/rate-limit-status', (req, res) => {
 // CSP Report Endpoint: Logs policy violations for monitoring
 app.post('/api/csp-report', (req, res) => {
   const violation = req.body;
-  console.warn('🚨 CSP Violation:', {
+  logger.warn({
+    event: 'csp-violation',
     documentUrl: violation['document-uri'],
     blockedUri: violation['blocked-uri'],
     violatedDirective: violation['violated-directive'],
-    originalPolicy: violation['original-policy'],
-    timestamp: new Date().toISOString(),
-  });
-  
-  // Optionally send to external logging service (Sentry, DataDog, etc.)
-  // logToExternalService(violation);
+  }, 'CSP Violation detected');
   
   res.status(204).send();
 });
 
 app.use('/api', apiLimiter, routes);
 
+// 404 Handler for undefined routes
+app.use(notFoundHandler);
+
 // CSRF Error Handler
 app.use((err, req, res, next) => {
   if (err.code === 'EBADCSRFTOKEN') {
+    logger.warn({ path: req.path, method: req.method }, 'CSRF token validation failed');
     res.status(403).json({
       error: 'Token CSRF inválido',
+      code: 'CSRF_ERROR',
       message: 'Requisição rejeitada por razões de segurança. Recarregue a página e tente novamente.'
     });
   } else {
@@ -296,6 +312,9 @@ app.use((err, req, res, next) => {
   }
 });
 
+// Centralized Error Handler (must be last)
+app.use(errorHandler);
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info({ port: PORT, env: process.env.NODE_ENV || 'development' }, 'Server started');
 });

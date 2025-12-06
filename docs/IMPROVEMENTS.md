@@ -405,82 +405,40 @@ backend/
 ---
 
 ### 2. Validação com Joi/Zod
-**Status**: Não implementado  
+**Status**: ✅ Implementado  
 **Prioridade**: Alta  
 **Esforço**: Médio
 
-**Problema Atual**: Validações manuais em controllers.
-
-```javascript
-// backend/validations/aiSchemas.js
-const Joi = require('joi');
-
-const improveTaskSchema = Joi.object({
-  task: Joi.string().min(10).max(10000).required(),
-  model: Joi.string().valid('gpt-4o', 'gpt-4o-mini', 'claude-sonnet-4').required(),
-  language: Joi.string().valid('pt-BR', 'en-US').default('pt-BR')
-});
-
-// Middleware de validação
-const validate = (schema) => (req, res, next) => {
-  const { error } = schema.validate(req.body);
-  if (error) return res.status(400).json({ error: error.details[0].message });
-  next();
-};
-```
+**Implementação**:
+- `backend/validations/schemas.js` - Schemas Joi para todas as rotas
+- `backend/middlewares/validate.js` - Middleware de validação
+- Todas as rotas protegidas com validação
 
 ---
 
 ### 3. Error Handling Centralizado
-**Status**: Parcialmente implementado  
+**Status**: ✅ Implementado  
 **Prioridade**: Alta  
 **Esforço**: Baixo
 
-```javascript
-// backend/middlewares/errorHandler.js
-class AppError extends Error {
-  constructor(message, statusCode, code) {
-    super(message);
-    this.statusCode = statusCode;
-    this.code = code;
-    this.isOperational = true;
-  }
-}
-
-const errorHandler = (err, req, res, next) => {
-  if (err.isOperational) {
-    return res.status(err.statusCode).json({
-      error: err.message,
-      code: err.code
-    });
-  }
-  
-  console.error('Unexpected error:', err);
-  res.status(500).json({ error: 'Internal server error' });
-};
-```
+**Implementação**:
+- `backend/middlewares/errorHandler.js` - AppError class + errorHandler middleware
+- `asyncHandler` wrapper para funções async
+- Erros operacionais vs erros de programação
+- Integrado em todos os controllers
 
 ---
 
 ### 4. Logging Estruturado
-**Status**: Não implementado  
+**Status**: ✅ Implementado  
 **Prioridade**: Média  
 **Esforço**: Baixo
 
-```javascript
-// Usar winston ou pino
-const logger = require('pino')({
-  level: process.env.LOG_LEVEL || 'info',
-  transport: {
-    target: 'pino-pretty',
-    options: { colorize: true }
-  }
-});
-
-// Uso:
-logger.info({ model, promptLength: prompt.length }, 'AI request started');
-logger.error({ error: err.message, stack: err.stack }, 'AI request failed');
-```
+**Implementação**:
+- `backend/utils/logger.js` - Logger Pino com pino-pretty
+- Helpers: `aiRequest`, `aiResponse`, `aiError`, `feedback`, `validationError`, `security`
+- Morgan removido, substituído por Pino
+- Logs estruturados em JSON (produção) ou coloridos (desenvolvimento)
 
 ---
 
@@ -911,8 +869,9 @@ router.get('/health', async (req, res) => {
 - [ ] Implementar Strategy Pattern para IAs
 - [ ] Adicionar Claude como provider
 - [ ] Atualizar modelos OpenAI para nomes reais
-- [ ] Validação com Joi
-- [ ] Error handling centralizado
+- [x] ~~Validação com Joi~~ ✅ Implementado
+- [x] ~~Error handling centralizado~~ ✅ Implementado
+- [x] ~~Logging estruturado~~ ✅ Implementado
 
 ### Fase 2 (2-3 semanas)
 - [ ] Integração GitHub Issues
@@ -924,7 +883,6 @@ router.get('/health', async (req, res) => {
 - [ ] Streaming de respostas
 - [ ] Docker + CI/CD
 - [ ] Cache com Redis
-- [ ] Logging estruturado
 
 ### Fase 4 (Contínuo)
 - [ ] Mais provedores de IA (Mistral, DeepSeek)

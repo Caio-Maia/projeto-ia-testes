@@ -1,4 +1,6 @@
 const axios = require('axios');
+const { aiRequest, aiResponse, aiError } = require('../utils/logger');
+const { errors, asyncHandler } = require('../middlewares/errorHandler');
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const DEFAULT_MODEL = 'gemini-2.5-flash-lite';
@@ -7,48 +9,61 @@ const DEFAULT_MODEL = 'gemini-2.5-flash-lite';
  * Helper function to call Gemini API
  */
 const callGeminiAPI = async (prompt, model, token) => {
+  const startTime = Date.now();
+  
   const response = await axios.post(
     `${GEMINI_API_URL}/${model}:generateContent?key=${token}`,
     { contents: [{ parts: [{ text: prompt }] }] }
   );
 
-  if (response.status === 400) {
-    throw { status: 400, data: response.data };
-  }
-
   const candidates = response.data?.candidates;
   if (!candidates?.[0]?.content?.parts?.[0]?.text) {
-    throw { status: 400, message: 'Não foi possível obter uma resposta válida do Gemini' };
+    throw new Error('Não foi possível obter uma resposta válida do Gemini');
   }
 
-  return candidates[0].content.parts[0].text;
+  const result = candidates[0].content.parts[0].text;
+  const durationMs = Date.now() - startTime;
+
+  return { result, durationMs };
 };
 
 /**
- * Generic Gemini request handler
+ * Generic Gemini request handler with logging and error handling
  */
-const handleGeminiRequest = (errorMessage) => async (req, res) => {
-  const prompt = req.body.data;
+const handleGeminiRequest = (feature) => asyncHandler(async (req, res) => {
+  const prompt = req.body.data || req.body.task;
   const model = req.body.model || DEFAULT_MODEL;
-  const token = req.query.token;
+  const token = req.query.token || process.env.GEMINI_API_KEY;
 
   if (!token) {
-    return res.status(401).json({ error: 'Token não fornecido' });
+    throw errors.AI_TOKEN_MISSING('Gemini');
   }
+
+  // Log request
+  aiRequest(model, prompt.length, feature);
 
   try {
-    const result = await callGeminiAPI(prompt, model, token);
+    const { result, durationMs } = await callGeminiAPI(prompt, model, token);
+    
+    // Log response
+    aiResponse(model, result.length, durationMs, feature);
+    
     res.json({ data: result });
   } catch (error) {
-    if (error.status === 400) {
-      return res.status(400).json(error.data || { error: error.message });
+    // Log error
+    aiError(model, error, feature);
+    
+    // Handle specific Gemini errors
+    if (error.response?.status === 400) {
+      throw errors.BAD_REQUEST(error.response?.data?.error?.message || 'Requisição inválida para Gemini');
     }
-    console.error(errorMessage, error.response?.data || error.message);
-    res.status(500).json({ error: errorMessage });
+    
+    const errorMessage = error.response?.data?.error?.message || error.message;
+    throw errors.AI_SERVICE_ERROR('Gemini', errorMessage);
   }
-};
+});
 
-const improveTaskGemini = handleGeminiRequest('Erro ao tentar melhorar a tarefa com Gemini');
-const generateTestsGemini = handleGeminiRequest('Erro ao tentar gerar casos de teste com Gemini');
+const improveTaskGemini = handleGeminiRequest('improve-task');
+const generateTestsGemini = handleGeminiRequest('generate-tests');
 
 module.exports = { improveTaskGemini, generateTestsGemini };

@@ -18,6 +18,13 @@ backend/
 │   ├── fileController.js     # Gerenciamento de arquivos
 │   ├── jiraController.js     # Integração JIRA
 │   └── chatgptConversationController.js  # Conversations API
+├── middlewares/
+│   ├── errorHandler.js       # Error handling centralizado
+│   └── validate.js           # Middleware de validação Joi
+├── validations/
+│   └── schemas.js            # Schemas Joi para todas as rotas
+├── utils/
+│   └── logger.js             # Logging estruturado com Pino
 ├── models/
 │   ├── feedbackModel.js      # Modelo de feedback (SQLite)
 │   └── *.md                  # Templates de prompts
@@ -42,6 +49,7 @@ Crie um arquivo `.env` baseado em `.env.example`:
 PORT=5000
 FRONTEND_URL=http://localhost:3000
 CHATGPT_API_KEY=sua-chave-openai
+LOG_LEVEL=info  # debug, info, warn, error
 ```
 
 ## Execução
