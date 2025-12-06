@@ -10,6 +10,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { getGroupedModelsForMenu } from '../utils/modelUtils';
 import { AI_MODELS } from '../utils/aiModels';
+import { useDarkMode } from '../contexts/DarkModeContext';
 
 /**
  * Componente de Select para escolher modelos de IA
@@ -23,6 +24,7 @@ import { AI_MODELS } from '../utils/aiModels';
  * - disabled: se o select está desabilitado
  */
 function ModelSelector({ value, onChange, label = 'Select Model', required = true, disabled = false }) {
+  const { isDarkMode } = useDarkMode();
   const groupedModels = useMemo(() => getGroupedModelsForMenu(), []);
   const [expandedGroups, setExpandedGroups] = useState({});
 
@@ -87,14 +89,16 @@ function ModelSelector({ value, onChange, label = 'Select Model', required = tru
           role="option"
           onMouseDown={(e) => toggleGroup(group.group, e)}
           sx={{
-            background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+            background: isDarkMode 
+              ? 'linear-gradient(135deg, #1a202c 0%, #232b33 100%)'
+              : 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
             fontWeight: 700,
             fontSize: '0.95rem',
-            color: '#1e40af',
+            color: isDarkMode ? '#60a5fa' : '#1e40af',
             letterSpacing: '0.5px',
             py: 1.5,
             px: 2,
-            borderBottom: '2px solid #bfdbfe',
+            borderBottom: `2px solid ${isDarkMode ? '#374151' : '#bfdbfe'}`,
             display: 'flex',
             alignItems: 'center',
             gap: 1,
@@ -102,7 +106,9 @@ function ModelSelector({ value, onChange, label = 'Select Model', required = tru
             userSelect: 'none',
             transition: 'all 0.2s ease-in-out',
             '&:hover': {
-              background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
+              background: isDarkMode
+                ? 'linear-gradient(135deg, #232b33 0%, #2d3748 100%)'
+                : 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
               paddingRight: 3
             }
           }}
@@ -110,7 +116,7 @@ function ModelSelector({ value, onChange, label = 'Select Model', required = tru
           <Box display="flex" alignItems="center" gap={1} flex={1}>
             <span>{group.icon}</span>
             <span>{group.group}</span>
-            <Typography variant="caption" sx={{ ml: 'auto', color: '#6b7280' }}>
+            <Typography variant="caption" sx={{ ml: 'auto', color: isDarkMode ? '#9ca3af' : '#6b7280' }}>
               ({group.models.length})
             </Typography>
           </Box>
@@ -118,7 +124,7 @@ function ModelSelector({ value, onChange, label = 'Select Model', required = tru
             sx={{
               transition: 'transform 0.3s ease-in-out',
               transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-              color: '#1e40af'
+              color: isDarkMode ? '#60a5fa' : '#1e40af'
             }}
           />
         </Box>
@@ -137,28 +143,30 @@ function ModelSelector({ value, onChange, label = 'Select Model', required = tru
                 ml: 2,
                 borderLeft: '5px solid transparent',
                 transition: 'all 0.2s ease',
-                backgroundColor: 'transparent',
+                backgroundColor: isDarkMode ? '#0f1419' : 'transparent',
+                color: isDarkMode ? '#f3f4f6' : '#1f2937',
                 '&:hover': {
                   borderLeftColor: model.apiName === 'chatgpt' ? '#3b82f6' : '#22c55e',
                   backgroundColor: model.apiName === 'chatgpt' 
-                    ? 'rgba(59, 130, 246, 0.08)' 
-                    : 'rgba(34, 197, 94, 0.08)',
+                    ? isDarkMode ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.08)'
+                    : isDarkMode ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.08)',
                 },
                 '&.Mui-selected': {
                   borderLeftColor: model.apiName === 'chatgpt' ? '#3b82f6' : '#22c55e',
                   backgroundColor: model.apiName === 'chatgpt' 
-                    ? 'rgba(59, 130, 246, 0.15)' 
-                    : 'rgba(34, 197, 94, 0.15)',
-                  fontWeight: 600
+                    ? isDarkMode ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.15)'
+                    : isDarkMode ? 'rgba(34, 197, 94, 0.25)' : 'rgba(34, 197, 94, 0.15)',
+                  fontWeight: 600,
+                  color: isDarkMode ? '#f3f4f6' : '#1f2937'
                 }
               }}
             >
               <Box display="flex" alignItems="center" gap={2} width="100%">
                 <Box display="flex" flexDirection="column" flex={1}>
-                  <Typography variant="body2" fontWeight={600}>
+                  <Typography variant="body2" fontWeight={600} sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
                     {model.label}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: '#6b7280', mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#6b7280', mt: 0.5 }}>
                     {model.version}
                   </Typography>
                 </Box>
@@ -180,7 +188,7 @@ function ModelSelector({ value, onChange, label = 'Select Model', required = tru
       variant="outlined" 
       sx={{ mb: 3 }}
     >
-      <InputLabel id="model-select-label">{label}</InputLabel>
+      <InputLabel id="model-select-label" sx={{ color: isDarkMode ? '#d1d5db' : '#666' }}>{label}</InputLabel>
       <Select
         labelId="model-select-label"
         id="model-select"
@@ -188,10 +196,25 @@ function ModelSelector({ value, onChange, label = 'Select Model', required = tru
         onChange={handleChange}
         label={label}
         renderValue={renderValue}
+        sx={{
+          backgroundColor: isDarkMode ? '#1a202c' : '#ffffff',
+          color: isDarkMode ? '#f3f4f6' : '#1f2937',
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: isDarkMode ? '#374151' : '#ccc'
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: isDarkMode ? '#4b5563' : '#999'
+          },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#3b82f6'
+          }
+        }}
         MenuProps={{
           PaperProps: {
             sx: {
-              maxHeight: 400
+              maxHeight: 400,
+              backgroundColor: isDarkMode ? '#0f1419' : '#ffffff',
+              color: isDarkMode ? '#f3f4f6' : '#1f2937'
             }
           }
         }}

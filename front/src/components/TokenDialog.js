@@ -17,8 +17,10 @@ import CloseIcon from '@mui/icons-material/Close';
 import LockIcon from '@mui/icons-material/Lock';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import { useDarkMode } from '../contexts/DarkModeContext';
 
-function TokenDialog({ open, onClose, permitClose }) {
+function TokenDialog({ open, onClose, permitClose, onSuccess }) {
+    const { isDarkMode } = useDarkMode();
     const [chatgptToken, setChatgptToken] = useState('');
     const [geminiToken, setGeminiToken] = useState('');
     const [jiraToken, setJiraToken] = useState('');
@@ -55,6 +57,11 @@ function TokenDialog({ open, onClose, permitClose }) {
         if (jiraEmail) localStorage.setItem('jiraEmail', jiraEmail);
         if (jiraBaseUrl) localStorage.setItem('jiraBaseUrl', jiraBaseUrl);
         onClose(false);
+        
+        // Call onSuccess callback if provided (used for redirect after token setup)
+        if (onSuccess && (chatgptToken || geminiToken)) {
+            onSuccess();
+        }
     };
 
     const handleClose = () => {
@@ -105,7 +112,8 @@ function TokenDialog({ open, onClose, permitClose }) {
                 onClick: (e) => e.stopPropagation(),
                 sx: {
                     borderRadius: 2,
-                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)'
+                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+                    backgroundColor: isDarkMode ? '#0f1419' : '#ffffff'
                 }
             }}
         >
@@ -146,21 +154,22 @@ function TokenDialog({ open, onClose, permitClose }) {
             </Box>
 
             {/* Content */}
-            <DialogContent sx={{ pt: 3, pb: 2 }}>
+            <DialogContent sx={{ p: 0, backgroundColor: isDarkMode ? '#0f1419' : '#ffffff' }}>
                 {/* AI Tokens Section */}
                 <Paper 
                     elevation={0}
                     sx={{
-                        p: 2.5,
-                        mb: 3,
-                        backgroundColor: '#f8f9fa',
-                        border: '1px solid #e9ecef',
+                        p: 2,
+                        mx: 2,
+                        mt: 2,
+                        mb: 0,
+                        backgroundColor: isDarkMode ? '#1a202c' : '#f8f9fa',
                         borderRadius: 2
                     }}
                 >
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                         <Box sx={{ fontSize: '1.5rem' }}>🤖</Box>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
                             Tokens IA
                         </Typography>
                     </Box>
@@ -179,7 +188,23 @@ function TokenDialog({ open, onClose, permitClose }) {
                                 helperText="Obtenha em openai.com/api-keys"
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
-                                        backgroundColor: '#fff'
+                                        backgroundColor: isDarkMode ? '#1a202c' : '#fff',
+                                        color: isDarkMode ? '#f3f4f6' : '#1f2937',
+                                        '& fieldset': {
+                                            borderColor: isDarkMode ? '#374151' : '#ccc'
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: isDarkMode ? '#4b5563' : '#999'
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: isDarkMode ? '#60a5fa' : '#1976d2'
+                                        }
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: isDarkMode ? '#d1d5db' : '#666'
+                                    },
+                                    '& .MuiFormHelperText-root': {
+                                        color: isDarkMode ? '#9ca3af' : '#666'
                                     }
                                 }}
                             />
@@ -197,7 +222,23 @@ function TokenDialog({ open, onClose, permitClose }) {
                                 helperText="Obtenha em aistudio.google.com"
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
-                                        backgroundColor: '#fff'
+                                        backgroundColor: isDarkMode ? '#1a202c' : '#fff',
+                                        color: isDarkMode ? '#f3f4f6' : '#1f2937',
+                                        '& fieldset': {
+                                            borderColor: isDarkMode ? '#374151' : '#ccc'
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: isDarkMode ? '#4b5563' : '#999'
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: isDarkMode ? '#60a5fa' : '#1976d2'
+                                        }
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: isDarkMode ? '#d1d5db' : '#666'
+                                    },
+                                    '& .MuiFormHelperText-root': {
+                                        color: isDarkMode ? '#9ca3af' : '#666'
                                     }
                                 }}
                             />
@@ -209,15 +250,16 @@ function TokenDialog({ open, onClose, permitClose }) {
                 <Paper 
                     elevation={0}
                     sx={{
-                        p: 2.5,
-                        backgroundColor: '#f8f9fa',
-                        border: '1px solid #e9ecef',
+                        p: 2,
+                        mx: 2,
+                        my: 2,
+                        backgroundColor: isDarkMode ? '#1a202c' : '#f8f9fa',
                         borderRadius: 2
                     }}
                 >
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                         <Box sx={{ fontSize: '1.5rem' }}>📋</Box>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
                             Credenciais JIRA
                         </Typography>
                     </Box>
@@ -235,7 +277,23 @@ function TokenDialog({ open, onClose, permitClose }) {
                                 helperText="Exemplo: https://suaempresa.atlassian.net"
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
-                                        backgroundColor: '#fff'
+                                        backgroundColor: isDarkMode ? '#1a202c' : '#fff',
+                                        color: isDarkMode ? '#f3f4f6' : '#1f2937',
+                                        '& fieldset': {
+                                            borderColor: isDarkMode ? '#374151' : '#ccc'
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: isDarkMode ? '#4b5563' : '#999'
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: isDarkMode ? '#60a5fa' : '#1976d2'
+                                        }
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: isDarkMode ? '#d1d5db' : '#666'
+                                    },
+                                    '& .MuiFormHelperText-root': {
+                                        color: isDarkMode ? '#9ca3af' : '#666'
                                     }
                                 }}
                             />
@@ -253,7 +311,23 @@ function TokenDialog({ open, onClose, permitClose }) {
                                 helperText="E-mail da sua conta JIRA"
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
-                                        backgroundColor: '#fff'
+                                        backgroundColor: isDarkMode ? '#1a202c' : '#fff',
+                                        color: isDarkMode ? '#f3f4f6' : '#1f2937',
+                                        '& fieldset': {
+                                            borderColor: isDarkMode ? '#374151' : '#ccc'
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: isDarkMode ? '#4b5563' : '#999'
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: isDarkMode ? '#60a5fa' : '#1976d2'
+                                        }
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: isDarkMode ? '#d1d5db' : '#666'
+                                    },
+                                    '& .MuiFormHelperText-root': {
+                                        color: isDarkMode ? '#9ca3af' : '#666'
                                     }
                                 }}
                             />
@@ -271,7 +345,23 @@ function TokenDialog({ open, onClose, permitClose }) {
                                 helperText="Obtenha em id.atlassian.com/manage-profile/security"
                                 sx={{
                                     '& .MuiOutlinedInput-root': {
-                                        backgroundColor: '#fff'
+                                        backgroundColor: isDarkMode ? '#1a202c' : '#fff',
+                                        color: isDarkMode ? '#f3f4f6' : '#1f2937',
+                                        '& fieldset': {
+                                            borderColor: isDarkMode ? '#374151' : '#ccc'
+                                        },
+                                        '&:hover fieldset': {
+                                            borderColor: isDarkMode ? '#4b5563' : '#999'
+                                        },
+                                        '&.Mui-focused fieldset': {
+                                            borderColor: isDarkMode ? '#60a5fa' : '#1976d2'
+                                        }
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: isDarkMode ? '#d1d5db' : '#666'
+                                    },
+                                    '& .MuiFormHelperText-root': {
+                                        color: isDarkMode ? '#9ca3af' : '#666'
                                     }
                                 }}
                             />
@@ -281,7 +371,7 @@ function TokenDialog({ open, onClose, permitClose }) {
             </DialogContent>
 
             {/* Actions */}
-            <DialogActions sx={{ p: 2, gap: 1, backgroundColor: '#f9fafb', borderTop: '1px solid #e5e7eb' }}>
+            <DialogActions sx={{ p: 2, gap: 1, backgroundColor: isDarkMode ? '#1a202c' : '#f9fafb', borderTop: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}` }}>
                 {permitClose && (
                     <Button 
                         onClick={handleClose}
@@ -289,16 +379,16 @@ function TokenDialog({ open, onClose, permitClose }) {
                         sx={{
                           fontWeight: 600,
                           textTransform: 'none',
-                          color: '#6b7280',
-                          borderColor: '#e5e7eb',
-                          backgroundColor: '#fff',
+                          color: isDarkMode ? '#d1d5db' : '#6b7280',
+                          borderColor: isDarkMode ? '#374151' : '#e5e7eb',
+                          backgroundColor: isDarkMode ? '#232b33' : '#fff',
                           fontSize: '1rem',
                           padding: '8px 16px',
                           minWidth: 'auto',
                           '&:hover': {
-                            backgroundColor: '#fee2e2',
-                            color: '#ef4444',
-                            borderColor: '#fca5a5',
+                            backgroundColor: isDarkMode ? '#374151' : '#fee2e2',
+                            color: isDarkMode ? '#f3f4f6' : '#ef4444',
+                            borderColor: isDarkMode ? '#4b5563' : '#fca5a5',
                             transition: '0.2s ease-in-out'
                           }
                         }}

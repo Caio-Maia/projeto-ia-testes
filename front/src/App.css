@@ -17,12 +17,30 @@
   --font-main: 'Roboto', 'Segoe UI', Arial, sans-serif;
 }
 
+/* Dark mode CSS variables */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-main: #0f1419;
+    --background-card: #1a202c;
+    --text-main: #f3f4f6;
+    --text-secondary: #d1d5db;
+    --border-color: #374151;
+  }
+}
+
 body, .app-container {
   font-family: var(--font-main);
-  background: var(--background-main);
-  color: var(--text-main);
+  background: var(--background-main) !important;
+  color: var(--text-main) !important;
   margin: 0;
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] .app-container {
+  background: #0f1419 !important;
+  color: #f3f4f6 !important;
 }
 
 .app-container {

@@ -7,6 +7,11 @@ const { getTaskJira, updateTaskJira } = require('../controllers/jiraController')
 const { getFeedbackStats, getRecentFeedback, regenerateContent, submitFeedback } = require('../controllers/feedbackController');
 const { generateTestCodeChatGPT, generateTestCodeGemini, analyzeRisks } = require('../controllers/codeGenerationController');
 const { createConversation, sendMessage, getConversationHistory, regenerateWithFeedback } = require('../controllers/chatgptConversationController');
+const { analyzeCoverage, extractRequirements, parseTestCases } = require('../controllers/coverageController');
+
+// ============================================
+// ROTAS (Protegidas por CORS, Rate Limit e Helmet)
+// ============================================
 
 // Rotas para ChatGPT
 router.post('/chatgpt/improve-task', improveTaskChatGPT);
@@ -36,5 +41,10 @@ router.post('/feedback', submitFeedback);
 router.post('/feedback/regenerate', regenerateContent);
 router.get('/feedback/stats', getFeedbackStats);
 router.get('/feedback/recent', getRecentFeedback);
+
+// Rotas para Análise de Cobertura de Testes
+router.post('/analyze-coverage', analyzeCoverage);
+router.post('/extract-requirements', extractRequirements);
+router.post('/parse-test-cases', parseTestCases);
 
 module.exports = router;

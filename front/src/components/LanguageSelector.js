@@ -87,6 +87,7 @@ function LanguageSelector() {
             mt: 1.5,
             minWidth: '220px',
             background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
+            border: 'none'
           }
         }}
       >

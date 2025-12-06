@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useDarkMode } from '../contexts/DarkModeContext';
 import {
   Container,
   Box,
@@ -44,6 +45,7 @@ function TabPanel(props) {
 
 function DocumentationPage() {
   const { language } = useLanguage();
+  const { isDarkMode } = useDarkMode();
   const [tabValue, setTabValue] = useState(0);
   const isPT = language === 'pt-BR';
 
@@ -57,8 +59,8 @@ function DocumentationPage() {
         🚀 Guia de Início Rápido
       </Typography>
 
-      <Paper sx={{ p: 3, mb: 3, backgroundColor: '#f0f4f8' }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+      <Paper sx={{ p: 3, mb: 3, backgroundColor: isDarkMode ? '#1a202c' : '#f0f4f8' }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
           1. Instalação
         </Typography>
         <Box component="pre" sx={{ backgroundColor: '#1e1e1e', color: '#d4d4d4', p: 2, borderRadius: 1, overflow: 'auto' }}>
@@ -76,12 +78,12 @@ npm install`}</code>
         </Box>
       </Paper>
 
-      <Paper sx={{ p: 3, mb: 3, backgroundColor: '#f0f4f8' }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+      <Paper sx={{ p: 3, mb: 3, backgroundColor: isDarkMode ? '#1a202c' : '#f0f4f8' }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
           2. Configuração de Variáveis de Ambiente
         </Typography>
-        <Typography variant="body2" sx={{ mb: 2 }}>
-          Crie um arquivo <code style={{ background: '#e0e0e0', padding: '2px 6px', borderRadius: 3 }}>.env</code> na pasta backend:
+        <Typography variant="body2" sx={{ mb: 2, color: isDarkMode ? '#d1d5db' : '#1f2937' }}>
+          Crie um arquivo <code style={{ background: isDarkMode ? '#374151' : '#e0e0e0', padding: '2px 6px', borderRadius: 3, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>.env</code> na pasta backend:
         </Typography>
         <Box component="pre" sx={{ backgroundColor: '#1e1e1e', color: '#d4d4d4', p: 2, borderRadius: 1, overflow: 'auto' }}>
           <code>{`OPENAI_API_KEY=sua_chave_aqui
@@ -90,11 +92,11 @@ PORT=5000`}</code>
         </Box>
       </Paper>
 
-      <Paper sx={{ p: 3, mb: 3, backgroundColor: '#f0f4f8' }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+      <Paper sx={{ p: 3, mb: 3, backgroundColor: isDarkMode ? '#1a202c' : '#f0f4f8' }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
           3. Executar o Projeto
         </Typography>
-        <Typography variant="body2" sx={{ mb: 2 }}>
+        <Typography variant="body2" sx={{ mb: 2, color: isDarkMode ? '#d1d5db' : '#1f2937' }}>
           Terminal 1 - Backend:
         </Typography>
         <Box component="pre" sx={{ backgroundColor: '#1e1e1e', color: '#d4d4d4', p: 2, borderRadius: 1, overflow: 'auto', mb: 2 }}>
@@ -110,11 +112,11 @@ npm start`}</code>
         </Box>
       </Paper>
 
-      <Paper sx={{ p: 3, backgroundColor: '#e8f5e9' }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#2e7d32' }}>
+      <Paper sx={{ p: 3, backgroundColor: isDarkMode ? '#1a2b1f' : '#e8f5e9' }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: isDarkMode ? '#4caf50' : '#2e7d32' }}>
           ✅ Tudo Pronto!
         </Typography>
-        <Typography variant="body2">
+        <Typography variant="body2" sx={{ color: isDarkMode ? '#d1d5db' : '#1f2937' }}>
           Acesse <strong>http://localhost:3000</strong> no seu navegador e comece a usar a aplicação.
         </Typography>
       </Paper>
@@ -236,7 +238,7 @@ npm start`}</code>
                 boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
                 transition: '0.3s ease-in-out',
                 border: `2px solid ${feature.color}20`,
-                background: '#ffffff',
+                background: isDarkMode ? '#1a202c' : '#ffffff',
                 position: 'relative',
                 overflow: 'hidden',
                 '&::before': {
@@ -263,10 +265,10 @@ npm start`}</code>
               }}
             >
               <CardContent sx={{ p: 2.5, display: 'flex', flexDirection: 'column' }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#1f2937', fontSize: '0.95rem' }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: isDarkMode ? '#f3f4f6' : '#1f2937', fontSize: '0.95rem' }}>
                   {feature.title}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#6b7280', lineHeight: 1.5, fontSize: '0.8rem' }}>
+                <Typography variant="body2" sx={{ color: isDarkMode ? '#d1d5db' : '#6b7280', lineHeight: 1.5, fontSize: '0.8rem' }}>
                   {feature.desc}
                 </Typography>
               </CardContent>
@@ -322,7 +324,7 @@ npm start`}</code>
                 boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
                 transition: '0.3s ease-in-out',
                 border: `2px solid ${feature.color}20`,
-                background: '#ffffff',
+                background: isDarkMode ? '#1a202c' : '#ffffff',
                 position: 'relative',
                 overflow: 'hidden',
                 '&::before': {
@@ -349,10 +351,10 @@ npm start`}</code>
               }}
             >
               <CardContent sx={{ p: 2.5, display: 'flex', flexDirection: 'column' }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: '#1f2937', fontSize: '0.95rem' }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: isDarkMode ? '#f3f4f6' : '#1f2937', fontSize: '0.95rem' }}>
                   {feature.title}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#6b7280', lineHeight: 1.5, fontSize: '0.8rem' }}>
+                <Typography variant="body2" sx={{ color: isDarkMode ? '#d1d5db' : '#6b7280', lineHeight: 1.5, fontSize: '0.8rem' }}>
                   {feature.desc}
                 </Typography>
               </CardContent>
@@ -407,8 +409,8 @@ npm start`}</code>
         </Grid>
 
         <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Paper sx={{ p: 3, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
               <FaLink size={20} /> APIs Externas
             </Typography>
             <List>
@@ -503,11 +505,11 @@ npm start`}</code>
         📡 Endpoints Principais
       </Typography>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+      <Paper sx={{ p: 3, mb: 3, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
           Melhorar Tarefa
         </Typography>
-        <Box sx={{ backgroundColor: '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
+        <Box sx={{ backgroundColor: isDarkMode ? '#0f1419' : '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
           <code style={{ color: '#d32f2f' }}>POST /api/improve-task</code>
         </Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
@@ -515,11 +517,11 @@ npm start`}</code>
         </Typography>
       </Paper>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+      <Paper sx={{ p: 3, mb: 3, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
           Gerar Casos de Teste
         </Typography>
-        <Box sx={{ backgroundColor: '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
+        <Box sx={{ backgroundColor: isDarkMode ? '#0f1419' : '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
           <code style={{ color: '#d32f2f' }}>POST /api/generate-tests</code>
         </Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
@@ -527,11 +529,11 @@ npm start`}</code>
         </Typography>
       </Paper>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+      <Paper sx={{ p: 3, mb: 3, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
           Gerar Código de Teste
         </Typography>
-        <Box sx={{ backgroundColor: '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
+        <Box sx={{ backgroundColor: isDarkMode ? '#0f1419' : '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
           <code style={{ color: '#d32f2f' }}>POST /api/generate-test-code</code>
         </Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
@@ -539,11 +541,11 @@ npm start`}</code>
         </Typography>
       </Paper>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+      <Paper sx={{ p: 3, mb: 3, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
           Análise de Riscos
         </Typography>
-        <Box sx={{ backgroundColor: '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
+        <Box sx={{ backgroundColor: isDarkMode ? '#0f1419' : '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
           <code style={{ color: '#d32f2f' }}>POST /api/analyze-risks</code>
         </Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
@@ -656,7 +658,7 @@ npm start`}</code>
         >
           {isPT ? '📚 Documentação' : '📚 Documentation'}
         </Typography>
-        <Typography variant="body1" sx={{ color: '#666', maxWidth: '600px', mx: 'auto' }}>
+        <Typography variant="body1" sx={{ color: isDarkMode ? '#d1d5db' : '#666', maxWidth: '600px', mx: 'auto' }}>
           {isPT
             ? 'Guia completo para começar a usar o IA-Testes e aproveitar todos os seus recursos'
             : 'Complete guide to get started with IA-Testes and make the most of its features'}
@@ -664,16 +666,20 @@ npm start`}</code>
       </Box>
 
       {/* Tabs */}
-      <Paper sx={{ mb: 4 }}>
+      <Paper sx={{ mb: 4, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
           aria-label="documentation tabs"
           sx={{
-            borderBottom: '1px solid #e0e0e0',
+            borderBottom: `1px solid ${isDarkMode ? '#374151' : '#e0e0e0'}`,
             '& .MuiTab-root': {
+              color: isDarkMode ? '#d1d5db' : '#666',
               fontWeight: 600,
               fontSize: '0.95rem',
+            },
+            '& .Mui-selected': {
+              color: isDarkMode ? '#3b82f6' : '#1976d2',
             },
           }}
         >
@@ -702,19 +708,19 @@ npm start`}</code>
 
       {/* Additional Resources */}
       <Box sx={{ mt: 6 }}>
-        <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
+        <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
           {isPT ? '📖 Recursos Adicionais' : '📖 Additional Resources'}
         </Typography>
 
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <FaBook size={32} color="#3b82f6" style={{ marginBottom: 16 }} />
-                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
                   {isPT ? 'README' : 'README'}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#666', mb: 2 }}>
+                <Typography variant="body2" sx={{ color: isDarkMode ? '#d1d5db' : '#666', mb: 2 }}>
                   {isPT ? 'Visão geral do projeto' : 'Project overview'}
                 </Typography>
                 <Box
@@ -731,13 +737,13 @@ npm start`}</code>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <FaTerminal size={32} color="#3b82f6" style={{ marginBottom: 16 }} />
-                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
                   SETUP
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#666', mb: 2 }}>
+                <Typography variant="body2" sx={{ color: isDarkMode ? '#d1d5db' : '#666', mb: 2 }}>
                   {isPT ? 'Instalação e configuração' : 'Installation & setup'}
                 </Typography>
                 <Box
@@ -754,13 +760,13 @@ npm start`}</code>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <FaClipboard size={32} color="#3b82f6" style={{ marginBottom: 16 }} />
-                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
                   API
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#666', mb: 2 }}>
+                <Typography variant="body2" sx={{ color: isDarkMode ? '#d1d5db' : '#666', mb: 2 }}>
                   {isPT ? 'Referência de endpoints' : 'Endpoints reference'}
                 </Typography>
                 <Box
@@ -777,13 +783,13 @@ npm start`}</code>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
               <CardContent sx={{ textAlign: 'center' }}>
                 <FaShieldAlt size={32} color="#3b82f6" style={{ marginBottom: 16 }} />
-                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
+                <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
                   {isPT ? 'Contribuir' : 'Contributing'}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#666', mb: 2 }}>
+                <Typography variant="body2" sx={{ color: isDarkMode ? '#d1d5db' : '#666', mb: 2 }}>
                   {isPT ? 'Guia de contribuição' : 'Contribution guide'}
                 </Typography>
                 <Box

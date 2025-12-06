@@ -1,9 +1,11 @@
-
-const express = require('express');
 const axios = require('axios');
-const router = express.Router();
 
-// Já existente
+// Helper para criar header de autenticação Jira
+const getJiraAuth = (email, token) => ({
+    'Authorization': `Basic ${Buffer.from(`${email}:${token}`).toString('base64')}`,
+    'Accept': 'application/json'
+});
+
 const getTaskJira = async (req, res) => {
     const { jiraTaskCode, jiraToken, jiraEmail, jiraBaseUrl } = req.body;
 
@@ -14,12 +16,7 @@ const getTaskJira = async (req, res) => {
     try {
         const response = await axios.get(
             `${jiraBaseUrl}/rest/api/3/issue/${jiraTaskCode}`,
-            {
-                headers: {
-                    'Authorization': `Basic ${Buffer.from(`${jiraEmail}:${jiraToken}`).toString('base64')}`,
-                    'Accept': 'application/json'
-                }
-            }
+            { headers: getJiraAuth(jiraEmail, jiraToken) }
         );
         res.json(response.data);
     } catch (error) {
@@ -27,7 +24,6 @@ const getTaskJira = async (req, res) => {
     }
 };
 
-// NOVO: Atualizar descrição do cartão JIRA
 const updateTaskJira = async (req, res) => {
     const { jiraTaskCode, jiraToken, jiraEmail, jiraBaseUrl, newDescription } = req.body;
 
@@ -36,50 +32,29 @@ const updateTaskJira = async (req, res) => {
     }
 
     try {
-        // O Jira Cloud API v3 espera o campo description em formato Atlassian Document Format (ADF)
-        // Para simplicidade, vamos enviar como texto simples (plain text)
         const updatePayload = {
             fields: {
                 description: {
                     type: "doc",
                     version: 1,
-                    content: [
-                        {
-                            type: "paragraph",
-                            content: [
-                                {
-                                    type: "text",
-                                    text: newDescription
-                                }
-                            ]
-                        }
-                    ]
+                    content: [{
+                        type: "paragraph",
+                        content: [{ type: "text", text: newDescription }]
+                    }]
                 }
             }
         };
 
-        const response = await axios.put(
+        await axios.put(
             `${jiraBaseUrl}/rest/api/3/issue/${jiraTaskCode}`,
             updatePayload,
-            {
-                headers: {
-                    'Authorization': `Basic ${Buffer.from(`${jiraEmail}:${jiraToken}`).toString('base64')}`,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            }
+            { headers: { ...getJiraAuth(jiraEmail, jiraToken), 'Content-Type': 'application/json' } }
         );
         res.json({ success: true, message: 'Cartão JIRA atualizado com sucesso!' });
     } catch (error) {
-        let details = error.message;
-        if (error.response && error.response.data) {
-            details = error.response.data;
-        }
+        const details = error.response?.data || error.message;
         res.status(500).json({ error: 'Erro ao atualizar cartão no JIRA', details });
     }
 };
 
-module.exports = {
-    getTaskJira,
-    updateTaskJira
-};
+module.exports = { getTaskJira, updateTaskJira };

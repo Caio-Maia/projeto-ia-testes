@@ -1,203 +1,93 @@
-# Backend API for AI-Powered Task & Test Case Generator
+# Backend API - Gerador de Testes com IA
 
-This backend provides a flexible API for interacting with different AI models to improve tasks, generate test cases, and analyze implementation risks.
+API para interação com modelos de IA (ChatGPT e Gemini) para melhoria de tarefas, geração de casos de teste e análise de riscos.
 
-## Architecture
-
-The backend uses a modular architecture to support different AI models and versions:
+## Estrutura
 
 ```
-├── api/                      # API routes and entry points
-├── controllers/              # Request handlers for different features
-│   ├── aiController.js       # Unified controller for AI operations
-│   ├── chatgptController.js  # Legacy controller for ChatGPT
-│   ├── geminiController.js   # Legacy controller for Gemini
-│   └── ...
-├── models/                   # Data models and schemas
-│   ├── aiModel.js            # Base class for AI models
-│   ├── chatgptModel.js       # ChatGPT model implementation
-│   ├── geminiModel.js        # Gemini model implementation
-│   ├── feedbackModel.js      # Feedback data model (SQLite)
-│   └── aiModelFactory.js     # Factory for creating AI model instances
-├── services/                 # Business logic services
-│   └── aiService.js          # Service for AI operations
-├── config/                   # Configuration files
-│   ├── aiModels.js           # Configuration for AI models and versions
-│   └── database.js           # SQLite database configuration
-└── data/                     # Directory for SQLite database file
+backend/
+├── api/
+│   ├── index.js              # Entry point com middlewares
+│   └── routes.js             # Definição de rotas
+├── controllers/
+│   ├── chatgptController.js  # Endpoints ChatGPT
+│   ├── geminiController.js   # Endpoints Gemini
+│   ├── codeGenerationController.js  # Geração de código
+│   ├── coverageController.js # Análise de cobertura
+│   ├── feedbackController.js # Sistema de feedback
+│   ├── fileController.js     # Gerenciamento de arquivos
+│   ├── jiraController.js     # Integração JIRA
+│   └── chatgptConversationController.js  # Conversations API
+├── models/
+│   ├── feedbackModel.js      # Modelo de feedback (SQLite)
+│   └── *.md                  # Templates de prompts
+├── config/
+│   ├── aiModels.js           # Configuração de modelos IA
+│   └── database.js           # Configuração SQLite
+└── data/                     # Dados SQLite
 ```
 
-## Database
-
-The application uses SQLite as a local database for storing feedback and other persistent data. This provides several advantages:
-
-- No need for external database server setup
-- Data is stored locally in a file
-- Faster response times for local development
-- No connection timeout issues
-
-The database configuration is in `config/database.js` and the database file is stored in the `data` directory.
-
-## API Endpoints
-
-### Unified AI Endpoints
-
-These endpoints support all AI models through a unified interface:
-
-- `POST /api/ai/improve-task` - Improve a task description
-- `POST /api/ai/generate-tests` - Generate test cases for a task
-- `POST /api/ai/generate-test-code` - Generate test code for test cases
-- `POST /api/ai/analyze-risks` - Analyze implementation risks
-- `GET /api/ai/models` - Get available AI models and versions
-
-### Feedback Endpoints
-
-- `POST /api/feedback` - Submit feedback for a generation
-- `GET /api/feedback/stats` - Get feedback statistics
-- `GET /api/feedback/recent` - Get recent feedback with comments
-- `POST /api/feedback/regenerate` - Regenerate content based on feedback
-
-### Request Format
-
-```json
-{
-  "modelType": "chatgpt|gemini",
-  "modelVersion": "gpt-3.5-turbo|gpt-4|gemini-1.5-flash|...",
-  "task": "Task description",
-  "testCases": "Test cases",
-  "framework": "Jest",
-  "language": "JavaScript"
-}
-```
-
-### Response Format
-
-For ChatGPT:
-```json
-"Generated content as string"
-```
-
-For Gemini:
-```json
-{
-  "data": "Generated content as string"
-}
-```
-
-## Adding a New AI Model
-
-To add a new AI model:
-
-1. Create a new model implementation in `models/` that extends `AIModel`
-2. Add the model to `AIModelFactory`
-3. Add the model configuration to `config/aiModels.js`
-
-Example:
-
-```javascript
-// models/newModel.js
-const AIModel = require('./aiModel');
-
-class NewModel extends AIModel {
-  constructor(config) {
-    super(config);
-    this.apiKey = config.apiKey;
-    this.model = config.model || 'default-version';
-    this.baseUrl = 'https://api.newmodel.com/v1';
-  }
-
-  async _makeRequest(prompt) {
-    // Implementation
-  }
-
-  async improveTask(task, options = {}) {
-    // Implementation
-  }
-
-  // Other methods...
-}
-
-module.exports = NewModel;
-```
-
-Then update the factory:
-
-```javascript
-// models/aiModelFactory.js
-const NewModel = require('./newModel');
-
-// In AIModelFactory class:
-static MODEL_TYPES = {
-  CHATGPT: 'chatgpt',
-  GEMINI: 'gemini',
-  NEW_MODEL: 'newmodel'
-};
-
-static createModel(type, config = {}) {
-  switch (type.toLowerCase()) {
-    case this.MODEL_TYPES.CHATGPT:
-      return new ChatGPTModel(config);
-    case this.MODEL_TYPES.GEMINI:
-      return new GeminiModel(config);
-    case this.MODEL_TYPES.NEW_MODEL:
-      return new NewModel(config);
-    default:
-      throw new Error(`Unsupported AI model type: ${type}`);
-  }
-}
-```
-
-And add the configuration:
-
-```javascript
-// config/aiModels.js
-const aiModelsConfig = {
-  // Existing models...
-  
-  newmodel: {
-    versions: [
-      {
-        id: 'default-version',
-        name: 'Default Version',
-        description: 'Default version of the new model',
-        isDefault: true
-      },
-      // Other versions...
-    ],
-    apiEndpoint: 'https://api.newmodel.com/v1'
-  }
-};
-```
-
-## Changing Model Versions
-
-To add or update model versions, simply modify the configuration in `config/aiModels.js`:
-
-```javascript
-// config/aiModels.js
-const aiModelsConfig = {
-  chatgpt: {
-    versions: [
-      // Existing versions...
-      {
-        id: 'gpt-4o',
-        name: 'GPT-4o',
-        description: 'Latest GPT-4 model with improved capabilities',
-        isDefault: false
-      }
-    ],
-    apiEndpoint: 'https://api.openai.com/v1/chat/completions'
-  }
-};
-```
-
-## Running Tests
+## Instalação
 
 ```bash
-npm test
+cd backend
+npm install
 ```
 
-## Environment Variables
+## Configuração
 
-- `CHATGPT_API_KEY` - API key for ChatGPT
-- `GEMINI_API_KEY` - API key for Gemini
+Crie um arquivo `.env` baseado em `.env.example`:
+
+```env
+PORT=5000
+FRONTEND_URL=http://localhost:3000
+CHATGPT_API_KEY=sua-chave-openai
+```
+
+## Execução
+
+```bash
+npm start
+```
+
+## Endpoints
+
+### ChatGPT
+- `POST /api/chatgpt/improve-task` - Melhorar descrição de tarefa
+- `POST /api/chatgpt/generate-tests` - Gerar casos de teste
+- `POST /api/chatgpt/generate-test-code` - Gerar código de teste
+
+### Gemini
+- `POST /api/gemini/improve-task?token=KEY` - Melhorar tarefa
+- `POST /api/gemini/generate-tests?token=KEY` - Gerar testes
+- `POST /api/gemini/generate-test-code?token=KEY` - Gerar código
+
+### Análise
+- `POST /api/analyze-risks` - Análise de riscos
+- `POST /api/analyze-coverage` - Análise de cobertura
+
+### JIRA
+- `POST /api/jira-task` - Buscar tarefa do JIRA
+- `POST /api/jira-task/update` - Atualizar tarefa
+
+### Feedback
+- `POST /api/feedback` - Enviar feedback
+- `GET /api/feedback/stats` - Estatísticas
+- `GET /api/feedback/recent` - Feedbacks recentes
+
+### Arquivos
+- `GET /api/files/:filename` - Ler arquivo de prompt
+- `PUT /api/files/:filename` - Atualizar arquivo
+
+## Segurança
+
+O backend inclui:
+- **CORS** - Controle de origem
+- **Helmet** - Headers de segurança
+- **Rate Limiting** - 100 req/15min por IP
+- **CSRF** - Proteção contra CSRF
+- **Compression** - Respostas comprimidas
+
+## Banco de Dados
+
+SQLite local em `data/database.sqlite` para armazenar feedbacks.

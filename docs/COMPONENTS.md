@@ -231,7 +231,7 @@ export default function App() {
 
 ### FeedbackDashboard
 
-Dashboard de análise de feedback.
+Dashboard de análise de feedback com armazenamento configurável.
 
 **Localização**: `src/components/FeedbackDashboard.js`
 
@@ -240,6 +240,41 @@ Dashboard de análise de feedback.
 - Estatísticas de satisfação
 - Análise por modelo de IA
 - Gráficos de tendências
+- **Armazenamento configurável**: local (privado) ou backend (compartilhado)
+- Indicador visual do modo de armazenamento
+- Toggle para alternar entre modos (no modo híbrido)
+
+**Configuração de Armazenamento**:
+
+A variável de ambiente `REACT_APP_FEEDBACK_STORAGE` define o modo:
+
+| Modo | Descrição |
+|------|-----------|
+| `local` | Dados salvos no localStorage do navegador (privado) |
+| `backend` | Dados salvos no banco de dados via API (compartilhado) |
+| `hybrid` | Usuário pode alternar entre local e backend |
+
+**Exemplo de configuração (.env)**:
+```env
+REACT_APP_FEEDBACK_STORAGE=hybrid
+```
+
+**Serviço de Armazenamento**:
+
+O componente utiliza o `feedbackStorageService` para abstrair a lógica de armazenamento:
+
+```javascript
+import feedbackStorageService from '../services/feedbackStorageService';
+
+// Verificar modo atual
+const mode = feedbackStorageService.getStorageMode();
+
+// Enviar feedback (roteado automaticamente)
+await feedbackStorageService.submitFeedback(feedbackData);
+
+// Buscar estatísticas
+const stats = await feedbackStorageService.getFeedbackStats();
+```
 
 ---
 
@@ -381,7 +416,7 @@ function Header() {
 
 ### FeedbackComponent
 
-Componente para enviar feedback sobre uma geração.
+Componente para enviar feedback sobre uma geração. Utiliza armazenamento configurável.
 
 **Localização**: `src/components/FeedbackComponent.js`
 
@@ -398,7 +433,15 @@ Componente para enviar feedback sobre uma geração.
 - Seletor de tipo (positivo/negativo/neutro)
 - Campo de comentário
 - Rating de estrelas
-- Envio para backend
+- **Armazenamento configurável**: envia para localStorage ou backend conforme configuração
+- Integração com `feedbackStorageService`
+
+**Armazenamento**:
+
+O feedback é salvo de acordo com a variável `REACT_APP_FEEDBACK_STORAGE`:
+- `local`: Salva no localStorage (privado)
+- `backend`: Envia para API (compartilhado)
+- `hybrid`: Segue preferência do usuário
 
 **Exemplo**:
 ```jsx

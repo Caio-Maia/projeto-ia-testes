@@ -9,25 +9,38 @@ Referência completa de todos os endpoints disponíveis no backend do Projeto IA
 3. [Gerar Casos de Teste](#gerar-casos-de-teste)
 4. [Gerar Código de Teste](#gerar-código-de-teste)
 5. [Análise de Riscos](#análise-de-riscos)
-6. [Integração JIRA](#integração-jira)
-7. [Feedback](#feedback)
-8. [Códigos de Erro](#códigos-de-erro)
+6. [Análise de Cobertura de Testes](#análise-de-cobertura-de-testes)
+7. [Integração JIRA](#integração-jira)
+8. [Feedback](#feedback)
+9. [Códigos de Erro](#códigos-de-erro)
 
 ## 🔐 Autenticação
 
-Todos os endpoints aceitam tokens de API via headers ou body.
+**Nota (v1.2.0)**: Autenticação com tokens foi removida. API é acessível diretamente.
 
-### Header (Recomendado)
-```
-Authorization: Bearer sk-... (OpenAI) ou AIza... (Gemini)
+**Segurança**: API protegida por:
+- ✅ CORS (validação de origem)
+- ✅ Rate Limiting (100 req/15min global, 10 req/min per-user)
+- ✅ CSRF Protection (tokens validados em POST/PUT/DELETE)
+- ✅ Helmet Security Headers (CSP, HSTS, X-Frame-Options)
+- ✅ HTTPS Enforcement (em produção)
+
+**CSRF Token**: Obrigatório para operações seguras
+
+```http
+GET /api/csrf-token
 ```
 
-### Body
+Response:
 ```json
 {
-  "openaiToken": "sk-...",
-  "geminiToken": "AIza..."
+  "csrfToken": "token-aqui-32-caracteres"
 }
+```
+
+Incluir em headers de requisições POST/PUT/DELETE:
+```http
+X-CSRF-Token: token-aqui-32-caracteres
 ```
 
 ---
@@ -293,7 +306,112 @@ Identifica riscos potenciais em features e recomenda testes.
 
 ---
 
-## 🔗 Integração JIRA
+## 📊 Análise de Cobertura de Testes
+
+Analisa a cobertura de testes de um projeto e identifica gaps.
+
+### POST `/api/analyze-coverage`
+
+**Descrição**: Analisa cobertura de testes e recomenda melhorias
+
+**Body**:
+```json
+{
+  "coverage": {
+    "statements": 75,
+    "branches": 60,
+    "functions": 80,
+    "lines": 75
+  },
+  "testedFeatures": [
+    "Authentication",
+    "User Profile",
+    "Payment"
+  ],
+  "totalFeatures": [
+    "Authentication",
+    "User Profile",
+    "Payment",
+    "Export",
+    "Notifications"
+  ],
+  "model": "gpt-3.5-turbo",
+  "openaiToken": "sk-..."
+}
+```
+
+**Parâmetros**:
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|------------|-----------|
+| coverage | object | Sim | Objeto com coverage percentages (statements, branches, functions, lines) |
+| testedFeatures | array | Sim | Array de features com testes |
+| totalFeatures | array | Sim | Array de todas as features do projeto |
+| model | string | Sim | Modelo de IA: `gpt-3.5-turbo`, `gpt-4`, `gemini-pro` |
+| openaiToken | string | Condicional | Token OpenAI |
+| geminiToken | string | Condicional | Token Gemini |
+
+**Response (200 OK)**:
+```json
+{
+  "overallCoverage": 72.5,
+  "gapAnalysis": [
+    {
+      "feature": "Export",
+      "priority": "High",
+      "recommendation": "Implementar testes para funcionalidade de exportação (PDF, Word, CSV)",
+      "suggestedTestCases": [
+        "Export to PDF with multiple pages",
+        "Export to Word with formatting",
+        "Export to CSV with special characters",
+        "Error handling for large files"
+      ]
+    },
+    {
+      "feature": "Notifications",
+      "priority": "Medium",
+      "recommendation": "Adicionar testes para sistema de notificações",
+      "suggestedTestCases": [
+        "Send notification to user",
+        "Notification delivery timeout",
+        "Notification persistence"
+      ]
+    }
+  ],
+  "improvementTips": [
+    "Focar em branches coverage que está em 60%",
+    "Adicionar testes para funções não cobertas",
+    "Implementar testes de integração para workflows críticos"
+  ],
+  "targetCoverage": {
+    "statements": 85,
+    "branches": 75,
+    "functions": 85,
+    "lines": 85
+  },
+  "model": "gpt-3.5-turbo",
+  "timestamp": "2024-01-15T10:45:00Z"
+}
+```
+
+**Exemplo com cURL**:
+```bash
+curl -X POST http://localhost:5000/api/analyze-coverage \
+  -H "Content-Type: application/json" \
+  -d '{
+    "coverage": {
+      "statements": 75,
+      "branches": 60,
+      "functions": 80,
+      "lines": 75
+    },
+    "testedFeatures": ["Authentication", "User Profile"],
+    "totalFeatures": ["Authentication", "User Profile", "Payment", "Export", "Notifications"],
+    "model": "gpt-3.5-turbo",
+    "openaiToken": "sk-..."
+  }'
+```
+
+---
 
 Sincronize tarefas com JIRA.
 
@@ -490,4 +608,10 @@ Invoke-WebRequest -Uri "http://localhost:5000/api/improve-task" `
 
 ---
 
-**Última atualização**: Janeiro 2024
+**Última atualização**: Dezembro 2024 (v1.2.0)
+
+**Mudanças Recentes**:
+- ✅ Autenticação removida (API acessível diretamente)
+- ✅ Novo endpoint: `/api/analyze-coverage` (Test Coverage Analysis)
+- ✅ CSRF protection implementado
+- ✅ Rate limiting ativo (proteção contra abuso)

@@ -46,13 +46,21 @@ O **Projeto IA Testes** é uma plataforma inteligente para automação de testes
    - Relatórios estruturados
    - Integração com histórias de usuário
 
-### 5. **Dashboard de Feedback**
+### 5. **Análise de Cobertura de Testes (NEW - v1.2.0)**
+   - Identifica gaps de cobertura de testes
+   - Recomendações de casos de teste faltantes
+   - Análise por feature
+   - Matriz de rastreabilidade (requirements → testes)
+
+### 6. **Dashboard de Feedback**
    - Visualiza feedback de gerações
    - Estatísticas de uso
    - Histórico de melhorias
    - Análise de modelos mais eficientes
+   - **Armazenamento configurável**: local (privado) ou backend (compartilhado)
+   - Toggle para alternar entre modos de armazenamento
 
-### 6. **Modo Educacional**
+### 7. **Modo Educacional**
    - Explicações detalhadas de conceitos de QA
    - Dicas de particionamento de equivalência
    - Valores-limite e critérios de aceitação
@@ -305,6 +313,32 @@ Veja [API.md](./docs/API.md) para detalhes completos.
 ## 📝 Licença
 
 Este projeto está sob a licença ISC. Veja o arquivo LICENSE para detalhes.
+
+## 📦 Mudanças Recentes (v1.2.0 - Dezembro 2024)
+
+### ✅ Novos Recursos
+- **Test Coverage Analysis** - Identifica gaps de cobertura de testes
+- **Sidebar Scroll** - Conteúdo responsivo em telas pequenas
+- **UI Improvements** - History button com melhor alinhamento
+
+### ✅ Remoções
+- ❌ Autenticação baseada em tokens (API acessível diretamente)
+- ❌ LoginPage (workflow simplificado)
+
+### ✅ Melhorias de Segurança
+- ✅ Rate Limiting (100 req/15min global, 10 req/min per-user)
+- ✅ CSRF Protection (tokens em POST/PUT/DELETE)
+- ✅ HTTPS Enforcement (com HSTS)
+- ✅ Content Security Policy (via Helmet)
+- ✅ Response Compression (96.85% em JSON)
+
+### 🎨 Mudanças UI/UX
+- Menu reorganizado (Test Coverage → Primary)
+- Sidebar com scroll automático
+- Dark/Light mode suportado em todos componentes
+- Suporte bilíngue (PT-BR + EN-US)
+
+**Para detalhes completos**: Veja [IMPROVEMENTS.md](./docs/IMPROVEMENTS.md)
 
 ## 👨‍💻 Autor
 

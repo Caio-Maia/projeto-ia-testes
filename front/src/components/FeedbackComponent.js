@@ -8,10 +8,12 @@ import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import axios from 'axios';
 import ModelSelector from './ModelSelector';
+import { useDarkMode } from '../contexts/DarkModeContext';
+import { submitFeedback, regenerateFeedback } from '../services/feedbackStorageService';
 
 function FeedbackComponent({ generationId, type, originalContent, onRegenerateContent }) {
+  const { isDarkMode } = useDarkMode();
   const feedbackRef = useRef(null); // Ref para scroll
   const [rating, setRating] = useState(null);
   const [comment, setComment] = useState('');
@@ -49,8 +51,7 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
         }
       ] : [];
       
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      const response = await axios.post(`${backendUrl}/api/feedback`, {
+      const response = await submitFeedback({
         generationId,
         type,
         rating,
@@ -59,8 +60,8 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
         conversationHistory
       });
       
-      const feedbackResponse = response.data.feedback;
-      // Accept both ._id (Mongo-like), or .id (Sequelize)
+      const feedbackResponse = response.feedback;
+      // Accept both ._id (Mongo-like), .id (Sequelize), or local id
       const fId = feedbackResponse ? (feedbackResponse._id || feedbackResponse.id) : null;
       setFeedbackId(fId);
       setFeedbackSubmitted(true);
@@ -98,7 +99,6 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
     setError(null);
     
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
       const token = localStorage.getItem(selectedModel.apiName + 'Token');
       
       if (!token) {
@@ -107,13 +107,7 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
         return;
       }
       
-      const response = await axios.post(
-        `${backendUrl}/api/feedback/regenerate?token=${token}`,
-        {
-          feedbackId,
-          model: selectedModel
-        }
-      );
+      const response = await regenerateFeedback(feedbackId, selectedModel, token);
       
       // Close dialog
       setRegenerateDialogOpen(false);
@@ -128,7 +122,7 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
       
       // Call the parent component's callback with the regenerated content
       if (onRegenerateContent) {
-        onRegenerateContent(response.data.data);
+        onRegenerateContent(response.data);
       }
       
       // Scroll para o topo do card de feedback após regeneração
@@ -172,14 +166,14 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
       sx={{ 
         p: 3, 
         borderRadius: 2,
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #f1f5f9 100%)',
-        border: '1px solid #e2e8f0',
+        background: isDarkMode ? '#1a202c' : 'linear-gradient(135deg, #f5f7fa 0%, #f1f5f9 100%)',
+        border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
       }}
     >
       {/* Header */}
       <Box display="flex" alignItems="center" gap={1.5} mb={3}>
         <FeedbackIcon sx={{ color: '#3b82f6', fontSize: 28 }} />
-        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1e293b' }}>
           O que você achou desta resposta?
         </Typography>
       </Box>
@@ -199,17 +193,19 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
             borderRadius: 2,
             cursor: 'pointer',
             transition: 'all 0.3s ease',
-            background: rating === 'positive' ? '#dcfce7' : '#f8f9fa',
-            border: rating === 'positive' ? '2px solid #4ade80' : '2px solid #e2e8f0',
+            background: rating === 'positive' 
+              ? isDarkMode ? '#064e3b' : '#dcfce7'
+              : isDarkMode ? '#0f1419' : '#f8f9fa',
+            border: rating === 'positive' ? '2px solid #4ade80' : `2px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
             '&:hover': {
               borderColor: '#4ade80',
-              background: '#f0fdf4',
+              background: isDarkMode ? '#10b981' : '#f0fdf4',
               transform: 'translateY(-2px)',
             }
           }}
         >
-          <ThumbUpIcon sx={{ fontSize: 32, color: rating === 'positive' ? '#22c55e' : '#94a3b8' }} />
-          <Typography variant="body2" sx={{ fontWeight: 600, color: rating === 'positive' ? '#22c55e' : '#64748b' }}>
+          <ThumbUpIcon sx={{ fontSize: 32, color: rating === 'positive' ? '#22c55e' : isDarkMode ? '#6b7280' : '#94a3b8' }} />
+          <Typography variant="body2" sx={{ fontWeight: 600, color: rating === 'positive' ? '#22c55e' : isDarkMode ? '#9ca3af' : '#64748b' }}>
             Útil
           </Typography>
         </Box>
@@ -225,17 +221,19 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
             borderRadius: 2,
             cursor: 'pointer',
             transition: 'all 0.3s ease',
-            background: rating === 'negative' ? '#fee2e2' : '#f8f9fa',
-            border: rating === 'negative' ? '2px solid #f87171' : '2px solid #e2e8f0',
+            background: rating === 'negative'
+              ? isDarkMode ? '#7f1d1d' : '#fee2e2'
+              : isDarkMode ? '#0f1419' : '#f8f9fa',
+            border: rating === 'negative' ? '2px solid #f87171' : `2px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
             '&:hover': {
               borderColor: '#f87171',
-              background: '#fef2f2',
+              background: isDarkMode ? '#dc2626' : '#fef2f2',
               transform: 'translateY(-2px)',
             }
           }}
         >
-          <ThumbDownIcon sx={{ fontSize: 32, color: rating === 'negative' ? '#ef4444' : '#94a3b8' }} />
-          <Typography variant="body2" sx={{ fontWeight: 600, color: rating === 'negative' ? '#ef4444' : '#64748b' }}>
+          <ThumbDownIcon sx={{ fontSize: 32, color: rating === 'negative' ? '#ef4444' : isDarkMode ? '#6b7280' : '#94a3b8' }} />
+          <Typography variant="body2" sx={{ fontWeight: 600, color: rating === 'negative' ? '#ef4444' : isDarkMode ? '#9ca3af' : '#64748b' }}>
             Melhorar
           </Typography>
         </Box>
@@ -243,9 +241,9 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
       
       {/* Comment Section */}
       {showCommentField && (
-        <Card sx={{ mb: 2, border: '1px solid #e2e8f0' }}>
+        <Card sx={{ mb: 2, border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`, backgroundColor: isDarkMode ? '#0f1419' : '#ffffff' }}>
           <CardContent sx={{ p: 2.5 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: '#1e293b' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: isDarkMode ? '#f3f4f6' : '#1e293b' }}>
               {rating === 'positive' ? '💡 Conte-nos mais' : '⚠️ O que pode ser melhorado?'}
             </Typography>
             <TextField
@@ -259,10 +257,17 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
               placeholder={rating === 'positive' ? "Diga-nos o que você gostou..." : "Descreva como o texto deve ser ajustado..."}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#ffffff',
+                  backgroundColor: isDarkMode ? '#1a202c' : '#ffffff',
+                  color: isDarkMode ? '#f3f4f6' : '#1f2937',
+                  '& fieldset': {
+                    borderColor: isDarkMode ? '#374151' : '#ccc'
+                  },
                   '&:hover fieldset': {
                     borderColor: '#3b82f6',
                   }
+                },
+                '& .MuiInputLabel-root': {
+                  color: isDarkMode ? '#d1d5db' : '#666'
                 }
               }}
             />
@@ -331,19 +336,19 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
             Regenerar Conteúdo
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          <Typography variant="body1" gutterBottom sx={{ mb: 2 }}>
+        <DialogContent sx={{ pt: 3, backgroundColor: isDarkMode ? '#0f1419' : '#ffffff' }}>
+          <Typography variant="body1" gutterBottom sx={{ mb: 2, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
             Deseja regenerar o conteúdo com base no seu feedback?
           </Typography>
-          <Paper sx={{ p: 2, bgcolor: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 1, mb: 3 }}>
-            <Typography variant="body2" color="textSecondary" sx={{ mb: 0.5, fontWeight: 600 }}>
+          <Paper sx={{ p: 2, bgcolor: isDarkMode ? '#1a202c' : '#fef3c7', border: `1px solid ${isDarkMode ? '#374151' : '#fcd34d'}`, borderRadius: 1, mb: 3 }}>
+            <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 600, color: isDarkMode ? '#d1d5db' : '#666' }}>
               Seu feedback:
             </Typography>
-            <Typography variant="body2" sx={{ fontStyle: 'italic', color: '#78350f' }}>
+            <Typography variant="body2" sx={{ fontStyle: 'italic', color: isDarkMode ? '#9ca3af' : '#78350f' }}>
               "{feedbackComment}"
             </Typography>
           </Paper>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5, color: '#1e293b' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5, color: isDarkMode ? '#f3f4f6' : '#1e293b' }}>
             Selecione o modelo para regenerar:
           </Typography>
           <ModelSelector

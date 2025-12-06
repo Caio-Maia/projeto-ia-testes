@@ -54,6 +54,107 @@ class ChatGPTModel extends AIModel {
     
     return this._makeRequest(prompt);
   }
+
+  async analyzeCoverage(requirements, testCases, options = {}) {
+    const systemPrompt = `Você é um especialista em Qualidade de Software e Análise de Cobertura de Testes.
+Sua função é:
+1. Analisar requisitos versus casos de teste
+2. Calcular percentuais de cobertura por requisito
+3. Identificar gaps (requisitos sem testes)
+4. Gerar recomendações acionáveis e priorizadas
+5. Sugerir novos testes para melhorar cobertura
+
+IMPORTANTE: Retorne APENAS um JSON válido, sem texto adicional, sem markdown code blocks.`;
+
+    const analysisPrompt = `Analise a cobertura de testes do seguinte projeto:
+
+REQUISITOS:
+${JSON.stringify(requirements, null, 2)}
+
+CASOS DE TESTE:
+${JSON.stringify(testCases, null, 2)}
+
+INSTRUÇÕES:
+1. Para cada requisito, identifique os casos de teste associados (por palavras-chave, contexto)
+2. Calcule o percentual de cobertura por requisito
+3. Identifique requisitos sem testes (cobertura 0%)
+4. Identifique requisitos com cobertura parcial (<80%)
+5. Gere recomendações priorizadas por severidade (high/medium/low)
+6. Sugira 2-3 novos testes para cada requisito não coberto ou com baixa cobertura
+
+RETORNE um JSON com esta estrutura exata:
+{
+  "analysis": {
+    "totalRequirements": number,
+    "coveredRequirements": number,
+    "notCoveredRequirements": number,
+    "coveragePercentage": number,
+    "totalTests": number,
+    "passedTests": number,
+    "failedTests": number,
+    "pendingTests": number,
+    "testSuccessRate": number
+  },
+  "traceabilityMatrix": [
+    {
+      "requirementId": "string",
+      "requirementTitle": "string",
+      "priority": "high|medium|low",
+      "associatedTestCases": ["TC-001"],
+      "testCount": number,
+      "passedCount": number,
+      "coveragePercentage": number,
+      "coverage_status": "FULLY_COVERED|PARTIALLY_COVERED|NOT_COVERED"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "REC-001",
+      "type": "missing_tests|low_coverage|failing_tests|test_quality",
+      "severity": "high|medium|low",
+      "requirement_id": "string (optional)",
+      "message": "string",
+      "suggested_tests": ["string"] (optional),
+      "priority_to_implement": "immediate|high|medium|low"
+    }
+  ],
+  "coverageHeatmap": [
+    { "requirementId": "string", "coverage": number, "color": "#hex" }
+  ],
+  "testMetrics": {
+    "averageCoverage": number,
+    "medianCoverage": number,
+    "requirementsWithFullCoverage": number,
+    "requirementsWithPartialCoverage": number,
+    "requirementsWithNoCoverage": number
+  }
+}`;
+
+    try {
+      const response = await axios.post(
+        this.baseUrl,
+        {
+          model: this.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: analysisPrompt }
+          ],
+          response_format: { type: 'json_object' }
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`
+          }
+        }
+      );
+      
+      const content = response.data.choices[0].message.content;
+      return JSON.parse(content);
+    } catch (error) {
+      console.error('ChatGPT Coverage Analysis error:', error);
+      throw new Error(`Error analyzing coverage with ChatGPT: ${error.message}`);
+    }
+  }
 }
 
 module.exports = ChatGPTModel;

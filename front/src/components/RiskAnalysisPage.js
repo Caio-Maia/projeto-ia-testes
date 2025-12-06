@@ -15,9 +15,11 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useDarkMode } from '../contexts/DarkModeContext';
 
 function RiskAnalysisPage() {
   const { t } = useLanguage();
+  const { isDarkMode } = useDarkMode();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [feature, setFeature] = useState('');
@@ -170,7 +172,7 @@ function RiskAnalysisPage() {
     >
       <Grid size={{xs:10, md:6, lg:4}} style={{ minWidth: '1000px' }}>
         <Box textAlign="center">
-          <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: '#1f2937' }}>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
             {t('riskAnalysis.title')}
           </Typography>
         </Box>
@@ -322,10 +324,10 @@ function RiskAnalysisPage() {
             width: '100%',
             maxWidth: '1000px',
             marginTop: 4,
-            backgroundColor: '#fff',
+            backgroundColor: isDarkMode ? '#1a202c' : '#fff',
             padding: '20px',
             borderRadius: '8px',
-            border: '1px solid #e5e7eb',
+            border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
             boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
             overflowX: 'auto',
             '&:hover': {
@@ -334,7 +336,9 @@ function RiskAnalysisPage() {
             }
           }}
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
+          <Box sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
+          </Box>
           
           {/* Feedback component */}
           {generationId && (
@@ -348,14 +352,14 @@ function RiskAnalysisPage() {
             </Box>
           )}
 
-          <Dialog open={showHistory} onClose={closeVersionsModal} fullWidth maxWidth="md">
-            <DialogTitle>{t('riskAnalysis.previousVersions')}</DialogTitle>
-            <DialogContent>
-              {versions.length === 0 && <Typography>{t('common.noVersions')}</Typography>}
+          <Dialog open={showHistory} onClose={closeVersionsModal} fullWidth maxWidth="md" PaperProps={{ sx: { backgroundColor: isDarkMode ? '#0f1419' : '#ffffff' } }}>
+            <DialogTitle sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937', backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>{t('riskAnalysis.previousVersions')}</DialogTitle>
+            <DialogContent sx={{ backgroundColor: isDarkMode ? '#0f1419' : '#ffffff' }}>
+              {versions.length === 0 && <Typography sx={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>{t('common.noVersions')}</Typography>}
               {versions.map((v, idx) => (
-                <Box key={idx} mb={3} p={2} sx={{ border: '1px solid #e5e7eb', borderRadius: '8px', background: '#f9fafb' }}>
-                  <Typography variant="caption">{v.date && (new Date(v.date)).toLocaleString()}</Typography>
-                  <Box mt={1} mb={1}>
+                <Box key={idx} mb={3} p={2} sx={{ border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`, borderRadius: '8px', background: isDarkMode ? '#232b33' : '#f9fafb' }}>
+                  <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>{v.date && (new Date(v.date)).toLocaleString()}</Typography>
+                  <Box mt={1} mb={1} sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{v.content || ''}</ReactMarkdown>
                   </Box>
                   <Button 
@@ -368,7 +372,7 @@ function RiskAnalysisPage() {
                       borderColor: '#3b82f6',
                       color: '#3b82f6',
                       '&:hover': {
-                        backgroundColor: '#f0f9ff',
+                        backgroundColor: isDarkMode ? '#1a202c' : '#f0f9ff',
                         borderColor: '#2563eb',
                         color: '#2563eb',
                         transition: '0.2s ease-in-out'
@@ -380,15 +384,16 @@ function RiskAnalysisPage() {
                 </Box>
               ))}
             </DialogContent>
-            <DialogActions>
+            <DialogActions sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#ffffff', borderTop: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}` }}>
               <Button 
                 onClick={closeVersionsModal} 
                 color="primary"
                 sx={{
                   fontWeight: 600,
                   textTransform: 'none',
+                  color: isDarkMode ? '#d1d5db' : '#3b82f6',
                   '&:hover': {
-                    backgroundColor: '#f0f9ff',
+                    backgroundColor: isDarkMode ? '#232b33' : '#f0f9ff',
                     transition: '0.2s ease-in-out'
                   }
                 }}

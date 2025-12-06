@@ -55,6 +55,99 @@ class GeminiModel extends AIModel {
     
     return this._makeRequest(prompt);
   }
+
+  async analyzeCoverage(requirements, testCases, options = {}) {
+    const prompt = `Você é um especialista em Qualidade de Software e Análise de Cobertura de Testes.
+
+Analise a cobertura de testes do seguinte projeto:
+
+REQUISITOS:
+${JSON.stringify(requirements, null, 2)}
+
+CASOS DE TESTE:
+${JSON.stringify(testCases, null, 2)}
+
+INSTRUÇÕES:
+1. Para cada requisito, identifique os casos de teste associados (por palavras-chave, contexto)
+2. Calcule o percentual de cobertura por requisito
+3. Identifique requisitos sem testes (cobertura 0%)
+4. Identifique requisitos com cobertura parcial (<80%)
+5. Gere recomendações priorizadas por severidade (high/medium/low)
+6. Sugira 2-3 novos testes para cada requisito não coberto ou com baixa cobertura
+
+RETORNE APENAS um JSON válido (sem markdown, sem texto adicional) com esta estrutura:
+{
+  "analysis": {
+    "totalRequirements": number,
+    "coveredRequirements": number,
+    "notCoveredRequirements": number,
+    "coveragePercentage": number,
+    "totalTests": number,
+    "passedTests": number,
+    "failedTests": number,
+    "pendingTests": number,
+    "testSuccessRate": number
+  },
+  "traceabilityMatrix": [
+    {
+      "requirementId": "string",
+      "requirementTitle": "string",
+      "priority": "high|medium|low",
+      "associatedTestCases": ["TC-001"],
+      "testCount": number,
+      "passedCount": number,
+      "coveragePercentage": number,
+      "coverage_status": "FULLY_COVERED|PARTIALLY_COVERED|NOT_COVERED"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "REC-001",
+      "type": "missing_tests|low_coverage|failing_tests|test_quality",
+      "severity": "high|medium|low",
+      "requirement_id": "string",
+      "message": "string",
+      "suggested_tests": ["string"],
+      "priority_to_implement": "immediate|high|medium|low"
+    }
+  ],
+  "coverageHeatmap": [
+    { "requirementId": "string", "coverage": number, "color": "#hex" }
+  ],
+  "testMetrics": {
+    "averageCoverage": number,
+    "medianCoverage": number,
+    "requirementsWithFullCoverage": number,
+    "requirementsWithPartialCoverage": number,
+    "requirementsWithNoCoverage": number
+  }
+}`;
+
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`,
+        {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: 'application/json'
+          }
+        }
+      );
+
+      if (!response.data.candidates || 
+          !response.data.candidates[0] || 
+          !response.data.candidates[0].content || 
+          !response.data.candidates[0].content.parts[0].text) {
+        throw new Error('Invalid response from Gemini API');
+      }
+
+      const content = response.data.candidates[0].content.parts[0].text;
+      return JSON.parse(content);
+    } catch (error) {
+      console.error('Gemini Coverage Analysis error:', error);
+      throw new Error(`Error analyzing coverage with Gemini: ${error.message}`);
+    }
+  }
 }
 
 module.exports = GeminiModel;

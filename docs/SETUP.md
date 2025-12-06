@@ -116,11 +116,19 @@ JIRA_TOKEN=seu_token_jira_aqui
 
 # Database
 DATABASE_PATH=./data/database.sqlite
+
+# Encryption (Opcional, para dados sensíveis)
+ENCRYPTION_KEY=sua_chave_de_32_caracteres_aqui
 ```
 
 **Variáveis Obrigatórias**:
 - `OPENAI_API_KEY`
 - `GEMINI_API_KEY`
+
+**Nota sobre Autenticação**: 
+- ❌ Autenticação foi removida (v1.2.0)
+- ✅ API acessível sem tokens
+- ✅ Protegida por: CORS, Rate Limiting, Helmet, CSRF
 
 ### Frontend (.env)
 
@@ -129,9 +137,22 @@ Crie um arquivo `.env` na pasta `front/`:
 ```env
 REACT_APP_BACKEND_URL=http://localhost:5000
 REACT_APP_ENVIRONMENT=development
+
+# Feedback Storage Mode
+# 'local' = localStorage only (private, no backend needed)
+# 'backend' = SQLite database (shared, requires backend)
+# 'hybrid' = User can choose (toggle in dashboard)
+REACT_APP_FEEDBACK_STORAGE=hybrid
 ```
 
 **Nota**: Variáveis frontend devem ser prefixadas com `REACT_APP_`
+
+**Modos de Armazenamento de Feedback**:
+| Modo | Descrição | Uso Recomendado |
+|------|-----------|-----------------|
+| `local` | Dados salvos no navegador | Uso pessoal, testes |
+| `backend` | Dados salvos no banco de dados | Ambiente corporativo |
+| `hybrid` | Usuário pode escolher | Flexibilidade máxima |
 
 ## 🔑 Configuração de APIs Externas
 
@@ -253,6 +274,12 @@ curl http://localhost:5000/api/health
 
 # Resposta esperada:
 # {"status":"ok"}
+
+# Obter CSRF Token (necessário para operações seguras)
+curl http://localhost:5000/api/csrf-token
+
+# Resposta esperada:
+# {"csrfToken":"...token-aqui..."}
 ```
 
 ### 2. Verificar Frontend
@@ -261,6 +288,8 @@ curl http://localhost:5000/api/health
 - Você deve ver a página inicial com logo e botões de navegação
 - Clique em "Configurar Tokens" (canto superior)
 - Tente adicionar um token de teste
+- ❌ Nota: Login/autenticação foi removido (v1.2.0)
+- ✅ API acessível diretamente sem login
 
 ### 3. Testar IA
 
@@ -274,7 +303,15 @@ curl http://localhost:5000/api/health
 4. Clique em "Gerar"
 5. Verifique se a IA gera uma resposta
 
-### 4. Verificar JIRA (opcional)
+### 4. Testar Análise de Cobertura de Testes (NEW)
+
+1. Acesse "Cobertura de Testes" no menu
+2. Configure seu coverage atual (statements, branches, functions, lines)
+3. Selecione quais features têm testes
+4. Clique em "Analisar"
+5. Receba análise de gaps e recomendações
+
+### 5. Verificar JIRA (opcional)
 
 1. Configure credenciais JIRA
 2. Acesse "Melhorar Tarefa"
@@ -332,6 +369,15 @@ npm start
 2. Atualize no arquivo `.env`
 3. Reinicie backend
 4. Atualize o token na UI
+
+### Erro: "CSRF Token Required" (429)
+
+**Causa**: Token CSRF ausente ou inválido em requisições POST/PUT/DELETE
+
+**Solução**:
+1. Frontend obtém automaticamente via `GET /api/csrf-token`
+2. Incluir em header: `X-CSRF-Token: token-aqui`
+3. Se erro persistir, limpe cookies e tente novamente
 
 ### Frontend não carrega em http://localhost:3000
 
@@ -399,6 +445,15 @@ Após configuração bem-sucedida:
 3. Revise [COMPONENTS.md](./COMPONENTS.md) para componentes React
 4. Estude [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) para UI/UX
 5. Veja [CONTRIBUTING.md](./CONTRIBUTING.md) para contribuir
+6. Confira [IMPROVEMENTS.md](./IMPROVEMENTS.md) para roadmap
+
+## 📝 Mudanças Recentes (v1.2.0)
+
+- ✅ Autenticação removida (API acessível diretamente)
+- ✅ Sidebar com scroll (conteúdo responsivo)
+- ✅ Test Coverage feature lançada
+- ✅ UI/UX improvements (History alignment, menu reorganization)
+- ✅ Security layers ativas (CORS, Rate Limit, Helmet, CSRF)
 
 ## 📞 Suporte
 
@@ -406,9 +461,10 @@ Se tiver problemas:
 
 1. Verifique as variáveis de ambiente
 2. Consulte logs do backend/frontend
-3. Abra uma [Issue no GitHub](https://github.com/Caio-Maia/projeto-ia-testes/issues)
-4. Revise as variáveis de ambiente
+3. Revise as variáveis de ambiente
+4. Confira [Troubleshooting](#troubleshooting) acima
+5. Abra uma [Issue no GitHub](https://github.com/Caio-Maia/projeto-ia-testes/issues)
 
 ---
 
-**Última atualização**: Janeiro 2024
+**Última atualização**: Dezembro 2025 (v2.1.0)

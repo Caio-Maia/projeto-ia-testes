@@ -21,14 +21,17 @@ import {
   FaRobot,
   FaLightbulb,
   FaCheckCircle,
-  FaArrowRight
+  FaArrowRight,
+  FaChartLine
 } from 'react-icons/fa';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useDarkMode } from '../contexts/DarkModeContext';
 
 function HomePage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { t } = useLanguage();
+  const { isDarkMode } = useDarkMode();
   
   const features = [
     {
@@ -64,12 +67,20 @@ function HomePage() {
       emoji: '⚠️'
     },
     {
+      icon: FaChartLine,
+      titleKey: 'testCoverage',
+      descKey: 'testCoverageDesc',
+      path: '/test-coverage',
+      color: '#10b981',
+      emoji: '📊'
+    },
+    {
       icon: FaChartBar,
       titleKey: 'feedbackDashboard',
       descKey: 'feedbackDashboardDesc',
       path: '/feedback-dashboard',
       color: '#3b82f6',
-      emoji: '📊'
+      emoji: '📈'
     },
     {
       icon: FaCog,
@@ -110,7 +121,7 @@ function HomePage() {
   ];
 
   return (
-    <Box sx={{ width: '100%', pb: 4, background: '#ffffff' }}>
+    <Box sx={{ width: '100%', pb: 4, background: isDarkMode ? '#0f1419' : '#ffffff' }}>
       {/* Hero Section - Melhorada */}
       <Box
         sx={{
@@ -179,10 +190,10 @@ function HomePage() {
                   {stats.map((stat, idx) => (
                     <Grid item xs={6} sm={3} key={idx}>
                       <Box sx={{ textAlign: 'center' }}>
-                        <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                        <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5, color: '#ffffff' }}>
                           {stat.value}
                         </Typography>
-                        <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                        <Typography variant="caption" sx={{ opacity: 0.9, color: '#ffffff' }}>
                           {stat.label}
                         </Typography>
                       </Box>
@@ -282,7 +293,7 @@ function HomePage() {
               fontWeight: 'bold',
               mb: 2,
               textAlign: 'center',
-              color: '#232b33'
+              color: isDarkMode ? '#f3f4f6' : '#232b33'
             }}
           >
             🎯 {t('home.mainFeatures')}
@@ -305,10 +316,12 @@ function HomePage() {
                         transition: 'all 0.3s ease',
                         cursor: 'pointer',
                         border: `2px solid ${feature.color}20`,
+                        backgroundColor: isDarkMode ? '#1a202c' : '#ffffff',
                         '&:hover': {
                           boxShadow: `0 12px 32px ${feature.color}30`,
                           transform: 'translateY(-8px)',
-                          borderColor: feature.color
+                          borderColor: feature.color,
+                          backgroundColor: isDarkMode ? '#232b33' : '#ffffff'
                         }
                       }}
                     >
@@ -333,7 +346,7 @@ function HomePage() {
                         sx={{ 
                           fontWeight: 'bold', 
                           mb: 1, 
-                          color: '#232b33',
+                          color: isDarkMode ? '#f3f4f6' : '#1f2937',
                           fontSize: { xs: '1rem', sm: '1.1rem' }
                         }}
                       >
@@ -342,7 +355,7 @@ function HomePage() {
                       <Typography 
                         variant="body2" 
                         sx={{ 
-                          color: '#666', 
+                          color: isDarkMode ? '#d1d5db' : '#666', 
                           lineHeight: 1.6,
                           flexGrow: 1
                         }}
@@ -383,7 +396,7 @@ function HomePage() {
               fontWeight: 700,
               mb: 1,
               textAlign: 'center',
-              color: '#1f2937'
+              color: isDarkMode ? '#f3f4f6' : '#1f2937'
             }}
           >
             {t('home.howItWorksTitle')}
@@ -392,7 +405,7 @@ function HomePage() {
             variant="body1"
             sx={{ 
               textAlign: 'center',
-              color: '#6b7280',
+              color: isDarkMode ? '#d1d5db' : '#6b7280',
               mb: 4,
               maxWidth: '700px',
               mx: 'auto'
@@ -410,8 +423,8 @@ function HomePage() {
                       p: 3,
                       borderRadius: '12px',
                       boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
-                      border: '1px solid #e5e7eb',
-                      background: '#f9fafb',
+                      border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
+                      background: isDarkMode ? '#1a202c' : '#f9fafb',
                       transition: '0.3s ease-in-out',
                       width: '100%',
                       display: 'flex',
@@ -419,7 +432,8 @@ function HomePage() {
                       '&:hover': {
                         boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
                         borderColor: '#3b82f6',
-                        transform: 'translateY(-4px)'
+                        transform: 'translateY(-4px)',
+                        backgroundColor: isDarkMode ? '#232b33' : '#f3f4f6'
                       }
                     }}
                   >
@@ -441,11 +455,11 @@ function HomePage() {
                       >
                         {item.step}
                       </Box>
-                      <Typography variant="h6" sx={{ fontWeight: 700, color: '#1f2937', fontSize: '1rem' }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937', fontSize: '1rem' }}>
                         {t(`home.${item.titleKey}`)}
                       </Typography>
                     </Box>
-                    <Typography variant="body2" sx={{ color: '#6b7280', lineHeight: 1.7, flexGrow: 1 }}>
+                    <Typography variant="body2" sx={{ color: isDarkMode ? '#d1d5db' : '#6b7280', lineHeight: 1.7, flexGrow: 1 }}>
                       {t(`home.${item.descKey}`)}
                     </Typography>
                   </Card>
@@ -466,7 +480,7 @@ function HomePage() {
               fontWeight: 700,
               mb: 1,
               textAlign: 'center',
-              color: '#1f2937'
+              color: isDarkMode ? '#f3f4f6' : '#1f2937'
             }}
           >
             {t('home.whyUseApp')}
@@ -475,7 +489,7 @@ function HomePage() {
             variant="body1"
             sx={{ 
               textAlign: 'center',
-              color: '#6b7280',
+              color: isDarkMode ? '#d1d5db' : '#6b7280',
               mb: 4,
               maxWidth: '700px',
               mx: 'auto'
@@ -500,18 +514,18 @@ function HomePage() {
                   sx={{
                     p: 2.5,
                     borderRadius: '10px',
-                    background: '#f9fafb',
-                    border: '1px solid #e5e7eb',
+                    background: isDarkMode ? '#1a202c' : '#f9fafb',
+                    border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
                     display: 'flex',
                     gap: 2,
                     alignItems: 'flex-start',
                     transition: '0.3s ease-in-out',
                     width: '100%',
                     '&:hover': {
-                      background: '#f3f4f6',
+                      background: isDarkMode ? '#232b33' : '#f3f4f6',
                       borderColor: '#3b82f6',
                       transform: 'translateY(-2px)',
-                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.1)'
+                      boxShadow: `0 4px 12px ${isDarkMode ? 'rgba(96, 165, 250, 0.2)' : 'rgba(59, 130, 246, 0.1)'}`
                     }
                   }}
                 >
@@ -519,13 +533,13 @@ function HomePage() {
                   <Box sx={{ width: '100%' }}>
                     <Typography 
                       variant="subtitle2" 
-                      sx={{ fontWeight: 700, color: '#1f2937', mb: 0.5 }}
+                      sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937', mb: 0.5 }}
                     >
                       {t(`home.${benefit.titleKey}`)}
                     </Typography>
                     <Typography 
                       variant="caption" 
-                      sx={{ color: '#6b7280', lineHeight: 1.5 }}
+                      sx={{ color: isDarkMode ? '#d1d5db' : '#6b7280', lineHeight: 1.5 }}
                     >
                       {t(`home.${benefit.descKey}`)}
                     </Typography>
@@ -626,6 +640,60 @@ function HomePage() {
                   }}
                 >
                   Gerar Testes <FaArrowRight size={16} />
+                </Button>
+              </Link>
+              <Link to="/generate-code" style={{ textDecoration: 'none' }}>
+                <Button 
+                  variant="contained" 
+                  size={isMobile ? "medium" : "large"}
+                  sx={{
+                    background: '#ffffff',
+                    color: '#3b82f6',
+                    fontWeight: 700,
+                    textTransform: 'none',
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    '&:hover': {
+                      background: '#f3f4f6',
+                      transform: 'scale(1.05)',
+                      boxShadow: '0 12px 28px rgba(0,0,0,0.2)'
+                    },
+                    transition: '0.3s ease-in-out'
+                  }}
+                >
+                  Gerar Código <FaArrowRight size={16} />
+                </Button>
+              </Link>
+              <Link to="/test-coverage" style={{ textDecoration: 'none' }}>
+                <Button 
+                  variant="contained" 
+                  size={isMobile ? "medium" : "large"}
+                  sx={{
+                    background: '#ffffff',
+                    color: '#3b82f6',
+                    fontWeight: 700,
+                    textTransform: 'none',
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    '&:hover': {
+                      background: '#f3f4f6',
+                      transform: 'scale(1.05)',
+                      boxShadow: '0 12px 28px rgba(0,0,0,0.2)'
+                    },
+                    transition: '0.3s ease-in-out'
+                  }}
+                >
+                  Cobertura de Testes <FaArrowRight size={16} />
                 </Button>
               </Link>
             </Box>

@@ -4,758 +4,934 @@ Este documento lista possíveis melhorias, otimizações e novas features para o
 
 ## 📋 Índice
 
-1. [Performance](#performance)
-2. [Funcionalidades](#funcionalidades)
-3. [UI/UX](#uiux)
-4. [Backend](#backend)
-5. [Testes e Qualidade](#testes-e-qualidade)
-6. [Segurança](#segurança)
-7. [Infraestrutura](#infraestrutura)
-8. [Documentação](#documentação)
+1. [Padrões de Projeto (Design Patterns)](#padrões-de-projeto)
+2. [Novas IAs](#novas-ias)
+3. [Atualização de Modelos](#atualização-de-modelos)
+4. [Novas Integrações](#novas-integrações)
+5. [Arquitetura Backend](#arquitetura-backend)
+6. [Arquitetura Frontend](#arquitetura-frontend)
+7. [Performance](#performance)
+8. [Segurança](#segurança)
+9. [Testes e Qualidade](#testes-e-qualidade)
+10. [DevOps e Infraestrutura](#devops-e-infraestrutura)
 
 ---
 
-## ⚡ Performance
+## 🏗️ Padrões de Projeto
 
-### 1. Implementar Lazy Loading para Componentes
+### 1. Strategy Pattern para Provedores de IA
 **Status**: Não implementado  
 **Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Usar `React.lazy()` e `Suspense` para carregar componentes de página sob demanda
+**Esforço**: Médio
 
-**Benefício**: Reduz tamanho inicial do bundle em ~40%
+**Problema Atual**: Código duplicado em cada controller para cada provedor de IA (ChatGPT, Gemini). Adicionar nova IA requer criar novo controller e rotas.
+
+**Solução**: Implementar Strategy Pattern para abstrair provedores de IA.
 
 ```javascript
-const GenerateTestsPage = React.lazy(() => import('./GenerateTestsPage'));
+// backend/services/ai/AIProvider.js (Interface)
+class AIProvider {
+  constructor(config) { this.config = config; }
+  async generateContent(prompt, options) { throw new Error('Not implemented'); }
+  async streamContent(prompt, options) { throw new Error('Not implemented'); }
+  validateToken(token) { throw new Error('Not implemented'); }
+}
 
-<Suspense fallback={<Loading />}>
-  <GenerateTestsPage />
-</Suspense>
+// backend/services/ai/providers/OpenAIProvider.js
+class OpenAIProvider extends AIProvider {
+  async generateContent(prompt, options) {
+    const response = await axios.post(this.config.endpoint, {
+      model: options.model || this.config.defaultModel,
+      messages: [{ role: 'user', content: prompt }]
+    }, { headers: { Authorization: `Bearer ${options.token}` } });
+    return response.data.choices[0].message.content;
+  }
+}
+
+// backend/services/ai/providers/GeminiProvider.js
+class GeminiProvider extends AIProvider { /* ... */ }
+
+// backend/services/ai/providers/ClaudeProvider.js
+class ClaudeProvider extends AIProvider { /* ... */ }
+
+// backend/services/ai/AIProviderFactory.js (Factory Pattern)
+class AIProviderFactory {
+  static providers = new Map();
+  
+  static register(name, ProviderClass) {
+    this.providers.set(name, ProviderClass);
+  }
+  
+  static create(name, config) {
+    const Provider = this.providers.get(name);
+    if (!Provider) throw new Error(`Provider ${name} not found`);
+    return new Provider(config);
+  }
+}
+```
+
+**Benefícios**:
+- Adicionar nova IA = 1 arquivo (novo Provider)
+- Código testável e isolado
+- Single Responsibility Principle
+
+---
+
+### 2. Repository Pattern para Dados
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Médio
+
+**Problema Atual**: Controllers acessam diretamente o Sequelize. Difícil trocar de banco.
+
+**Solução**:
+```javascript
+// backend/repositories/FeedbackRepository.js
+class FeedbackRepository {
+  async create(data) { return Feedback.create(data); }
+  async findById(id) { return Feedback.findByPk(id); }
+  async findByType(type, options) { return Feedback.findAll({ where: { type }, ...options }); }
+  async getStats() { /* aggregations */ }
+}
+
+// Permite trocar SQLite por PostgreSQL/MongoDB sem alterar controllers
 ```
 
 ---
 
-### 2. Cache de Modelos IA
-**Status**: Parcialmente implementado  
-**Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Implementar cache para respostas idênticas de IA
+### 3. Command Pattern para Operações de IA
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Médio
 
-**Benefício**: 
-- Reduz custos de API (evita requests duplicadas)
-- Respostas instantâneas para prompts repetidos
-- Economia estimada: 15-20% em chamadas de API
+**Problema Atual**: Lógica de operações (improve task, generate tests) misturada nos controllers.
 
-**Implementação**:
+**Solução**:
 ```javascript
-// Cache com hash do prompt + modelo
-const cacheKey = `${model}::${hashPrompt(prompt)}`;
-if (cache.has(cacheKey)) {
-  return cache.get(cacheKey);
+// backend/commands/ImproveTaskCommand.js
+class ImproveTaskCommand {
+  constructor(aiProvider, promptService) {
+    this.aiProvider = aiProvider;
+    this.promptService = promptService;
+  }
+  
+  async execute(taskDescription, options) {
+    const prompt = await this.promptService.getPrompt('taskModel', options.language);
+    const fullPrompt = prompt + '\n\n' + taskDescription;
+    return this.aiProvider.generateContent(fullPrompt, options);
+  }
+}
+
+// Permite logging, undo, queue de comandos
+```
+
+---
+
+### 4. Observer Pattern para Eventos
+**Status**: Não implementado  
+**Prioridade**: Baixa  
+**Esforço**: Médio
+
+**Uso**: Notificar múltiplos listeners sobre eventos (feedback criado, geração completada).
+
+```javascript
+// backend/events/EventEmitter.js
+const eventBus = new EventEmitter();
+
+// Quando feedback é criado:
+eventBus.emit('feedback:created', feedback);
+
+// Listeners podem reagir:
+eventBus.on('feedback:created', async (feedback) => {
+  await analyticsService.trackFeedback(feedback);
+  await notificationService.notifyAdmin(feedback);
+});
+```
+
+---
+
+### 5. Singleton para Configurações
+**Status**: Parcialmente implementado  
+**Prioridade**: Baixa  
+**Esforço**: Baixo
+
+```javascript
+// backend/config/ConfigManager.js
+class ConfigManager {
+  static instance = null;
+  
+  static getInstance() {
+    if (!this.instance) {
+      this.instance = new ConfigManager();
+      this.instance.load();
+    }
+    return this.instance;
+  }
+  
+  get(key) { return this.config[key]; }
 }
 ```
 
 ---
 
-### 3. Paginar Histórico de Gerações
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Baixo  
-**Descrição**: Atualmente carrega todo o histórico da localStorage. Implementar paginação.
+## 🤖 Novas IAs
 
-**Benefício**: Melhor performance com muitas gerações (100+)
-
----
-
-### 4. Otimizar Bundle do Frontend
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Médio  
-**Descrição**: 
-- Remover dependências não utilizadas
-- Tree-shaking do Material-UI
-- Minificar imagens
-- Comprimir com Gzip
-
-**Ferramentas**: webpack-bundle-analyzer, terser
-
----
-
-## ✨ Funcionalidades
-
-### 1. Modo Offline
+### 1. Claude (Anthropic)
 **Status**: Não implementado  
 **Prioridade**: Alta  
-**Esforço**: Alto  
-**Descrição**: Permitir uso da aplicação sem conexão com internet
+**Esforço**: Baixo (com Strategy Pattern)
 
-**Funcionalidades**:
-- Service Worker para cache de assets
-- Sincronizar com backend quando conexão voltar
-- IndexedDB para armazenamento local robusto
-
----
-
-### 2. Exportar Resultados
-**Status**: Não implementado  
-**Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Exportar gerações em múltiplos formatos
-
-**Formatos Suportados**:
-- PDF (casos de teste, código)
-- Word (.docx)
-- Markdown
-- JSON
-- CSV (para tabelas de testes)
-
-**Biblioteca**: `jspdf`, `docx`, `papaparse`
-
----
-
-### 3. Colaboração em Tempo Real
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Alto  
-**Descrição**: Múltiplos usuários editando ao mesmo tempo
-
-**Funcionalidades**:
-- WebSockets para sincronização em tempo real
-- Indicadores de usuários online
-- Conflitos de edição resolvidos automaticamente
-- Histórico de mudanças com timestamps
-
----
-
-### 4. Integração com Mais Ferramentas
-**Status**: Parcial (JIRA implementado)  
-**Prioridade**: Média  
-**Esforço**: Médio por integração  
-**Descrição**: Integrar com outras plataformas de gerenciamento
-
-**Plataformas**:
-- Azure DevOps
-- GitLab Issues
-- GitHub Issues
-- Notion
-- Asana
-
----
-
-### 5. Templates de Prompts
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Baixo  
-**Descrição**: Criar biblioteca de prompts reutilizáveis por domínio
-
-**Tipos**:
-- E-commerce
-- SaaS
-- Mobile Apps
-- APIs
-- Aplicações Desktop
-
-**Benefício**: Acelera workflow para domínios específicos
-
----
-
-### 6. Análise de Cobertura de Testes
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Alto  
-**Descrição**: Identificar gaps de testes baseado em histórias de usuário
-
-**Funcionalidades**:
-- Matriz de rastreabilidade (requirements → testes)
-- Heatmap de cobertura
-- Recomendações automáticas de testes faltantes
-
----
-
-### 7. A/B Testing entre Modelos
-**Status**: Não implementado  
-**Prioridade**: Baixa  
-**Esforço**: Médio  
-**Descrição**: Comparar qualidade de respostas entre ChatGPT e Gemini
-
-**Funcionalidades**:
-- Gerar com ambos os modelos lado a lado
-- Rating e feedback comparativo
-- Análise estatística
-
----
-
-## 🎨 UI/UX
-
-### 1. Dark Mode
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Médio  
-**Descrição**: Tema escuro para reduzir fadiga ocular
+**Modelos a Suportar**:
+- `claude-sonnet-4-20250514` - Modelo principal, excelente custo-benefício
+- `claude-opus-4-20250514` - Máxima capacidade
+- `claude-3-5-haiku-20241022` - Mais rápido e econômico
 
 **Implementação**:
 ```javascript
-const theme = createTheme({
-  palette: {
-    mode: isDarkMode ? 'dark' : 'light',
-    // ...
+// backend/services/ai/providers/ClaudeProvider.js
+class ClaudeProvider extends AIProvider {
+  constructor(config) {
+    super(config);
+    this.endpoint = 'https://api.anthropic.com/v1/messages';
+  }
+  
+  async generateContent(prompt, options) {
+    const response = await axios.post(this.endpoint, {
+      model: options.model || 'claude-sonnet-4-20250514',
+      max_tokens: options.maxTokens || 4096,
+      messages: [{ role: 'user', content: prompt }]
+    }, {
+      headers: {
+        'x-api-key': options.token,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data.content[0].text;
+  }
+}
+```
+
+**Frontend**:
+```javascript
+// Adicionar em aiModels.js
+{ label: 'Claude Sonnet 4', apiName: 'claude', version: 'claude-sonnet-4-20250514' },
+{ label: 'Claude Opus 4', apiName: 'claude', version: 'claude-opus-4-20250514' },
+{ label: 'Claude 3.5 Haiku', apiName: 'claude', version: 'claude-3-5-haiku-20241022' },
+```
+
+---
+
+### 2. Mistral AI
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Baixo
+
+**Modelos**:
+- `mistral-large-latest` - Modelo principal
+- `mistral-small-latest` - Rápido e econômico
+- `codestral-latest` - Especializado em código
+
+---
+
+### 3. DeepSeek
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Baixo
+
+**Modelos**:
+- `deepseek-chat` - Chat geral
+- `deepseek-coder` - Especializado em código (excelente para geração de testes)
+
+---
+
+### 4. Cohere
+**Status**: Não implementado  
+**Prioridade**: Baixa  
+**Esforço**: Baixo
+
+**Modelos**:
+- `command-r-plus` - Modelo principal
+- `command-r` - Mais rápido
+
+---
+
+### 5. Groq (LLaMA via Groq Cloud)
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Baixo
+
+**Benefício**: Extremamente rápido (tokens/segundo muito alto)
+
+**Modelos**:
+- `llama-3.3-70b-versatile`
+- `llama-3.1-8b-instant`
+
+---
+
+## 🔗 Novas Integrações
+
+### 1. Azure DevOps
+**Status**: Não implementado  
+**Prioridade**: Alta  
+**Esforço**: Médio
+
+```javascript
+// backend/integrations/AzureDevOpsIntegration.js
+class AzureDevOpsIntegration {
+  constructor(organization, project, token) {
+    this.baseUrl = `https://dev.azure.com/${organization}/${project}/_apis`;
+    this.token = token;
+  }
+  
+  async getWorkItem(id) {
+    const response = await axios.get(
+      `${this.baseUrl}/wit/workitems/${id}?api-version=7.0`,
+      { headers: { Authorization: `Basic ${Buffer.from(':' + this.token).toString('base64')}` } }
+    );
+    return response.data;
+  }
+  
+  async updateWorkItem(id, updates) { /* PATCH request */ }
+}
+```
+
+---
+
+### 2. GitHub Issues
+**Status**: Não implementado  
+**Prioridade**: Alta  
+**Esforço**: Baixo
+
+```javascript
+// backend/integrations/GitHubIntegration.js
+class GitHubIntegration {
+  async getIssue(owner, repo, issueNumber) {
+    return axios.get(
+      `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}`,
+      { headers: { Authorization: `token ${this.token}` } }
+    );
+  }
+}
+```
+
+---
+
+### 3. GitLab Issues
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Baixo
+
+---
+
+### 4. Notion
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Médio
+
+**Uso**: Importar/exportar tarefas e casos de teste para Notion.
+
+---
+
+### 5. Slack/Teams Notifications
+**Status**: Não implementado  
+**Prioridade**: Baixa  
+**Esforço**: Baixo
+
+**Uso**: Notificar quando análise de cobertura completar, feedback negativo recebido, etc.
+
+---
+
+### 6. TestRail
+**Status**: Não implementado  
+**Prioridade**: Alta  
+**Esforço**: Médio
+
+**Uso**: Sincronizar casos de teste gerados com TestRail.
+
+---
+
+### 7. Xray (Jira Test Management)
+**Status**: Não implementado  
+**Prioridade**: Alta  
+**Esforço**: Médio
+
+**Uso**: Criar test cases no Xray a partir dos testes gerados.
+
+---
+
+## 🏛️ Arquitetura Backend
+
+### 1. Estrutura de Pastas Melhorada
+**Status**: Parcialmente implementado  
+**Prioridade**: Alta
+
+```
+backend/
+├── src/
+│   ├── api/
+│   │   ├── routes/
+│   │   │   ├── ai.routes.js
+│   │   │   ├── integrations.routes.js
+│   │   │   ├── feedback.routes.js
+│   │   │   └── index.js
+│   │   └── middlewares/
+│   │       ├── auth.middleware.js
+│   │       ├── validation.middleware.js
+│   │       └── error.middleware.js
+│   ├── services/
+│   │   ├── ai/
+│   │   │   ├── AIProvider.js
+│   │   │   ├── AIProviderFactory.js
+│   │   │   └── providers/
+│   │   │       ├── OpenAIProvider.js
+│   │   │       ├── GeminiProvider.js
+│   │   │       └── ClaudeProvider.js
+│   │   ├── PromptService.js
+│   │   └── CacheService.js
+│   ├── repositories/
+│   │   └── FeedbackRepository.js
+│   ├── integrations/
+│   │   ├── JiraIntegration.js
+│   │   ├── GitHubIntegration.js
+│   │   └── AzureDevOpsIntegration.js
+│   ├── models/
+│   ├── config/
+│   └── utils/
+├── tests/
+└── package.json
+```
+
+---
+
+### 2. Validação com Joi/Zod
+**Status**: Não implementado  
+**Prioridade**: Alta  
+**Esforço**: Médio
+
+**Problema Atual**: Validações manuais em controllers.
+
+```javascript
+// backend/validations/aiSchemas.js
+const Joi = require('joi');
+
+const improveTaskSchema = Joi.object({
+  task: Joi.string().min(10).max(10000).required(),
+  model: Joi.string().valid('gpt-4o', 'gpt-4o-mini', 'claude-sonnet-4').required(),
+  language: Joi.string().valid('pt-BR', 'en-US').default('pt-BR')
+});
+
+// Middleware de validação
+const validate = (schema) => (req, res, next) => {
+  const { error } = schema.validate(req.body);
+  if (error) return res.status(400).json({ error: error.details[0].message });
+  next();
+};
+```
+
+---
+
+### 3. Error Handling Centralizado
+**Status**: Parcialmente implementado  
+**Prioridade**: Alta  
+**Esforço**: Baixo
+
+```javascript
+// backend/middlewares/errorHandler.js
+class AppError extends Error {
+  constructor(message, statusCode, code) {
+    super(message);
+    this.statusCode = statusCode;
+    this.code = code;
+    this.isOperational = true;
+  }
+}
+
+const errorHandler = (err, req, res, next) => {
+  if (err.isOperational) {
+    return res.status(err.statusCode).json({
+      error: err.message,
+      code: err.code
+    });
+  }
+  
+  console.error('Unexpected error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+};
+```
+
+---
+
+### 4. Logging Estruturado
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Baixo
+
+```javascript
+// Usar winston ou pino
+const logger = require('pino')({
+  level: process.env.LOG_LEVEL || 'info',
+  transport: {
+    target: 'pino-pretty',
+    options: { colorize: true }
+  }
+});
+
+// Uso:
+logger.info({ model, promptLength: prompt.length }, 'AI request started');
+logger.error({ error: err.message, stack: err.stack }, 'AI request failed');
+```
+
+---
+
+### 5. Cache com Redis
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Médio
+
+```javascript
+// Cache de respostas de IA para prompts idênticos
+const cacheKey = `ai:${model}:${hashPrompt(prompt)}`;
+const cached = await redis.get(cacheKey);
+if (cached) return JSON.parse(cached);
+
+const result = await aiProvider.generateContent(prompt);
+await redis.setex(cacheKey, 3600, JSON.stringify(result)); // 1 hora
+```
+
+---
+
+### 6. Queue para Requests Longos
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Alto
+
+**Uso**: Para análises de cobertura grandes, usar BullMQ:
+
+```javascript
+// Retorna job ID imediatamente
+const job = await aiQueue.add('analyzeCoverage', { requirements, testCases });
+res.json({ jobId: job.id, status: 'processing' });
+
+// Endpoint para verificar status
+GET /api/jobs/:jobId -> { status: 'completed', result: {...} }
+```
+
+---
+
+## 🎨 Arquitetura Frontend
+
+### 1. Custom Hooks Melhorados
+**Status**: Parcialmente implementado  
+**Prioridade**: Alta  
+**Esforço**: Médio
+
+```javascript
+// hooks/useAI.js - Hook genérico para chamadas de IA
+const useAI = (endpoint) => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const execute = useCallback(async (payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await apiClient.post(endpoint, payload);
+      setData(result.data);
+      return result.data;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [endpoint]);
+  
+  return { data, loading, error, execute };
+};
+
+// Uso:
+const { data, loading, execute } = useAI('/api/chatgpt/improve-task');
+await execute({ task: description, model: selectedModel });
+```
+
+---
+
+### 2. React Query / TanStack Query
+**Status**: Não implementado  
+**Prioridade**: Alta  
+**Esforço**: Médio
+
+**Benefícios**: Cache automático, refetch, loading states.
+
+```javascript
+const { data, isLoading, mutate } = useMutation({
+  mutationFn: (payload) => axios.post('/api/chatgpt/improve-task', payload),
+  onSuccess: (data) => {
+    queryClient.invalidateQueries(['history']);
   }
 });
 ```
 
-**Benefício**: 
-- Melhor usabilidade à noite
-- Reduz consumo de bateria em OLED
-
 ---
 
-### 2. Menus Customizáveis
-**Status**: Não implementado  
-**Prioridade**: Baixa  
-**Esforço**: Médio  
-**Descrição**: Usuários reordenar opções de menu conforme preferência
-
-**Persistência**: localStorage
-
----
-
-### 3. Atalhos de Teclado
+### 3. Zustand para Estado Global
 **Status**: Não implementado  
 **Prioridade**: Média  
-**Esforço**: Baixo  
-**Descrição**: Aumentar produtividade com shortcuts
+**Esforço**: Baixo
 
-**Atalhos Propostos**:
-```
-Ctrl+Enter   → Gerar/Submeter
-Ctrl+K       → Abrir seletor de modelo
-Ctrl+H       → Abrir histórico
-Ctrl+T       → Configurar tokens
-Ctrl+Shift+L → Toggle language
-```
+**Problema Atual**: Contexts podem causar re-renders desnecessários.
 
-**Biblioteca**: `hotkeys-js`
-
----
-
-### 4. Tooltips Inteligentes
-**Status**: Parcial  
-**Prioridade**: Baixa  
-**Esforço**: Baixo  
-**Descrição**: Mostrar dicas contextuais baseado no comportamento do usuário
-
-**Lógica**:
-- Primeira visita → mostrar mais dicas
-- Usuários experientes → menos dicas
-
----
-
-### 5. Breadcrumbs de Navegação
-**Status**: Não implementado  
-**Prioridade**: Baixa  
-**Esforço**: Baixo  
-**Descrição**: Indicar localização na aplicação
-
----
-
-### 6. Responsive Design Melhorado
-**Status**: Parcialmente implementado  
-**Prioridade**: Média  
-**Esforço**: Médio  
-**Descrição**: Otimizar experiência em tablets (especialmente)
-
-**Pontos de Quebra**:
-- Mobile: < 576px ✅
-- Tablet: 576px - 1024px (melhorar)
-- Desktop: > 1024px ✅
-
----
-
-## 🔧 Backend
-
-### 1. Rate Limiting por Usuário
-**Status**: Não implementado  
-**Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Evitar abuso da API
-
-**Implementação**:
 ```javascript
-// Máximo 10 requisições por minuto por usuário
-const rateLimit = require('express-rate-limit');
-app.use(rateLimit({
-  windowMs: 60 * 1000,
-  max: 10
+// stores/settingsStore.js
+const useSettingsStore = create((set) => ({
+  selectedModel: null,
+  educationMode: false,
+  setModel: (model) => set({ selectedModel: model }),
+  toggleEducationMode: () => set((state) => ({ educationMode: !state.educationMode }))
 }));
 ```
 
 ---
 
-### 2. Autenticação e Autorização
-**Status**: Não implementado  
-**Prioridade**: Alta  
-**Esforço**: Alto  
-**Descrição**: Sistema completo de usuários e permissões
-
-**Funcionalidades**:
-- Registro/Login com JWT
-- Roles (Admin, User, Editor)
-- Compartilhamento de gerações entre usuários
-- Histórico de auditoria
-
----
-
-### 3. Persistência em Banco de Dados
-**Status**: Parcialmente implementado (SQLite local)  
-**Prioridade**: Alta  
-**Esforço**: Alto  
-**Descrição**: Migrar para banco relacional real (PostgreSQL/MySQL)
-
-**Benefícios**:
-- Escalabilidade
-- Backup automático
-- Replicação
-- Relacionamentos complexos
-
----
-
-### 4. Webhooks para Integrações
+### 4. Componentes Compostos
 **Status**: Não implementado  
 **Prioridade**: Média  
-**Esforço**: Médio  
-**Descrição**: Notificar sistemas externos sobre eventos
-
-**Eventos**:
-- `generation.created`
-- `generation.completed`
-- `jira.updated`
-- `feedback.received`
-
----
-
-### 5. API Versionamento
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Baixo  
-**Descrição**: Versionamento de endpoints para compatibilidade
-
-```
-/api/v1/improve-task
-/api/v2/improve-task
-```
-
----
-
-### 6. Logging e Monitoring
-**Status**: Básico (Morgan)  
-**Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Logs estruturados e alertas
-
-**Ferramentas**:
-- Winston para logging
-- Sentry para error tracking
-- Prometheus para métricas
-
----
-
-### 7. Compressão de Respostas
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Baixo  
-**Descrição**: Compactar respostas JSON com gzip
+**Esforço**: Médio
 
 ```javascript
-const compression = require('compression');
-app.use(compression());
+// Compound Components Pattern
+<AIGenerator>
+  <AIGenerator.Input placeholder="Descrição da tarefa" />
+  <AIGenerator.ModelSelector />
+  <AIGenerator.Submit>Gerar</AIGenerator.Submit>
+  <AIGenerator.Result />
+  <AIGenerator.Feedback />
+</AIGenerator>
 ```
 
 ---
 
-## ✅ Testes e Qualidade
+### 5. Streaming de Respostas
+**Status**: Não implementado  
+**Prioridade**: Alta  
+**Esforço**: Alto
+
+**Problema Atual**: Usuário espera resposta completa (pode demorar 30s+).
+
+```javascript
+// Backend: Server-Sent Events
+router.get('/api/ai/stream', async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  
+  const stream = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [...],
+    stream: true
+  });
+  
+  for await (const chunk of stream) {
+    res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+  }
+  res.end();
+});
+
+// Frontend: EventSource
+const eventSource = new EventSource('/api/ai/stream?prompt=...');
+eventSource.onmessage = (event) => {
+  setResult((prev) => prev + JSON.parse(event.data).content);
+};
+```
+
+---
+
+## ⚡ Performance
+
+### 1. Bundle Splitting Melhorado
+**Status**: Parcialmente implementado  
+**Prioridade**: Média
+
+```javascript
+// Lazy load por rota + feature
+const TestCoverageAnalysis = lazy(() => 
+  import(/* webpackChunkName: "coverage" */ './components/TestCoverageAnalysis')
+);
+```
+
+---
+
+### 2. Virtualização de Listas
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Baixo
+
+**Uso**: Para histórico grande, usar react-window:
+
+```javascript
+import { FixedSizeList } from 'react-window';
+
+<FixedSizeList height={400} itemCount={history.length} itemSize={80}>
+  {({ index, style }) => <HistoryItem item={history[index]} style={style} />}
+</FixedSizeList>
+```
+
+---
+
+### 3. Debounce em Inputs
+**Status**: Parcialmente implementado  
+**Prioridade**: Baixa
+
+```javascript
+const debouncedSearch = useDebouncedCallback((value) => {
+  // Busca após parar de digitar
+}, 300);
+```
+
+---
+
+## 🔒 Segurança
+
+### 1. Tokens no Backend
+**Status**: Não implementado  
+**Prioridade**: Alta  
+**Esforço**: Alto
+
+**Problema Atual**: Tokens de IA enviados do frontend para backend em cada request.
+
+**Solução**: 
+- Usuário configura token uma vez
+- Backend armazena encrypted
+- Frontend só envia session token
+
+---
+
+### 2. Rate Limiting por Usuário
+**Status**: Parcialmente implementado (por IP)  
+**Prioridade**: Média
+
+```javascript
+// Rate limit por token de usuário, não só IP
+const userRateLimiter = rateLimit({
+  keyGenerator: (req) => req.user?.id || req.ip,
+  max: 50
+});
+```
+
+---
+
+### 3. Audit Log
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Médio
+
+```javascript
+// Logar todas as operações
+await AuditLog.create({
+  userId: req.user?.id,
+  action: 'GENERATE_TESTS',
+  resource: 'ai',
+  details: { model, promptLength: prompt.length },
+  ip: req.ip
+});
+```
+
+---
+
+## 🧪 Testes e Qualidade
 
 ### 1. Testes Unitários
+**Status**: Mínimo (1 teste)  
+**Prioridade**: Alta  
+**Esforço**: Alto
+
+**Meta**: 80% de cobertura
+
+```bash
+# Setup
+npm install --save-dev jest @testing-library/react @testing-library/jest-dom
+
+# Testes de Controllers
+describe('chatgptController', () => {
+  it('should return 401 if no token configured', async () => {
+    const req = { body: { task: 'test' } };
+    const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+    await improveTaskChatGPT(req, res);
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+});
+```
+
+---
+
+### 2. Testes E2E
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Alto
+
+**Ferramenta**: Playwright ou Cypress
+
+```javascript
+test('should improve task with GPT-4', async ({ page }) => {
+  await page.goto('/improve-task');
+  await page.fill('[data-testid="task-input"]', 'Criar tela de login');
+  await page.click('[data-testid="model-selector"]');
+  await page.click('text=GPT-4o');
+  await page.click('[data-testid="submit"]');
+  await expect(page.locator('[data-testid="result"]')).toBeVisible({ timeout: 30000 });
+});
+```
+
+---
+
+### 3. ESLint + Prettier
+**Status**: Parcialmente implementado  
+**Prioridade**: Média  
+**Esforço**: Baixo
+
+---
+
+### 4. Husky + lint-staged
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Baixo
+
+```json
+// package.json
+{
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.js": ["eslint --fix", "prettier --write"]
+  }
+}
+```
+
+---
+
+## 🚀 DevOps e Infraestrutura
+
+### 1. Docker
 **Status**: Não implementado  
 **Prioridade**: Alta  
-**Esforço**: Alto  
-**Descrição**: Cobertura mínima de 80% para backend e frontend
+**Esforço**: Baixo
+
+```dockerfile
+# backend/Dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+EXPOSE 5000
+CMD ["node", "api/index.js"]
+```
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - CHATGPT_API_KEY=${CHATGPT_API_KEY}
+  
+  frontend:
+    build: ./front
+    ports:
+      - "3000:80"
+```
+
+---
+
+### 2. CI/CD com GitHub Actions
+**Status**: Não implementado  
+**Prioridade**: Alta  
+**Esforço**: Médio
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+```
+
+---
+
+### 3. Monitoramento
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Médio
 
 **Ferramentas**:
-- Jest para unit tests
-- React Testing Library para componentes
-
-**Métricas**:
-```
-Statements: 80%+
-Branches: 75%+
-Functions: 80%+
-Lines: 80%+
-```
+- Sentry para error tracking
+- Prometheus + Grafana para métricas
+- OpenTelemetry para tracing
 
 ---
 
-### 2. Testes de Integração
+### 4. Health Check Endpoint
 **Status**: Não implementado  
 **Prioridade**: Alta  
-**Esforço**: Alto  
-**Descrição**: Testar fluxos completos
-
-**Cenários**:
-- Melhorar tarefa → Gerar testes → Gerar código
-- JIRA fetch → Update → Verify
-
----
-
-### 3. Testes E2E
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Alto  
-**Descrição**: Automação de testes de UI com Cypress
-
-**Fluxos Críticos**:
-- Configurar tokens
-- Gerar casos de teste
-- Integração JIRA
-
----
-
-### 4. Testes de Performance
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Médio  
-**Descrição**: Lighthouse, Web Vitals, Benchmark
-
-**Métricas**:
-- Largest Contentful Paint (LCP) < 2.5s
-- First Input Delay (FID) < 100ms
-- Cumulative Layout Shift (CLS) < 0.1
-
----
-
-### 5. Validação de Tipos TypeScript
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Alto  
-**Descrição**: Migrar projeto para TypeScript
-
-**Benefícios**:
-- Detecção de erros em tempo de desenvolvimento
-- Melhor autocomplete
-- Documentação implícita
-
----
-
-## 🔐 Segurança
-
-### 1. Validação de Entrada
-**Status**: Básico  
-**Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Validar e sanitizar todas as entradas
-
-**Bibliotecas**: `joi`, `validator.js`, `xss`
+**Esforço**: Baixo
 
 ```javascript
-const schema = joi.object({
-  task: joi.string().max(5000).required(),
-  model: joi.string().valid('gpt-3.5-turbo', 'gpt-4', 'gemini-pro')
+router.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    database: await checkDatabase(),
+    memory: process.memoryUsage()
+  };
+  res.json(health);
 });
 ```
 
 ---
 
-### 2. Proteção contra CSRF
-**Status**: Não implementado  
-**Prioridade**: Alta  
-**Esforço**: Baixo  
-**Descrição**: Tokens CSRF em formulários
+## 📝 Roadmap Sugerido
 
-```javascript
-const csrf = require('csurf');
-app.use(csrf());
-```
+### Fase 1 (1-2 semanas)
+- [ ] Implementar Strategy Pattern para IAs
+- [ ] Adicionar Claude como provider
+- [ ] Atualizar modelos OpenAI para nomes reais
+- [ ] Validação com Joi
+- [ ] Error handling centralizado
 
----
+### Fase 2 (2-3 semanas)
+- [ ] Integração GitHub Issues
+- [ ] Integração Azure DevOps
+- [ ] React Query no frontend
+- [ ] Testes unitários (50% cobertura)
 
-### 3. HTTPS Obrigatório
-**Status**: Parcial (produção)  
-**Prioridade**: Alta  
-**Esforço**: Baixo  
-**Descrição**: Redirecionar HTTP → HTTPS
+### Fase 3 (3-4 semanas)
+- [ ] Streaming de respostas
+- [ ] Docker + CI/CD
+- [ ] Cache com Redis
+- [ ] Logging estruturado
 
----
-
-### 4. Content Security Policy (CSP)
-**Status**: Não implementado  
-**Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Mitigar ataques XSS
-
-```javascript
-app.use(helmet.contentSecurityPolicy({
-  directives: {
-    defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "trusted-cdn.com"]
-  }
-}));
-```
+### Fase 4 (Contínuo)
+- [ ] Mais provedores de IA (Mistral, DeepSeek)
+- [ ] Integração TestRail/Xray
+- [ ] Testes E2E
+- [ ] Monitoramento
 
 ---
 
-### 5. Rate Limiting Global
-**Status**: Não implementado  
-**Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Proteger contra DDoS
-
-```javascript
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100 // 100 requisições por IP
-});
-app.use(limiter);
-```
-
----
-
-### 6. Criptografia de Dados Sensíveis
-**Status**: Não implementado  
-**Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Criptografar tokens na base de dados
-
-**Biblioteca**: `bcrypt` para senhas, `crypto` para tokens
-
----
-
-### 7. OWASP Top 10 Compliance
-**Status**: Parcial  
-**Prioridade**: Alta  
-**Esforço**: Alto  
-**Descrição**: Seguir checklist OWASP
-
----
-
-## 🏗 Infraestrutura
-
-### 1. CI/CD Pipeline
-**Status**: Não implementado  
-**Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Automatizar build, test e deploy
-
-**Plataformas**: GitHub Actions, GitLab CI, Jenkins
-
-**Pipeline**:
-```yaml
-1. Lint (ESLint, Prettier)
-2. Build (frontend + backend)
-3. Testes Unitários
-4. Testes E2E
-5. Análise de Cobertura
-6. Deploy Staging
-7. Deploy Produção
-```
-
----
-
-### 2. Containerização
-**Status**: Não implementado  
-**Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Docker para reproducibilidade
-
-**Dockerfile**:
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY . .
-RUN npm install
-RUN npm run build
-CMD ["npm", "start"]
-```
-
-**Docker Compose** para backend + frontend + database
-
----
-
-### 3. Kubernetes Deployment
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Alto  
-**Descrição**: Orquestração para produção
-
-**Benefícios**: Auto-scaling, alta disponibilidade, rolling updates
-
----
-
-### 4. Database Backups
-**Status**: Não implementado  
-**Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Backup automático diário
-
-**Estratégia**:
-- Full backup a cada 24h
-- Incremental a cada 6h
-- Retenção de 30 dias
-- Testar restore regularmente
-
----
-
-### 5. Monitoring e Alertas
-**Status**: Não implementado  
-**Prioridade**: Alta  
-**Esforço**: Médio  
-**Descrição**: Monitorar saúde da aplicação 24/7
-
-**Ferramentas**: Prometheus, Grafana, AlertManager
-
-**Métricas**:
-- CPU, memória, disco
-- Latência de API
-- Taxa de erro
-- Uptime
-
----
-
-### 6. Load Balancing
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Médio  
-**Descrição**: Distribuir carga entre múltiplas instâncias
-
-**Ferramentas**: Nginx, HAProxy, AWS ELB
-
----
-
-## 📚 Documentação
-
-### 1. Guia de Desenvolvimento
-**Status**: Parcial  
-**Prioridade**: Média  
-**Esforço**: Médio  
-**Descrição**: Documentar processo de desenvolvimento
-
-**Conteúdo**:
-- Setup ambiente
-- Arquitetura detalhada
-- Padrões de código
-- Fluxo de contribuição
-- Troubleshooting comum
-
----
-
-### 2. API OpenAPI/Swagger
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Baixo  
-**Descrição**: Documentação interativa da API
-
-```javascript
-const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('./swagger.json');
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-```
-
----
-
-### 3. Vídeos Tutoriais
-**Status**: Não implementado  
-**Prioridade**: Baixa  
-**Esforço**: Alto  
-**Descrição**: Criar tutoriais em vídeo para funcionalidades
-
-**Temas**:
-- Primeiros passos
-- Configuração de APIs
-- Geração de testes
-- Integração com JIRA
-
----
-
-### 4. Exemplos de Uso
-**Status**: Não implementado  
-**Prioridade**: Média  
-**Esforço**: Médio  
-**Descrição**: Exemplos práticos por caso de uso
-
-**Casos**:
-- E-commerce checkout
-- SaaS authentication
-- Mobile app upload
-
----
-
-### 5. Roadmap Público
-**Status**: Não implementado  
-**Prioridade**: Baixa  
-**Esforço**: Baixo  
-**Descrição**: Compartilhar planos futuros com comunidade
-
-**Plataforma**: GitHub Projects, Trello Public
-
----
-
-## 🎯 Roadmap Recomendado (Prioridades)
-
-### Fase 1 (Mês 1-2) - Foundation
-- ✅ Testes unitários e E2E
-- ✅ Autenticação/Autorização
-- ✅ Rate Limiting
-- ✅ Logging estruturado
-- ✅ CI/CD básico
-
-### Fase 2 (Mês 3-4) - Scale
-- ✅ Containerização (Docker)
-- ✅ PostgreSQL migration
-- ✅ Cache de respostas IA
-- ✅ Webhooks
-- ✅ Dark mode
-
-### Fase 3 (Mês 5-6) - Features
-- ✅ Exportação (PDF, Word, CSV)
-- ✅ Mais integrações (Azure DevOps, GitHub)
-- ✅ Templates de prompts
-- ✅ Análise de cobertura
-- ✅ A/B testing
-
-### Fase 4 (Mês 7+) - Enterprise
-- ✅ Colaboração em tempo real
-- ✅ Kubernetes
-- ✅ Enterprise SSO
-- ✅ Advanced analytics
-- ✅ Custom ML models
-
----
-
-## 📊 Matriz de Esforço vs Impacto
-
-| Melhoria | Impacto | Esforço | Score |
-|----------|---------|---------|-------|
-| Rate Limiting | Alto | Baixo | 9 |
-| Testes Unitários | Alto | Alto | 8 |
-| Cache IA | Alto | Médio | 8 |
-| Dark Mode | Médio | Médio | 6 |
-| Exportação | Médio | Médio | 7 |
-| Webhooks | Médio | Médio | 6 |
-| Collaboração Tempo Real | Médio | Alto | 5 |
-| Kubernetes | Médio | Alto | 5 |
-| TypeScript Migration | Médio | Alto | 5 |
-
----
-
-## 💡 Como Contribuir
-
-Para sugerir novas melhorias:
-
-1. Abra uma [Issue](https://github.com/Caio-Maia/projeto-ia-testes/issues) com a tag `enhancement`
-2. Descreva a melhoria seguindo o template
-3. Inclua casos de uso e benefícios
-4. Aguarde feedback da comunidade
-
----
-
-**Última atualização**: Novembro 2024
-
-Para mais informações, consulte [CONTRIBUTING.md](./CONTRIBUTING.md)
+**Última atualização**: Dezembro 2025

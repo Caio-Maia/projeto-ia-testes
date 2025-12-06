@@ -14,10 +14,12 @@ import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
 import { addVersion, getVersions, restoreVersion } from '../utils/generationHistory';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useDarkMode } from '../contexts/DarkModeContext';
 import { usePrompt } from '../hooks/usePrompt';
 
 function ImproveTaskPage() {
     const { t } = useLanguage();
+    const { isDarkMode } = useDarkMode();
     const { prompt } = usePrompt('taskModel');
     const [isLoading, setIsLoading] = useState(false);
     const [model, setModel] = useState({ apiName: '', version: '' });
@@ -255,7 +257,7 @@ Aqui está uma história de usuário:
                         variant={isMobile ? "h5" : "h4"} 
                         component="h1"
                         className="heading-responsive"
-                        sx={{ fontWeight: 700, color: '#1f2937' }}
+                        sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}
                     >
                         {t('improveTask.title')}
                     </Typography>
@@ -412,10 +414,10 @@ Aqui está uma história de usuário:
                         width: '100%',
                         maxWidth: { xs: '100%', sm: '90%', md: '1000px' },
                         marginTop: { xs: 2, sm: 3, md: 4 },
-                        backgroundColor: '#fff',
+                        backgroundColor: isDarkMode ? '#1a202c' : '#fff',
                         padding: { xs: '15px', sm: '20px' },
                         borderRadius: '8px',
-                        border: '1px solid #e5e7eb',
+                        border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
                         boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
                         overflowX: 'auto',
                         '&:hover': {
@@ -435,12 +437,12 @@ Aqui está uma história de usuário:
                                 </Typography>
                             </Box>
                             <Box mb={2}>
-                                <Typography variant="body2"><b>{t('improveTask.tip')}</b> Explique passo a passo seu raciocínio para construir critérios de aceitação e casos de teste robustos.</Typography>
-                                <Typography variant="body2"><b>{t('improveTask.concept')}</b> Diferencie testes positivos (usuário faz ação certa) e negativos (usuário erra ou há exceção).</Typography>
-                                <Typography variant="body2"><b>{t('improveTask.coverage')}</b> Explore valores-limite e partições de equivalência para garantir qualidade.</Typography>
+                                <Typography variant="body2" sx={{ color: isDarkMode ? '#d1d5db' : '#1f2937' }}><b>{t('improveTask.tip')}</b> Explique passo a passo seu raciocínio para construir critérios de aceitação e casos de teste robustos.</Typography>
+                                <Typography variant="body2" sx={{ color: isDarkMode ? '#d1d5db' : '#1f2937' }}><b>{t('improveTask.concept')}</b> Diferencie testes positivos (usuário faz ação certa) e negativos (usuário erra ou há exceção).</Typography>
+                                <Typography variant="body2" sx={{ color: isDarkMode ? '#d1d5db' : '#1f2937' }}><b>{t('improveTask.coverage')}</b> Explore valores-limite e partições de equivalência para garantir qualidade.</Typography>
                             </Box>
                             <Box mb={2}>
-                                <Typography variant="body2" color="textSecondary" sx={{ fontStyle: 'italic' }}>
+                                <Typography variant="body2" sx={{ color: isDarkMode ? '#9ca3af' : '#6b7280', fontStyle: 'italic' }}>
                                     Explicação e raciocínio fornecidos pela IA abaixo 👇:
                                 </Typography>
                             </Box>
@@ -448,7 +450,9 @@ Aqui está uma história de usuário:
                     )}
 
                     {/* Apresentação do resultado e explicação */}
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
+                    <Box sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
+                    </Box>
                     {educationMode && (
                         <Box mt={3}>
                             <Typography variant="subtitle2" color="primary">{t('improveTask.studySuggestions')}:</Typography>
@@ -498,14 +502,14 @@ Aqui está uma história de usuário:
                             />
                         </Box>
                     )}
-                    <Dialog open={showHistory} onClose={closeVersionsModal} fullWidth maxWidth="md">
-                        <DialogTitle>{t('improveTask.previousVersions')}</DialogTitle>
-                        <DialogContent>
-                            {versions.length === 0 && <Typography>{t('common.noVersions')}</Typography>}
+                    <Dialog open={showHistory} onClose={closeVersionsModal} fullWidth maxWidth="md" PaperProps={{ sx: { backgroundColor: isDarkMode ? '#0f1419' : '#ffffff' } }}>
+                        <DialogTitle sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937', backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>{t('improveTask.previousVersions')}</DialogTitle>
+                        <DialogContent sx={{ backgroundColor: isDarkMode ? '#0f1419' : '#ffffff' }}>
+                            {versions.length === 0 && <Typography sx={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>{t('common.noVersions')}</Typography>}
                             {versions.map((v, idx) => (
-                                <Box key={idx} mb={3} p={2} sx={{ border: '1px solid #e5e7eb', borderRadius: '8px', background: '#f9fafb' }}>
-                                    <Typography variant="caption">{v.date && (new Date(v.date)).toLocaleString()}</Typography>
-                                    <Box mt={1} mb={1}>
+                                <Box key={idx} mb={3} p={2} sx={{ border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`, borderRadius: '8px', background: isDarkMode ? '#232b33' : '#f9fafb' }}>
+                                    <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#6b7280' }}>{v.date && (new Date(v.date)).toLocaleString()}</Typography>
+                                    <Box mt={1} mb={1} sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{v.content || ''}</ReactMarkdown>
                                     </Box>
                                     <Button 
@@ -518,7 +522,7 @@ Aqui está uma história de usuário:
                                         borderColor: '#3b82f6',
                                         color: '#3b82f6',
                                         '&:hover': {
-                                          backgroundColor: '#f0f9ff',
+                                          backgroundColor: isDarkMode ? '#1a202c' : '#f0f9ff',
                                           borderColor: '#2563eb',
                                           color: '#2563eb',
                                           transition: '0.2s ease-in-out'
@@ -530,15 +534,16 @@ Aqui está uma história de usuário:
                                 </Box>
                             ))}
                         </DialogContent>
-                        <DialogActions>
+                        <DialogActions sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#ffffff', borderTop: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}` }}>
                             <Button 
                               onClick={closeVersionsModal} 
                               color="primary"
                               sx={{
                                 fontWeight: 600,
                                 textTransform: 'none',
+                                color: isDarkMode ? '#d1d5db' : '#3b82f6',
                                 '&:hover': {
-                                  backgroundColor: '#f0f9ff',
+                                  backgroundColor: isDarkMode ? '#232b33' : '#f0f9ff',
                                   transition: '0.2s ease-in-out'
                                 }
                               }}
@@ -557,36 +562,39 @@ Aqui está uma história de usuário:
                 maxWidth="md" 
                 fullWidth
                 fullScreen={isMobile}
+                PaperProps={{ sx: { backgroundColor: isDarkMode ? '#0f1419' : '#ffffff' } }}
             >
-                <DialogTitle>{t('improveTask.jiraUpdateTitle')} ({jiraTaskCode})</DialogTitle>
-                <DialogContent>
-                    <Typography variant="subtitle1" gutterBottom>
+                <DialogTitle sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937', backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>{t('improveTask.jiraUpdateTitle')} ({jiraTaskCode})</DialogTitle>
+                <DialogContent sx={{ backgroundColor: isDarkMode ? '#0f1419' : '#ffffff' }}>
+                    <Typography variant="subtitle1" gutterBottom sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
                         {t('improveTask.jiraUpdateText')}
                     </Typography>
                     <Box
                         sx={{
-                            backgroundColor: '#f5f5f5',
+                            backgroundColor: isDarkMode ? '#1a202c' : '#f5f5f5',
                             borderRadius: 2,
                             padding: 2,
                             minHeight: 120,
                             fontFamily: 'monospace',
                             whiteSpace: 'pre-wrap',
-                            overflowX: 'auto'
+                            overflowX: 'auto',
+                            color: isDarkMode ? '#d1d5db' : '#1f2937',
+                            border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`
                         }}
                     >
                         {extractJiraUpdateText()}
                     </Box>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#ffffff', borderTop: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}` }}>
                     <Button 
                       onClick={handleCloseJiraDialog} 
                       disabled={jiraUpdateLoading}
                       sx={{
                         fontWeight: 600,
                         textTransform: 'none',
-                        color: '#6b7280',
+                        color: isDarkMode ? '#d1d5db' : '#6b7280',
                         '&:hover': {
-                          backgroundColor: '#f3f4f6',
+                          backgroundColor: isDarkMode ? '#232b33' : '#f3f4f6',
                           transition: '0.2s ease-in-out'
                         }
                       }}
