@@ -49,17 +49,50 @@ function FeedbackDashboard() {
   const [storageMode, setStorageModeState] = useState(getStorageMode());
   const [clearDialogOpen, setClearDialogOpen] = useState(false);
 
+  const generateTrendData = (data) => {
+    // Agrupar feedbacks por data
+    const grouped = {};
+    data.forEach(f => {
+      const date = new Date(f.createdAt).toLocaleDateString('pt-BR');
+      grouped[date] = (grouped[date] || 0) + 1;
+    });
+
+    const sortedDates = Object.keys(grouped).sort((a, b) => new Date(a) - new Date(b)).slice(-7);
+    setTrendData(sortedDates.map(date => ({
+      date,
+      feedbacks: grouped[date]
+    })));
+  };
+
+  const fetchFeedbackData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [statsData, recentData] = await Promise.all([
+        getFeedbackStats(),
+        getRecentFeedback()
+      ]);
+      setStats(statsData);
+      setRecent(recentData);
+      generateTrendData(recentData);
+    } catch (err) {
+      setError(t('feedbackDashboard.errorLoading'));
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
   useEffect(() => {
     fetchFeedbackData();
-    // eslint-disable-next-line
-  }, [storageMode]);
+  }, [storageMode, fetchFeedbackData]);
 
   useEffect(() => {
     if (autoRefresh) {
       const interval = setInterval(fetchFeedbackData, 30000); // Refresh a cada 30s
       return () => clearInterval(interval);
     }
-  }, [autoRefresh]);
+  }, [autoRefresh, fetchFeedbackData]);
 
   useEffect(() => {
     applyFilters();
@@ -87,40 +120,6 @@ function FeedbackDashboard() {
     a.download = `feedbacks-local-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  };
-
-  const fetchFeedbackData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [statsData, recentData] = await Promise.all([
-        getFeedbackStats(),
-        getRecentFeedback()
-      ]);
-      setStats(statsData);
-      setRecent(recentData);
-      generateTrendData(recentData);
-    } catch (err) {
-      setError(t('feedbackDashboard.errorLoading'));
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generateTrendData = (data) => {
-    // Agrupar feedbacks por data
-    const grouped = {};
-    data.forEach(f => {
-      const date = new Date(f.createdAt).toLocaleDateString('pt-BR');
-      grouped[date] = (grouped[date] || 0) + 1;
-    });
-
-    const sortedDates = Object.keys(grouped).sort((a, b) => new Date(a) - new Date(b)).slice(-7);
-    setTrendData(sortedDates.map(date => ({
-      date,
-      feedbacks: grouped[date]
-    })));
   };
 
   const applyFilters = useCallback(() => {

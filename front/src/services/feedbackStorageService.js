@@ -266,7 +266,7 @@ export const importLocalFeedbacks = (jsonString) => {
   }
 };
 
-export default {
+const feedbackStorageService = {
   getStorageMode,
   setStorageMode,
   canUserChooseStorage,
@@ -278,3 +278,5 @@ export default {
   exportLocalFeedbacks,
   importLocalFeedbacks
 };
+
+export default feedbackStorageService;

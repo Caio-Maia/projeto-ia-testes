@@ -808,26 +808,28 @@ services:
 ---
 
 ### 2. CI/CD com GitHub Actions
-**Status**: Não implementado  
+**Status**: ✅ Parcialmente implementado  
 **Prioridade**: Alta  
 **Esforço**: Médio
 
-```yaml
-# .github/workflows/ci.yml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
-```
+**Implementado**:
+- `.github/workflows/auto-version.yml` - Versionamento semântico automático
+
+**Padrão de Commits para Versionamento**:
+| Tipo de Bump | Palavras-chave no Commit |
+|--------------|--------------------------|
+| **MAJOR** (X.0.0) | `BREAKING CHANGE`, `breaking:`, `major:` |
+| **MINOR** (0.X.0) | `feat`, `feature:`, `minor:`, `add` |
+| **PATCH** (0.0.X) | `fix`, `patch`, `bugfix`, `hotfix`, `chore`, `refactor` |
+
+**Funcionalidades**:
+- Atualiza `package.json` do frontend e backend
+- Cria tag git automaticamente
+- Gera GitHub Release com changelog
+
+**Pendente**: 
+- Workflow de CI para testes
+- Workflow de deploy
 
 ---
 
