@@ -1,18 +1,19 @@
-name: Auto Version & Tag
+name: Auto Version & Release
 
 on:
   push:
     branches:
-      - main
+      - develop
     paths-ignore:
       - '**.md'
       - '.github/**'
 
 jobs:
-  version:
+  version-and-release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     
     steps:
       - name: Checkout
@@ -31,27 +32,40 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Get commit message
-        id: commit
+      - name: Get commit messages since last tag
+        id: commits
         run: |
-          COMMIT_MSG=$(git log -1 --pretty=%B)
-          echo "message=$COMMIT_MSG" >> $GITHUB_OUTPUT
-          echo "Commit message: $COMMIT_MSG"
+          # Pega última tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          if [ -z "$LAST_TAG" ]; then
+            # Se não há tags, pega todos os commits
+            COMMITS=$(git log --pretty=format:"%s" -20)
+          else
+            # Pega commits desde a última tag
+            COMMITS=$(git log ${LAST_TAG}..HEAD --pretty=format:"%s")
+          fi
+          
+          echo "commits<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          # Pega último commit para exibição
+          LAST_COMMIT=$(git log -1 --pretty=%B)
+          echo "last_commit=$LAST_COMMIT" >> $GITHUB_OUTPUT
 
       - name: Determine version bump type
         id: bump
         run: |
-          COMMIT_MSG="${{ steps.commit.outputs.message }}"
+          COMMITS="${{ steps.commits.outputs.commits }}"
           
-          # Detecta tipo de bump baseado na mensagem de commit
-          # MAJOR: breaking change, major, BREAKING CHANGE
-          # MINOR: feat, feature, minor, add
-          # PATCH: fix, patch, bugfix, hotfix, chore, refactor, docs, style, test
+          # Detecta tipo de bump baseado nas mensagens de commit
+          # Prioridade: MAJOR > MINOR > PATCH
           
-          if echo "$COMMIT_MSG" | grep -iE "(BREAKING CHANGE|breaking:|major:|^major\b)" > /dev/null; then
+          if echo "$COMMITS" | grep -iE "(BREAKING CHANGE|breaking:|major:|^major\b)" > /dev/null; then
             echo "type=major" >> $GITHUB_OUTPUT
             echo "🚀 Detected MAJOR version bump"
-          elif echo "$COMMIT_MSG" | grep -iE "(^feat|feature:|minor:|^add\b)" > /dev/null; then
+          elif echo "$COMMITS" | grep -iE "(^feat|feature:|minor:|^add\b)" > /dev/null; then
             echo "type=minor" >> $GITHUB_OUTPUT
             echo "✨ Detected MINOR version bump"
           else
@@ -62,7 +76,6 @@ jobs:
       - name: Get current version
         id: current
         run: |
-          # Pega versão do frontend package.json
           CURRENT_VERSION=$(node -p "require('./front/package.json').version")
           echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $CURRENT_VERSION"
@@ -73,10 +86,8 @@ jobs:
           CURRENT="${{ steps.current.outputs.version }}"
           BUMP_TYPE="${{ steps.bump.outputs.type }}"
           
-          # Parse version
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
           
-          # Bump version
           case $BUMP_TYPE in
             major)
               NEW_VERSION="$((MAJOR + 1)).0.0"
@@ -96,43 +107,94 @@ jobs:
         run: |
           NEW_VERSION="${{ steps.new.outputs.version }}"
           
-          # Update frontend package.json
           cd front
           npm version $NEW_VERSION --no-git-tag-version
           cd ..
           
-          # Update backend package.json
           cd backend
           npm version $NEW_VERSION --no-git-tag-version
           cd ..
           
           echo "✅ Updated package.json files to v$NEW_VERSION"
 
-      - name: Commit version bump
+      - name: Commit version bump to develop
         run: |
           NEW_VERSION="${{ steps.new.outputs.version }}"
           
           git add front/package.json front/package-lock.json backend/package.json backend/package-lock.json 2>/dev/null || true
           git add front/package.json backend/package.json
           
-          # Verifica se há mudanças para commitar
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
             git commit -m "chore: bump version to v$NEW_VERSION [skip ci]"
-            git push
+            git push origin develop
           fi
 
-      - name: Create and push tag
+      - name: Merge develop into main
+        run: |
+          git fetch origin main
+          git checkout main
+          git merge develop --no-ff -m "chore: release v${{ steps.new.outputs.version }} [skip ci]"
+          git push origin main
+
+      - name: Create and push tag on main
         run: |
           NEW_VERSION="${{ steps.new.outputs.version }}"
           TAG_NAME="v$NEW_VERSION"
           
-          # Cria tag anotada
           git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
           git push origin "$TAG_NAME"
           
           echo "🏷️ Created tag: $TAG_NAME"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          COMMITS="${{ steps.commits.outputs.commits }}"
+          
+          # Organiza commits por tipo
+          BREAKING=$(echo "$COMMITS" | grep -iE "(BREAKING CHANGE|breaking:|major:)" || true)
+          FEATURES=$(echo "$COMMITS" | grep -iE "(^feat|feature:)" || true)
+          FIXES=$(echo "$COMMITS" | grep -iE "(^fix|bugfix:|hotfix:)" || true)
+          OTHER=$(echo "$COMMITS" | grep -ivE "(BREAKING|feat|feature|fix|bugfix|hotfix|chore:.*version)" || true)
+          
+          CHANGELOG=""
+          
+          if [ -n "$BREAKING" ]; then
+            CHANGELOG="$CHANGELOG### ⚠️ Breaking Changes\n"
+            while IFS= read -r line; do
+              [ -n "$line" ] && CHANGELOG="$CHANGELOG- $line\n"
+            done <<< "$BREAKING"
+            CHANGELOG="$CHANGELOG\n"
+          fi
+          
+          if [ -n "$FEATURES" ]; then
+            CHANGELOG="$CHANGELOG### ✨ Features\n"
+            while IFS= read -r line; do
+              [ -n "$line" ] && CHANGELOG="$CHANGELOG- $line\n"
+            done <<< "$FEATURES"
+            CHANGELOG="$CHANGELOG\n"
+          fi
+          
+          if [ -n "$FIXES" ]; then
+            CHANGELOG="$CHANGELOG### 🐛 Bug Fixes\n"
+            while IFS= read -r line; do
+              [ -n "$line" ] && CHANGELOG="$CHANGELOG- $line\n"
+            done <<< "$FIXES"
+            CHANGELOG="$CHANGELOG\n"
+          fi
+          
+          if [ -n "$OTHER" ]; then
+            CHANGELOG="$CHANGELOG### 📝 Other Changes\n"
+            while IFS= read -r line; do
+              [ -n "$line" ] && CHANGELOG="$CHANGELOG- $line\n"
+            done <<< "$OTHER"
+          fi
+          
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -140,13 +202,12 @@ jobs:
           tag_name: v${{ steps.new.outputs.version }}
           name: Release v${{ steps.new.outputs.version }}
           body: |
-            ## Changes in v${{ steps.new.outputs.version }}
+            ## 🚀 Release v${{ steps.new.outputs.version }}
             
             **Bump Type:** ${{ steps.bump.outputs.type }}
             **Previous Version:** ${{ steps.current.outputs.version }}
             
-            ### Commit
-            ${{ steps.commit.outputs.message }}
+            ${{ steps.changelog.outputs.changelog }}
             
             ---
             *Automatically generated by GitHub Actions*
@@ -157,7 +218,7 @@ jobs:
 
       - name: Summary
         run: |
-          echo "## 🎉 Version Bump Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎉 Release Complete!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
@@ -165,3 +226,8 @@ jobs:
           echo "| New Version | ${{ steps.new.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Bump Type | ${{ steps.bump.outputs.type }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Tag | v${{ steps.new.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Branches Updated" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ develop (version bump)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ main (merged from develop)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Tag created on main" >> $GITHUB_STEP_SUMMARY

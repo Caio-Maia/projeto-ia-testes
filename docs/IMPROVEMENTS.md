@@ -813,7 +813,25 @@ services:
 **Esforço**: Médio
 
 **Implementado**:
-- `.github/workflows/auto-version.yml` - Versionamento semântico automático
+- `.github/workflows/auto-version.yml` - Versionamento semântico automático com Git Flow
+
+**Estratégia de Branches (Git Flow)**:
+```
+develop (desenvolvimento) → main (produção/deploy)
+       ↓                        ↓
+   Push trigger            Merge automático
+       ↓                        ↓
+   Version bump              Tag + Release
+```
+
+**Fluxo**:
+1. Desenvolver na branch `develop`
+2. Push para `develop` aciona o workflow
+3. Workflow detecta tipo de bump pelos commits
+4. Atualiza versão nos `package.json`
+5. Faz merge para `main` automaticamente
+6. Cria tag e GitHub Release
+7. Netlify faz deploy da `main`
 
 **Padrão de Commits para Versionamento**:
 | Tipo de Bump | Palavras-chave no Commit |
@@ -822,14 +840,9 @@ services:
 | **MINOR** (0.X.0) | `feat`, `feature:`, `minor:`, `add` |
 | **PATCH** (0.0.X) | `fix`, `patch`, `bugfix`, `hotfix`, `chore`, `refactor` |
 
-**Funcionalidades**:
-- Atualiza `package.json` do frontend e backend
-- Cria tag git automaticamente
-- Gera GitHub Release com changelog
-
 **Pendente**: 
 - Workflow de CI para testes
-- Workflow de deploy
+- Proteção de branches
 
 ---
 
