@@ -343,12 +343,12 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
           {generations.length > 0 ? (paginatedGenerations.map((gen) => (
             <ListItem
               key={gen.id}
-              button
               onClick={() => handleDialogOpen(gen)}
               sx={{
                 borderRadius: 2,
                 mb: 0.5,
                 transition: '.15s',
+                cursor: 'pointer',
                 '&:hover': {
                   background: 'rgba(33,150,243,0.08)',
                   boxShadow: 2

@@ -1,39 +1,50 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import {
   Box, Button, TextField, Typography, Grid,
   Alert, Snackbar, CircularProgress, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
-import { addVersion, getVersions, restoreVersion } from '../utils/generationHistory';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
+import { 
+  useGenerateTestCode, 
+  useGenerationHistory 
+} from '../hooks';
 
 function CodeGenerationPage() {
   const { t } = useLanguage();
   const { isDarkMode } = useDarkMode();
+  
+  // Custom Hooks
+  const { 
+    generateTestCode, 
+    result, 
+    setResult,
+    loading: isLoading, 
+    error, 
+    setError,
+    generationId 
+  } = useGenerateTestCode();
+  const { 
+    versions, 
+    showHistory, 
+    addNewVersion,
+    restore: handleRestore, 
+    toggleHistory 
+  } = useGenerationHistory(generationId);
+
+  // Local state
   const [testCases, setTestCases] = useState('');
   const [framework, setFramework] = useState('');
   const [language, setLanguage] = useState('JavaScript');
   const [model, setModel] = useState({ apiName: '', version: '' });
-  const [result, setResult] = useState('');
-  const [showHistory, setShowHistory] = useState(false);
-  const [versions, setVersions] = useState([]);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [generationId, setGenerationId] = useState(null);
-  const [educationMode] = React.useState(() => {
-    const saved = localStorage.getItem('educationMode');
-    return saved ? JSON.parse(saved) : false;
-  });
   
   const isButtonDisabled = testCases === '' || framework === '' || model.apiName === '';
 
@@ -74,85 +85,38 @@ function CodeGenerationPage() {
   };
 
   const handleSubmit = async (e) => {
-    setIsLoading(true);
-    setError(null);
     e.preventDefault();
     
     // Validar modelo selecionado
     if (!model || !model.apiName) {
       setError(t('generateCode.selectModel') || 'Por favor, selecione um modelo');
-      setIsLoading(false);
       return;
     }
     
-    let token = localStorage.getItem(`${model.apiName}Token`);
-    if (!token) {
-      setError(t('generateCode.tokenNotFound') || 'Token não configurado para ' + model.apiName);
-      setIsLoading(false);
-      return;
-    }
+    const promptText = testCases;
+    const taskInfo = `${framework} tests in ${language}`;
     
-    try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      // PROMPT EDUCACIONAL
-      let educationalPrompt = '';
-      if (educationMode) {
-        educationalPrompt += `\n\n---\n${t('generateCode.educationalPrompt')}\n`;
-      }
-      const response = await axios.post(
-        `${backendUrl}/api/${model.apiName}/generate-test-code?token=${token}`,
-        {
-          testCases,
-          framework,
-          language,
-          model: model.version,
-          educationMode,
-          promptSupplement: educationMode ? educationalPrompt : undefined
-        }
-      );
-      
-      const resultData = model.apiName === 'gemini' ? response.data.data : response.data;
-      setResult(resultData);
-      // Save as first version if not present yet
-      if (generationId) {
-        addVersion(generationId, resultData, { framework, language, type: 'code', model: model.version });
-      }
-      // Save to local storage and get the ID
-      const id = saveGenerationToLocalStorage(resultData, 'code', model.version, `${framework} tests in ${language}`);
-      setGenerationId(id);
-      // update versions
-      setVersions(getVersions(id));
-    } catch (error) {
-      setError(t('generateCode.errorGenerating'));
-      console.error('Erro ao gerar código de teste:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    await generateTestCode(promptText, model, taskInfo, { 
+      framework, 
+      language,
+      testCases 
+    });
   };
 
   // Handler do callback de uma nova geração vinda do FeedbackComponent (regeneração)
   const handleRegeneratedContent = (regeneratedContent) => {
-    // Salva versão anterior
-    if (generationId && result)  {
-      addVersion(generationId, result, { type: 'code', model: model.version });
+    if (generationId && result) {
+      addNewVersion(result, { type: 'code', model: model.version });
     }
     setResult(regeneratedContent);
-    if (generationId) setVersions(getVersions(generationId));
   };
 
   // Handler para abrir/fechar modal
-  const openVersionsModal = () => {
-    if (generationId) setVersions(getVersions(generationId));
-    setShowHistory(true);
-  };
-
-  const closeVersionsModal = () => setShowHistory(false);
-
-  const handleRestore = idx => {
-    if (!generationId) return;
-    const v = restoreVersion(generationId, idx);
-    if (v && v.content) setResult(v.content);
-    setShowHistory(false);
+  const openVersionsModal = () => toggleHistory();
+  const closeVersionsModal = () => toggleHistory();
+  const handleRestoreVersion = (idx) => {
+    const restored = handleRestore(idx);
+    if (restored?.content) setResult(restored.content);
   };
 
   return (
@@ -171,7 +135,7 @@ function CodeGenerationPage() {
             {t('generateCode.title')}
           </Typography>
         </Box>
-        {generationId && getVersions(generationId).length > 0 && (
+        {generationId && versions.length > 0 && (
             <Box my={2} display="flex" justifyContent="center">
                 <Button 
                   variant="outlined" 
@@ -346,7 +310,7 @@ function CodeGenerationPage() {
                   <Button 
                     variant="outlined" 
                     size="small" 
-                    onClick={() => handleRestore(idx)}
+                    onClick={() => handleRestoreVersion(idx)}
                     sx={{
                       fontWeight: 600,
                       textTransform: 'none',

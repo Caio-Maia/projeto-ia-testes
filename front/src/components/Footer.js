@@ -27,7 +27,7 @@ const Footer = () => {
       <Container maxWidth="lg">
         <Grid container spacing={4} sx={{ mb: 4 }}>
           {/* Coluna 1: Sobre */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Typography 
               variant="h6" 
               sx={{ 
@@ -65,7 +65,7 @@ const Footer = () => {
           </Grid>
 
           {/* Coluna 2: Links Rápidos */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Typography 
               variant="h6" 
               sx={{ 
@@ -77,32 +77,32 @@ const Footer = () => {
               {isPT ? 'Links Rápidos' : 'Quick Links'}
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <RouterLink to="/" style={{ textDecoration: 'none' }}>
-                <MuiLink
-                  sx={{ color: '#d1d5db', textDecoration: 'none', transition: '0.2s', cursor: 'pointer', '&:hover': { color: '#3b82f6' } }}
-                >
-                  {isPT ? 'Início' : 'Home'}
-                </MuiLink>
-              </RouterLink>
-              <RouterLink to="/feedback-dashboard" style={{ textDecoration: 'none' }}>
-                <MuiLink
-                  sx={{ color: '#d1d5db', textDecoration: 'none', transition: '0.2s', cursor: 'pointer', '&:hover': { color: '#3b82f6' } }}
-                >
-                  Dashboard
-                </MuiLink>
-              </RouterLink>
-              <RouterLink to="/documentation" style={{ textDecoration: 'none' }}>
-                <MuiLink
-                  sx={{ color: '#d1d5db', textDecoration: 'none', transition: '0.2s', cursor: 'pointer', '&:hover': { color: '#3b82f6' } }}
-                >
-                  {isPT ? 'Documentação' : 'Documentation'}
-                </MuiLink>
-              </RouterLink>
+              <MuiLink
+                component={RouterLink}
+                to="/"
+                sx={{ color: '#d1d5db', textDecoration: 'none', transition: '0.2s', cursor: 'pointer', '&:hover': { color: '#3b82f6' } }}
+              >
+                {isPT ? 'Início' : 'Home'}
+              </MuiLink>
+              <MuiLink
+                component={RouterLink}
+                to="/feedback-dashboard"
+                sx={{ color: '#d1d5db', textDecoration: 'none', transition: '0.2s', cursor: 'pointer', '&:hover': { color: '#3b82f6' } }}
+              >
+                Dashboard
+              </MuiLink>
+              <MuiLink
+                component={RouterLink}
+                to="/documentation"
+                sx={{ color: '#d1d5db', textDecoration: 'none', transition: '0.2s', cursor: 'pointer', '&:hover': { color: '#3b82f6' } }}
+              >
+                {isPT ? 'Documentação' : 'Documentation'}
+              </MuiLink>
             </Box>
           </Grid>
 
           {/* Coluna 4: Versão */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Typography 
               variant="h6" 
               sx={{ 

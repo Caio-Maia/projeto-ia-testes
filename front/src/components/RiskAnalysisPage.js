@@ -1,41 +1,58 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import {
   Box, Button, TextField, Typography, Grid,
   Alert, Snackbar, CircularProgress, useMediaQuery, useTheme
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
-import { addVersion, getVersions, restoreVersion } from '../utils/generationHistory';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
+import { 
+  useAnalyzeRisks, 
+  useJira, 
+  useGenerationHistory 
+} from '../hooks';
 
 function RiskAnalysisPage() {
   const { t } = useLanguage();
   const { isDarkMode } = useDarkMode();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // Custom Hooks
+  const { 
+    analyzeRisks, 
+    result, 
+    setResult,
+    loading: isLoading, 
+    error, 
+    setError,
+    generationId 
+  } = useAnalyzeRisks();
+  const { 
+    fetchTask, 
+    loading: isJiraLoading, 
+    error: jiraError,
+    isConfigured: isJiraConfigured 
+  } = useJira();
+  const { 
+    versions, 
+    showHistory, 
+    addNewVersion,
+    restore: handleRestore, 
+    toggleHistory 
+  } = useGenerationHistory(generationId);
+
+  // Local state
   const [feature, setFeature] = useState('');
   const [jiraTaskCode, setJiraTaskCode] = useState('');
-  const [isJiraLoading, setIsJiraLoading] = useState(false);
   const [model, setModel] = useState({ apiName: '', version: '' });
-  const [result, setResult] = useState('');
-  const [showHistory, setShowHistory] = useState(false);
-  const [versions, setVersions] = useState([]);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [generationId, setGenerationId] = useState(null);
-  const [educationMode] = React.useState(() => {
-    const saved = localStorage.getItem('educationMode');
-    return saved ? JSON.parse(saved) : false;
-  });
   
   // Exclusividade: só pode preencher um dos campos
   const isManualEnabled = !jiraTaskCode;
@@ -55,35 +72,21 @@ function RiskAnalysisPage() {
 
   const fetchJiraTaskDescription = async () => {
     if (!jiraTaskCode) return;
-    setIsJiraLoading(true);
-    setError(null);
+    if (!isJiraConfigured) {
+      setError(t('riskAnalysis.jiraNotConfigured'));
+      return;
+    }
     try {
-      const backendUrl = 'http://localhost:5000';
-      const jiraToken = localStorage.getItem('jiraToken');
-      const jiraEmail = localStorage.getItem('jiraEmail');
-      const jiraBaseUrl = localStorage.getItem('jiraBaseUrl');
-      if (!jiraToken || !jiraEmail || !jiraBaseUrl) {
-        setError(t('riskAnalysis.jiraNotConfigured'));
-        setIsJiraLoading(false);
+      const response = await fetchTask(jiraTaskCode);
+      if (!response?.fields?.description?.content?.[0]?.content?.[0]?.text) {
+        setError(t('riskAnalysis.descriptionNotFound'));
         return;
       }
-      const response = await axios.post(
-        `${backendUrl}/api/jira-task`,
-        {
-          jiraTaskCode,
-          jiraToken,
-          jiraEmail,
-          jiraBaseUrl
-        }
-      );
-      if (!response.data.fields.description.content[0].content[0].text) setError(t('riskAnalysis.descriptionNotFound'));
-      const description = 'Titulo: '+ response.data.fields.summary + '\n\nDescrição: ' + response.data.fields.description.content[0].content[0].text || '';
+      const description = 'Titulo: '+ response.fields.summary + '\n\nDescrição: ' + response.fields.description.content[0].content[0].text || '';
       setFeature(description);
     } catch (err) {
-      setError(t('riskAnalysis.errorFetchingJira'));
+      setError(jiraError || t('riskAnalysis.errorFetchingJira'));
       console.error(err);
-    } finally {
-      setIsJiraLoading(false);
     }
   };
 
@@ -93,71 +96,27 @@ function RiskAnalysisPage() {
   };
 
   const handleSubmit = async (e) => {
-    setIsLoading(true);
-    setError(null);
     e.preventDefault();
     
-    let token;
-    if (model.apiName === 'gemini') {
-      token = localStorage.getItem('geminiToken');
-    } else if (model.apiName === 'chatgpt') {
-      token = localStorage.getItem('chatgptToken');
-    } else {
-      setError('Sem token para realizar requisição');
-      setIsLoading(false);
-      return;
-    }
+    const taskInfo = jiraTaskCode
+      ? `JIRA: ${jiraTaskCode} - ${feature.substring(0, 50)}`
+      : `Risk Analysis: ${feature.substring(0, 50)}...`;
     
-    try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      let educationalPrompt = '';
-      if (educationMode) {
-        educationalPrompt += `\n\n---\n${t('riskAnalysis.educationalPrompt')}\n`;
-      }
-      const response = await axios.post(
-        `${backendUrl}/api/analyze-risks?token=${token}`,
-        {
-          feature,
-          model,
-          educationMode,
-          promptSupplement: educationMode ? educationalPrompt : undefined
-        }
-      );
-      
-      const resultData = model.apiName === 'gemini' ? response.data.data : response.data;
-      setResult(resultData);
-      if (generationId) {
-        addVersion(generationId, resultData, { type: 'risk', model });
-      }
-      // Save to local storage and get the ID
-      const id = saveGenerationToLocalStorage(resultData, 'risk', model, `Risk Analysis: ${feature.substring(0, 50)}...`);
-      setGenerationId(id);
-      setVersions(getVersions(id));
-    } catch (error) {
-      setError(t('riskAnalysis.errorAnalyzing'));
-      console.error('Erro ao analisar riscos:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    await analyzeRisks(feature, model, taskInfo);
   };
 
   const handleRegeneratedContent = (regeneratedContent) => {
     if (generationId && result) {
-      addVersion(generationId, result, { type: 'risk', model });
+      addNewVersion(result, { type: 'risk', model: model.version });
     }
     setResult(regeneratedContent);
-    if (generationId) setVersions(getVersions(generationId));
   };
-  const openVersionsModal = () => {
-    if (generationId) setVersions(getVersions(generationId));
-    setShowHistory(true);
-  };
-  const closeVersionsModal = () => setShowHistory(false);
-  const handleRestore = idx => {
-    if (!generationId) return;
-    const v = restoreVersion(generationId, idx);
-    if (v && v.content) setResult(v.content);
-    setShowHistory(false);
+  
+  const openVersionsModal = () => toggleHistory();
+  const closeVersionsModal = () => toggleHistory();
+  const handleRestoreVersion = (idx) => {
+    const restored = handleRestore(idx);
+    if (restored?.content) setResult(restored.content);
   };
 
   return (
@@ -176,7 +135,7 @@ function RiskAnalysisPage() {
             {t('riskAnalysis.title')}
           </Typography>
         </Box>
-        {generationId && getVersions(generationId).length > 0 && (
+        {generationId && versions.length > 0 && (
           <Box my={2} display="flex" justifyContent="center">
               <Button 
                 variant="outlined" 
@@ -365,7 +324,7 @@ function RiskAnalysisPage() {
                   <Button 
                     variant="outlined" 
                     size="small" 
-                    onClick={() => handleRestore(idx)}
+                    onClick={() => handleRestoreVersion(idx)}
                     sx={{
                       fontWeight: 600,
                       textTransform: 'none',

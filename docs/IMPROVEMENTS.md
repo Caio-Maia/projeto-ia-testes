@@ -480,39 +480,52 @@ GET /api/jobs/:jobId -> { status: 'completed', result: {...} }
 ## 🎨 Arquitetura Frontend
 
 ### 1. Custom Hooks Melhorados
-**Status**: Parcialmente implementado  
+**Status**: ✅ Implementado  
 **Prioridade**: Alta  
-**Esforço**: Médio
+**Esforço**: Médio  
+**Implementado em**: v1.x.x
 
+**Implementação**:
+Os seguintes hooks foram criados em `front/src/hooks/`:
+
+- **useAI.js**: Hook genérico para chamadas de IA
+  - `useImproveTask()` - Melhoria de tarefas
+  - `useGenerateTests()` - Geração de casos de teste
+  - `useGenerateTestCode()` - Geração de código de teste
+  - `useAnalyzeRisks()` - Análise de riscos
+  
+- **useJira.js**: Integração com JIRA
+  - `fetchTask(taskCode)` - Buscar tarefa do JIRA
+  - `updateDescription(taskCode, description)` - Atualizar descrição
+  
+- **useGenerationHistory.js**: Gerenciamento de versões
+  - `addNewVersion()`, `restore()`, `clear()`, `toggleHistory()`
+  
+- **useLocalStorage.js**: Storage com sincronização de estado
+  - `useLocalStorage(key, initialValue)` - Hook genérico
+  - `useEducationMode()` - Modo educacional
+  - `useApiToken(provider)` - Tokens de API
+
+**Uso**:
 ```javascript
-// hooks/useAI.js - Hook genérico para chamadas de IA
-const useAI = (endpoint) => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  
-  const execute = useCallback(async (payload) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await apiClient.post(endpoint, payload);
-      setData(result.data);
-      return result.data;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [endpoint]);
-  
-  return { data, loading, error, execute };
-};
+import { useImproveTask, useJira, useGenerationHistory, useEducationMode } from '../hooks';
 
-// Uso:
-const { data, loading, execute } = useAI('/api/chatgpt/improve-task');
-await execute({ task: description, model: selectedModel });
+function MyPage() {
+  const [educationMode] = useEducationMode();
+  const { improveTask, result, loading, error, generationId } = useImproveTask();
+  const { fetchTask, isConfigured } = useJira();
+  const { versions, showHistory, toggleHistory } = useGenerationHistory(generationId);
+
+  const handleSubmit = async () => {
+    await improveTask(prompt, model, taskInfo);
+  };
+}
 ```
+
+**Páginas refatoradas**:
+- ✅ ImproveTaskPage.js
+- ✅ GenerateTestsPage.js
+- ✅ RiskAnalysisPage.js
 
 ---
 
