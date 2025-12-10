@@ -12,11 +12,11 @@ import ModelSelector from './ModelSelector';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import { 
-    useImproveTask, 
     useJira, 
     useGenerationHistory,
     useEducationMode,
-    usePrompt 
+    usePrompt,
+    useImproveTaskMutation
 } from '../hooks';
 
 function ImproveTaskPage() {
@@ -28,15 +28,24 @@ function ImproveTaskPage() {
     
     // Custom Hooks
     const { educationMode } = useEducationMode();
-    const { 
-        improveTask, 
-        result, 
-        setResult,
-        loading: isLoading, 
-        error, 
-        setError,
-        generationId 
-    } = useImproveTask();
+    
+    // React Query Mutation para melhorar tarefa
+    const [generationId, setGenerationId] = useState(null);
+    const [result, setResult] = useState('');
+    const [error, setError] = useState(null);
+    
+    const improveTaskMutation = useImproveTaskMutation({
+        onSuccess: (data, variables, id) => {
+            setResult(data);
+            setGenerationId(id);
+        },
+        onError: (err) => {
+            setError(err.message);
+        }
+    });
+    
+    const isLoading = improveTaskMutation.isPending;
+    
     const { 
         fetchTask, 
         updateDescription, 
@@ -127,7 +136,13 @@ Aqui está uma história de usuário:
             ? `JIRA: ${jiraTaskCode} - ${userStory.substring(0, 100)}`
             : `Manual: ${userStory.substring(0, 100)}`;
         
-        await improveTask(promptText, model, taskInfo);
+        // Usa React Query mutation
+        improveTaskMutation.mutate({ 
+            promptText, 
+            model, 
+            taskInfo,
+            generationId 
+        });
     };
 
     // --- NOVO: Extração do texto após "Versão Ajustada:" ---

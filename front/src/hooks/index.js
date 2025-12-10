@@ -50,3 +50,15 @@ export {
   useEducationMode, 
   useApiToken 
 } from './useLocalStorage';
+
+// ============================================
+// REACT QUERY MUTATIONS
+// ============================================
+
+export {
+  useImproveTaskMutation,
+  useGenerateTestsMutation,
+  useGenerateTestCodeMutation,
+  useAnalyzeRisksMutation,
+  useImproveTaskWithState
+} from './useAIMutations';

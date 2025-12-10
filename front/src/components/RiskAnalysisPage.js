@@ -14,9 +14,9 @@ import DialogActions from '@mui/material/DialogActions';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import { 
-  useAnalyzeRisks, 
   useJira, 
-  useGenerationHistory 
+  useGenerationHistory,
+  useAnalyzeRisksMutation
 } from '../hooks';
 
 function RiskAnalysisPage() {
@@ -25,16 +25,23 @@ function RiskAnalysisPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  // Custom Hooks
-  const { 
-    analyzeRisks, 
-    result, 
-    setResult,
-    loading: isLoading, 
-    error, 
-    setError,
-    generationId 
-  } = useAnalyzeRisks();
+  // React Query Mutation para análise de riscos
+  const [generationId, setGenerationId] = useState(null);
+  const [result, setResult] = useState('');
+  const [error, setError] = useState(null);
+  
+  const analyzeRisksMutation = useAnalyzeRisksMutation({
+    onSuccess: (data, variables, id) => {
+      setResult(data);
+      setGenerationId(id);
+    },
+    onError: (err) => {
+      setError(err.message);
+    }
+  });
+  
+  const isLoading = analyzeRisksMutation.isPending;
+  
   const { 
     fetchTask, 
     loading: isJiraLoading, 
@@ -102,7 +109,13 @@ function RiskAnalysisPage() {
       ? `JIRA: ${jiraTaskCode} - ${feature.substring(0, 50)}`
       : `Risk Analysis: ${feature.substring(0, 50)}...`;
     
-    await analyzeRisks(feature, model, taskInfo);
+    // Usa React Query mutation
+    analyzeRisksMutation.mutate({ 
+      feature, 
+      model, 
+      taskInfo,
+      generationId 
+    });
   };
 
   const handleRegeneratedContent = (regeneratedContent) => {

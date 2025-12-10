@@ -14,24 +14,31 @@ import DialogActions from '@mui/material/DialogActions';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import { 
-  useGenerateTestCode, 
-  useGenerationHistory 
+  useGenerationHistory,
+  useGenerateTestCodeMutation
 } from '../hooks';
 
 function CodeGenerationPage() {
   const { t } = useLanguage();
   const { isDarkMode } = useDarkMode();
   
-  // Custom Hooks
-  const { 
-    generateTestCode, 
-    result, 
-    setResult,
-    loading: isLoading, 
-    error, 
-    setError,
-    generationId 
-  } = useGenerateTestCode();
+  // React Query Mutation para gerar código de teste
+  const [generationId, setGenerationId] = useState(null);
+  const [result, setResult] = useState('');
+  const [error, setError] = useState(null);
+  
+  const generateTestCodeMutation = useGenerateTestCodeMutation({
+    onSuccess: (data, variables, id) => {
+      setResult(data);
+      setGenerationId(id);
+    },
+    onError: (err) => {
+      setError(err.message);
+    }
+  });
+  
+  const isLoading = generateTestCodeMutation.isPending;
+  
   const { 
     versions, 
     showHistory, 
@@ -96,10 +103,17 @@ function CodeGenerationPage() {
     const promptText = testCases;
     const taskInfo = `${framework} tests in ${language}`;
     
-    await generateTestCode(promptText, model, taskInfo, { 
-      framework, 
-      language,
-      testCases 
+    // Usa React Query mutation
+    generateTestCodeMutation.mutate({ 
+      promptText, 
+      model, 
+      taskInfo,
+      generationId,
+      extraConfig: { 
+        framework, 
+        language,
+        testCases 
+      }
     });
   };
 

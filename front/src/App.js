@@ -1,6 +1,9 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import { Box, useMediaQuery, ThemeProvider, CssBaseline } from '@mui/material';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { queryClient } from './config/queryClient';
 import { DarkModeProvider, useDarkMode } from './contexts/DarkModeContext';
 import { lightTheme, darkTheme } from './theme/themes';
 import LoadingFallback from './components/LoadingFallback';
@@ -184,11 +187,14 @@ function AppContent() {
 
 function App() {
   return (
-    <DarkModeProvider>
-      <LanguageProvider>
-        <AppContent />
-      </LanguageProvider>
-    </DarkModeProvider>
+    <QueryClientProvider client={queryClient}>
+      <DarkModeProvider>
+        <LanguageProvider>
+          <AppContent />
+        </LanguageProvider>
+      </DarkModeProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }
 

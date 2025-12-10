@@ -11,11 +11,11 @@ import DialogActions from '@mui/material/DialogActions';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import { 
-  useGenerateTests, 
   useJira, 
   useGenerationHistory,
   useEducationMode,
-  usePrompt 
+  usePrompt,
+  useGenerateTestsMutation
 } from '../hooks';
 
 function GenerateTestsPage() {
@@ -25,15 +25,24 @@ function GenerateTestsPage() {
   
   // Custom Hooks
   const { educationMode } = useEducationMode();
-  const { 
-    generateTests, 
-    result, 
-    setResult,
-    loading: isLoading, 
-    error, 
-    setError,
-    generationId 
-  } = useGenerateTests();
+  
+  // React Query Mutation para gerar testes
+  const [generationId, setGenerationId] = useState(null);
+  const [result, setResult] = useState('');
+  const [error, setError] = useState(null);
+  
+  const generateTestsMutation = useGenerateTestsMutation({
+    onSuccess: (data, variables, id) => {
+      setResult(data);
+      setGenerationId(id);
+    },
+    onError: (err) => {
+      setError(err.message);
+    }
+  });
+  
+  const isLoading = generateTestsMutation.isPending;
+  
   const { 
     fetchTask, 
     loading: isJiraLoading, 
@@ -114,7 +123,13 @@ function GenerateTestsPage() {
       ? `JIRA: ${jiraTaskCode} - ${taskDescription.substring(0, 100)}`
       : `Manual: ${taskDescription.substring(0, 100)}`;
     
-    await generateTests(promptText, model, taskInfo);
+    // Usa React Query mutation
+    generateTestsMutation.mutate({ 
+      promptText, 
+      model, 
+      taskInfo,
+      generationId 
+    });
   };
 
   const handleRegeneratedContent = (regeneratedContent) => {
