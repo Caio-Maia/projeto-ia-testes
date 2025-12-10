@@ -9,8 +9,9 @@ const { getTaskJira, updateTaskJira } = require('../controllers/jiraController')
 const { getFeedbackStats, getRecentFeedback, regenerateContent, submitFeedback } = require('../controllers/feedbackController');
 const { generateTestCodeChatGPT, generateTestCodeGemini, analyzeRisks } = require('../controllers/codeGenerationController');
 const { createConversation, sendMessage, getConversationHistory, regenerateWithFeedback } = require('../controllers/chatgptConversationController');
-const { analyzeCoverage, extractRequirements, parseTestCases } = require('../controllers/coverageController');
+const { analyzeCoverage, analyzeCoverageAsync, extractRequirements, parseTestCases } = require('../controllers/coverageController');
 const { streamChatGPT, streamGemini, streamAI } = require('../controllers/streamController');
+const { getJob, listQueueJobs, cancelQueueJob, getStats, healthCheck } = require('../controllers/jobsController');
 
 // Validação
 const { validate } = require('../middlewares/validate');
@@ -66,6 +67,7 @@ router.get('/feedback/recent', getRecentFeedback);
 
 // Rotas para Análise de Cobertura de Testes
 router.post('/analyze-coverage', validate(analyzeCoverageSchema), analyzeCoverage);
+router.post('/analyze-coverage/async', validate(analyzeCoverageSchema), analyzeCoverageAsync);
 router.post('/extract-requirements', validate(extractRequirementsSchema), extractRequirements);
 router.post('/parse-test-cases', validate(parseTestCasesSchema), parseTestCases);
 
@@ -75,5 +77,14 @@ router.post('/parse-test-cases', validate(parseTestCasesSchema), parseTestCases)
 router.post('/stream/chatgpt', streamChatGPT);
 router.post('/stream/gemini', streamGemini);
 router.post('/stream/:provider', streamAI);
+
+// ============================================
+// ROTAS DE JOBS (Filas Assíncronas)
+// ============================================
+router.get('/jobs/health', healthCheck);
+router.get('/jobs/stats', getStats);
+router.get('/jobs', listQueueJobs);
+router.get('/jobs/:jobId', getJob);
+router.delete('/jobs/:jobId', cancelQueueJob);
 
 module.exports = router;

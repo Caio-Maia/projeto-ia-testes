@@ -11,6 +11,8 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const { logger } = require('../utils/logger');
 const { errorHandler, notFoundHandler } = require('../middlewares/errorHandler');
+const { initAIWorker } = require('../services/aiQueueService');
+const { closeAll: closeQueues, isRedisEnabled } = require('../services/queueService');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,7 +20,8 @@ const PORT = process.env.PORT || 5000;
 // Log security info
 logger.info({ 
   security: ['CORS', 'Rate Limit', 'Helmet', 'CSRF'],
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  queueEnabled: isRedisEnabled()
 }, 'Server starting with security features');
 
 app.use(cors());
@@ -343,6 +346,36 @@ app.use((err, req, res, next) => {
 
 // Centralized Error Handler (must be last)
 app.use(errorHandler);
+
+// Initialize Queue Workers
+if (isRedisEnabled()) {
+  try {
+    initAIWorker();
+    logger.info('AI Queue Worker initialized');
+  } catch (error) {
+    logger.warn({ error: error.message }, 'Failed to initialize AI Queue Worker');
+  }
+}
+
+// Graceful shutdown
+const gracefulShutdown = async (signal) => {
+  logger.info({ signal }, 'Received shutdown signal, closing connections...');
+  
+  try {
+    await closeQueues();
+    logger.info('Queue connections closed');
+  } catch (error) {
+    logger.error({ error: error.message }, 'Error closing queue connections');
+  }
+  
+  process.exit(0);
+};
+
+// Only register shutdown handlers in production
+if (process.env.NODE_ENV === 'production') {
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+}
 
 app.listen(PORT, () => {
   logger.info({ port: PORT, env: process.env.NODE_ENV || 'development' }, 'Server started');
