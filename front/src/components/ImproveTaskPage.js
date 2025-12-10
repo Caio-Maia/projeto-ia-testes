@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import {
     Box, Button, TextField, Typography, Grid,
     Alert, Snackbar, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions,
-    useMediaQuery, useTheme
+    useMediaQuery, useTheme, Switch, FormControlLabel, Tooltip
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import StreamIcon from '@mui/icons-material/Stream';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -16,7 +17,8 @@ import {
     useGenerationHistory,
     useEducationMode,
     usePrompt,
-    useImproveTaskMutation
+    useImproveTaskMutation,
+    useImproveTaskStream
 } from '../hooks';
 
 function ImproveTaskPage() {
@@ -29,7 +31,10 @@ function ImproveTaskPage() {
     // Custom Hooks
     const { educationMode } = useEducationMode();
     
-    // React Query Mutation para melhorar tarefa
+    // Estado para modo streaming
+    const [useStreaming, setUseStreaming] = useState(true);
+    
+    // React Query Mutation para melhorar tarefa (modo normal)
     const [generationId, setGenerationId] = useState(null);
     const [result, setResult] = useState('');
     const [error, setError] = useState(null);
@@ -44,7 +49,19 @@ function ImproveTaskPage() {
         }
     });
     
-    const isLoading = improveTaskMutation.isPending;
+    // Hook de streaming
+    const { 
+        improveTask: improveTaskStream,
+        isStreaming,
+        abort: abortStream,
+        generationId: streamGenerationId
+    } = useImproveTaskStream();
+    
+    // Loading combinado
+    const isLoading = improveTaskMutation.isPending || isStreaming;
+    
+    // Usar generationId do streaming se disponível
+    const activeGenerationId = streamGenerationId || generationId;
     
     const { 
         fetchTask, 
@@ -59,7 +76,7 @@ function ImproveTaskPage() {
         addNewVersion,
         restore: handleRestore, 
         toggleHistory 
-    } = useGenerationHistory(generationId);
+    } = useGenerationHistory(activeGenerationId);
 
     // Local state
     const [model, setModel] = useState({ apiName: '', version: '' });
@@ -136,13 +153,34 @@ Aqui está uma história de usuário:
             ? `JIRA: ${jiraTaskCode} - ${userStory.substring(0, 100)}`
             : `Manual: ${userStory.substring(0, 100)}`;
         
-        // Usa React Query mutation
-        improveTaskMutation.mutate({ 
-            promptText, 
-            model, 
-            taskInfo,
-            generationId 
-        });
+        if (useStreaming) {
+            // Usa streaming (SSE)
+            setResult(''); // Limpa resultado anterior
+            console.log('[Streaming] Iniciando streaming...');
+            await improveTaskStream(promptText, model, taskInfo, {
+                onChunk: (chunk, fullContent) => {
+                    console.log('[Streaming] Chunk recebido:', chunk.length, 'chars');
+                    setResult(fullContent);
+                },
+                onComplete: (finalContent, id) => {
+                    console.log('[Streaming] Completo:', finalContent.length, 'chars');
+                    setResult(finalContent);
+                    setGenerationId(id);
+                },
+                onError: (err) => {
+                    console.error('[Streaming] Erro:', err);
+                    setError(err.message);
+                }
+            });
+        } else {
+            // Usa React Query mutation (modo normal)
+            improveTaskMutation.mutate({ 
+                promptText, 
+                model, 
+                taskInfo,
+                generationId 
+            });
+        }
     };
 
     // --- NOVO: Extração do texto após "Versão Ajustada:" ---
@@ -321,32 +359,62 @@ Aqui está uma história de usuário:
                     helperText={!isManualEnabled ? t('improveTask.disabledJira') : ""}
                 />
 
-                <Box textAlign="center">
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        disabled={isButtonDisabled || isLoading}
-                        onClick={handleSubmit}
-                        size={isMobile ? "medium" : "large"}
-                        sx={{
-                          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                          fontWeight: 600,
-                          textTransform: 'none',
-                          padding: '10px 32px',
-                          '&:hover': {
-                            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                            boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
-                            transform: 'translateY(-2px)',
-                            transition: '0.2s ease-in-out'
-                          },
-                          '&:disabled': {
-                            background: '#d1d5db',
-                            color: '#9ca3af'
-                          }
-                        }}
-                    >
-                        {isLoading ? <CircularProgress size={24} /> : t('common.submit')}
-                    </Button>
+                <Box textAlign="center" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <Tooltip title={t('improveTask.streamingTooltip') || "Streaming mostra a resposta em tempo real conforme é gerada"}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={useStreaming}
+                                    onChange={(e) => setUseStreaming(e.target.checked)}
+                                    color="primary"
+                                    size="small"
+                                />
+                            }
+                            label={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <StreamIcon fontSize="small" />
+                                    <Typography variant="body2">Streaming</Typography>
+                                </Box>
+                            }
+                        />
+                    </Tooltip>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            disabled={isButtonDisabled || isLoading}
+                            onClick={handleSubmit}
+                            size={isMobile ? "medium" : "large"}
+                            sx={{
+                              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                              fontWeight: 600,
+                              textTransform: 'none',
+                              padding: '10px 32px',
+                              '&:hover': {
+                                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+                                transform: 'translateY(-2px)',
+                                transition: '0.2s ease-in-out'
+                              },
+                              '&:disabled': {
+                                background: '#d1d5db',
+                                color: '#9ca3af'
+                              }
+                            }}
+                        >
+                            {isLoading ? <CircularProgress size={24} /> : t('common.submit')}
+                        </Button>
+                        {isStreaming && (
+                            <Button
+                                variant="outlined"
+                                color="error"
+                                onClick={abortStream}
+                                size={isMobile ? "medium" : "large"}
+                            >
+                                {t('common.cancel') || 'Cancelar'}
+                            </Button>
+                        )}
+                    </Box>
                 </Box>
             </Grid>
             <div hidden={!isLoading}>
@@ -418,8 +486,26 @@ Aqui está uma história de usuário:
                     )}
 
                     {/* Apresentação do resultado e explicação */}
-                    <Box sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
+                    <Box sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937', position: 'relative' }}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
+                        {isStreaming && (
+                            <Box 
+                                component="span" 
+                                sx={{ 
+                                    display: 'inline-block',
+                                    width: '8px',
+                                    height: '20px',
+                                    backgroundColor: 'primary.main',
+                                    animation: 'blink 1s infinite',
+                                    verticalAlign: 'text-bottom',
+                                    ml: 0.5,
+                                    '@keyframes blink': {
+                                        '0%, 50%': { opacity: 1 },
+                                        '51%, 100%': { opacity: 0 }
+                                    }
+                                }}
+                            />
+                        )}
                     </Box>
                     {educationMode && (
                         <Box mt={3}>

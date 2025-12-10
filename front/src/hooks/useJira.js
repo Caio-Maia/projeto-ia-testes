@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import axios from 'axios';
+import { parseError, logError } from '../utils/errorHandler';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -102,11 +103,9 @@ export const useJira = () => {
       setTask(taskData);
       return taskData;
     } catch (err) {
-      const errorMessage = err.response?.data?.error 
-        || err.message 
-        || 'Erro ao buscar tarefa do JIRA';
-      setError(errorMessage);
-      console.error('useJira fetchTask error:', err);
+      const appError = parseError(err);
+      setError(appError.message);
+      logError('useJira fetchTask', err);
       return null;
     } finally {
       setLoading(false);
@@ -144,11 +143,9 @@ export const useJira = () => {
 
       return true;
     } catch (err) {
-      const errorMessage = err.response?.data?.error 
-        || err.message 
-        || 'Erro ao atualizar tarefa no JIRA';
-      setError(errorMessage);
-      console.error('useJira updateTask error:', err);
+      const appError = parseError(err);
+      setError(appError.message);
+      logError('useJira updateTask', err);
       return false;
     } finally {
       setLoading(false);

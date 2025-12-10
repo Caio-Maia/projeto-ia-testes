@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
 import { addVersion } from '../utils/generationHistory';
+import { parseError, logError } from '../utils/errorHandler';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -147,13 +148,9 @@ export const useImproveTaskMutation = (options = {}) => {
       options.onSuccess?.(data, variables, id);
     },
     onError: (error, variables) => {
-      const errorMessage = error.response?.data?.error 
-        || error.response?.data?.message 
-        || error.message 
-        || 'Erro ao melhorar a tarefa';
-      
-      console.error('useImproveTaskMutation error:', error);
-      options.onError?.(new Error(errorMessage), variables);
+      const appError = parseError(error);
+      logError('useImproveTaskMutation', error);
+      options.onError?.(appError, variables);
     },
     ...options,
   });
@@ -181,13 +178,9 @@ export const useGenerateTestsMutation = (options = {}) => {
       options.onSuccess?.(data, variables, id);
     },
     onError: (error, variables) => {
-      const errorMessage = error.response?.data?.error 
-        || error.response?.data?.message 
-        || error.message 
-        || 'Erro ao gerar casos de teste';
-      
-      console.error('useGenerateTestsMutation error:', error);
-      options.onError?.(new Error(errorMessage), variables);
+      const appError = parseError(error);
+      logError('useGenerateTestsMutation', error);
+      options.onError?.(appError, variables);
     },
     ...options,
   });
@@ -215,13 +208,9 @@ export const useGenerateTestCodeMutation = (options = {}) => {
       options.onSuccess?.(data, variables, id);
     },
     onError: (error, variables) => {
-      const errorMessage = error.response?.data?.error 
-        || error.response?.data?.message 
-        || error.message 
-        || 'Erro ao gerar código de teste';
-      
-      console.error('useGenerateTestCodeMutation error:', error);
-      options.onError?.(new Error(errorMessage), variables);
+      const appError = parseError(error);
+      logError('useGenerateTestCodeMutation', error);
+      options.onError?.(appError, variables);
     },
     ...options,
   });
@@ -249,13 +238,9 @@ export const useAnalyzeRisksMutation = (options = {}) => {
       options.onSuccess?.(data, variables, id);
     },
     onError: (error, variables) => {
-      const errorMessage = error.response?.data?.error 
-        || error.response?.data?.message 
-        || error.message 
-        || 'Erro ao analisar riscos';
-      
-      console.error('useAnalyzeRisksMutation error:', error);
-      options.onError?.(new Error(errorMessage), variables);
+      const appError = parseError(error);
+      logError('useAnalyzeRisksMutation', error);
+      options.onError?.(appError, variables);
     },
     ...options,
   });

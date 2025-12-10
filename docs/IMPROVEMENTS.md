@@ -530,20 +530,38 @@ function MyPage() {
 ---
 
 ### 2. React Query / TanStack Query
-**Status**: Não implementado  
+**Status**: ✅ Implementado  
 **Prioridade**: Alta  
 **Esforço**: Médio
 
-**Benefícios**: Cache automático, refetch, loading states.
+**Implementação**:
+- `front/src/config/queryClient.js` - Configuração do QueryClient
+- `front/src/hooks/useAIMutations.js` - Mutations com React Query
+- `App.js` - QueryClientProvider e ReactQueryDevtools
 
+**Hooks disponíveis**:
 ```javascript
-const { data, isLoading, mutate } = useMutation({
-  mutationFn: (payload) => axios.post('/api/chatgpt/improve-task', payload),
-  onSuccess: (data) => {
-    queryClient.invalidateQueries(['history']);
-  }
+import { 
+  useImproveTaskMutation,
+  useGenerateTestsMutation,
+  useGenerateTestCodeMutation,
+  useAnalyzeRisksMutation
+} from '../hooks';
+
+// Uso
+const mutation = useImproveTaskMutation({
+  onSuccess: (data, variables, id) => { /* ... */ },
+  onError: (err) => { /* ... */ }
 });
+
+mutation.mutate({ promptText, model, taskInfo, generationId });
 ```
+
+**Benefícios**:
+- Cache automático
+- Estados `isPending`, `isError`, `isSuccess`
+- DevTools para debug
+- Invalidação automática de queries
 
 ---
 
@@ -585,35 +603,65 @@ const useSettingsStore = create((set) => ({
 ---
 
 ### 5. Streaming de Respostas
-**Status**: Não implementado  
+**Status**: ✅ Implementado  
 **Prioridade**: Alta  
 **Esforço**: Alto
 
-**Problema Atual**: Usuário espera resposta completa (pode demorar 30s+).
+**Implementação**:
 
+**Backend** (`backend/controllers/streamController.js`):
+- `streamChatGPT` - SSE streaming para OpenAI
+- `streamGemini` - SSE streaming para Gemini
+- `streamAI` - Roteador genérico por provider
+
+**Rotas**:
 ```javascript
-// Backend: Server-Sent Events
-router.get('/api/ai/stream', async (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  
-  const stream = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [...],
-    stream: true
-  });
-  
-  for await (const chunk of stream) {
-    res.write(`data: ${JSON.stringify(chunk)}\n\n`);
-  }
-  res.end();
-});
-
-// Frontend: EventSource
-const eventSource = new EventSource('/api/ai/stream?prompt=...');
-eventSource.onmessage = (event) => {
-  setResult((prev) => prev + JSON.parse(event.data).content);
-};
+POST /api/stream/chatgpt  // Streaming ChatGPT
+POST /api/stream/gemini   // Streaming Gemini
+POST /api/stream/:provider // Roteador genérico
 ```
+
+**Frontend** (`front/src/hooks/useAIStream.js`):
+```javascript
+import { 
+  useAIStream,
+  useImproveTaskStream,
+  useGenerateTestsStream,
+  useGenerateTestCodeStream,
+  useAnalyzeRisksStream
+} from '../hooks';
+
+// Uso
+const { 
+  stream, 
+  result, 
+  isStreaming, 
+  error, 
+  abort 
+} = useAIStream();
+
+await stream({
+  provider: 'chatgpt',
+  promptText: 'Minha tarefa...',
+  model: { apiName: 'chatgpt', version: 'gpt-4o' },
+  feature: 'improve-task',
+  onChunk: (chunk, fullContent) => setResult(fullContent),
+  onComplete: (finalContent, id) => console.log('Done!'),
+  onError: (err) => console.error(err)
+});
+```
+
+**Features**:
+- Toggle para ativar/desativar streaming na UI
+- Cursor piscante durante streaming
+- Botão para cancelar streaming
+- Callbacks: `onChunk`, `onComplete`, `onError`
+- Função `abort()` para cancelar
+
+**Benefícios**:
+- Resposta aparece em tempo real
+- Menor tempo percebido de espera
+- Melhor UX para respostas longas
 
 ---
 
@@ -904,11 +952,11 @@ router.get('/health', async (req, res) => {
 ### Fase 2 (2-3 semanas)
 - [ ] Integração GitHub Issues
 - [ ] Integração Azure DevOps
-- [ ] React Query no frontend
+- [x] ~~React Query no frontend~~ ✅ Implementado
 - [ ] Testes unitários (50% cobertura)
 
 ### Fase 3 (3-4 semanas)
-- [ ] Streaming de respostas
+- [x] ~~Streaming de respostas~~ ✅ Implementado
 - [ ] Docker + CI/CD
 - [ ] Cache com Redis
 

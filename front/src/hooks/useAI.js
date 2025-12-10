@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import axios from 'axios';
 import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
 import { addVersion, getVersions } from '../utils/generationHistory';
+import { parseError, logError } from '../utils/errorHandler';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -76,13 +77,9 @@ export const useAI = (endpoint) => {
       setData(result);
       return result;
     } catch (err) {
-      const errorMessage = err.response?.data?.error 
-        || err.response?.data?.message 
-        || err.message 
-        || 'Erro ao processar requisição';
-      
-      setError(errorMessage);
-      console.error(`useAI [${endpoint}] error:`, err);
+      const appError = parseError(err);
+      setError(appError.message);
+      logError(`useAI [${endpoint}]`, err);
       return null;
     } finally {
       setLoading(false);
@@ -160,9 +157,9 @@ export const useImproveTask = () => {
 
       return data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message || 'Erro ao melhorar a tarefa';
-      setError(errorMessage);
-      console.error('useImproveTask error:', err);
+      const appError = parseError(err);
+      setError(appError.message);
+      logError('useImproveTask', err);
       return null;
     } finally {
       setLoading(false);
@@ -238,9 +235,9 @@ export const useGenerateTests = () => {
 
       return data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message || 'Erro ao gerar casos de teste';
-      setError(errorMessage);
-      console.error('useGenerateTests error:', err);
+      const appError = parseError(err);
+      setError(appError.message);
+      logError('useGenerateTests', err);
       return null;
     } finally {
       setLoading(false);
@@ -317,9 +314,9 @@ export const useGenerateTestCode = () => {
 
       return data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message || 'Erro ao gerar código de teste';
-      setError(errorMessage);
-      console.error('useGenerateTestCode error:', err);
+      const appError = parseError(err);
+      setError(appError.message);
+      logError('useGenerateTestCode', err);
       return null;
     } finally {
       setLoading(false);
@@ -396,9 +393,9 @@ export const useAnalyzeRisks = () => {
 
       return data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message || 'Erro ao analisar riscos';
-      setError(errorMessage);
-      console.error('useAnalyzeRisks error:', err);
+      const appError = parseError(err);
+      setError(appError.message);
+      logError('useAnalyzeRisks', err);
       return null;
     } finally {
       setLoading(false);

@@ -62,3 +62,15 @@ export {
   useAnalyzeRisksMutation,
   useImproveTaskWithState
 } from './useAIMutations';
+
+// ============================================
+// HOOKS DE STREAMING (SSE)
+// ============================================
+
+export {
+  useAIStream,
+  useImproveTaskStream,
+  useGenerateTestsStream,
+  useGenerateTestCodeStream,
+  useAnalyzeRisksStream
+} from './useAIStream';

@@ -1,9 +1,9 @@
 import React from 'react';
-import { Box, Container, Typography, Button, Grid, Card, useTheme } from '@mui/material';
+import { Box, Container, Typography, Button, Grid, Card, useTheme, IconButton } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
-import { FaArrowRight } from 'react-icons/fa';
+import { FaArrowRight, FaSun, FaMoon } from 'react-icons/fa';
 
 // Icons
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
@@ -24,7 +24,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 
 const LandingPage = ({ onOpenTokenDialog }) => {
   const { t, language, changeLanguage } = useLanguage();
-  const { isDarkMode } = useDarkMode();
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -138,9 +138,28 @@ const LandingPage = ({ onOpenTokenDialog }) => {
         }}
       >
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-          {/* Language Selector inside Hero */}
+          {/* Language Selector and Dark Mode Toggle inside Hero */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 4 }}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              {/* Dark Mode Toggle */}
+              <IconButton
+                onClick={toggleDarkMode}
+                sx={{
+                  color: '#ffffff',
+                  backgroundColor: 'rgba(255,255,255,0.15)',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.25)',
+                    transform: 'scale(1.05)',
+                  },
+                }}
+                title={isDarkMode ? 'Modo Claro' : 'Modo Escuro'}
+              >
+                {isDarkMode ? <FaSun size={20} /> : <FaMoon size={20} />}
+              </IconButton>
+
               <Button
                 onClick={() => changeLanguage('pt-BR')}
                 sx={{

@@ -126,6 +126,27 @@ export const lightTheme = createTheme({
         },
       },
     },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#ffffff',
+          border: 'none',
+          outline: 'none',
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#ffffff',
+          border: 'none',
+          outline: 'none',
+        },
+        list: {
+          border: 'none',
+        },
+      },
+    },
   },
 });
 
@@ -273,6 +294,20 @@ export const darkTheme = createTheme({
       styleOverrides: {
         paper: {
           backgroundColor: '#1a202c',
+          border: 'none',
+          outline: 'none',
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#1a202c',
+          border: 'none',
+          outline: 'none',
+        },
+        list: {
+          border: 'none',
         },
       },
     },

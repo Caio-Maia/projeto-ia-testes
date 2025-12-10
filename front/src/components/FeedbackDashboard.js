@@ -20,6 +20,7 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import StorageIcon from '@mui/icons-material/Storage';
 import CloudIcon from '@mui/icons-material/Cloud';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import { parseError, logError } from '../utils/errorHandler';
 import { 
   getFeedbackStats, 
   getRecentFeedback, 
@@ -76,8 +77,9 @@ function FeedbackDashboard() {
       setRecent(recentData);
       generateTrendData(recentData);
     } catch (err) {
-      setError(t('feedbackDashboard.errorLoading'));
-      console.error(err);
+      const appError = parseError(err);
+      setError(appError.message || t('feedbackDashboard.errorLoading'));
+      logError('FeedbackDashboard fetch', err);
     } finally {
       setLoading(false);
     }

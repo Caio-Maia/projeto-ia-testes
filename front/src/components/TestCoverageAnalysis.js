@@ -17,6 +17,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import { parseError, logError } from '../utils/errorHandler';
 
 /**
  * TestCoverageAnalysis - AI-powered test coverage analysis component
@@ -220,12 +221,13 @@ function TestCoverageAnalysis({
         }
       }
     } catch (err) {
-      console.error('Coverage analysis error:', err);
+      logError('TestCoverageAnalysis AI analysis', err);
+      const appError = parseError(err);
       
       // Fallback to local analysis on error
       setError(language === 'pt-BR' 
-        ? `Erro na análise com IA: ${err.message}. Usando análise local.` 
-        : `AI analysis error: ${err.message}. Using local analysis.`);
+        ? `Erro na análise com IA: ${appError.message}. Usando análise local.` 
+        : `AI analysis error: ${appError.message}. Using local analysis.`);
       
       // Perform local fallback analysis
       performLocalAnalysis(requirementsData, testCasesData);
