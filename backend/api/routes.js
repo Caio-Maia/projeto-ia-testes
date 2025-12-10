@@ -10,6 +10,7 @@ const { getFeedbackStats, getRecentFeedback, regenerateContent, submitFeedback }
 const { generateTestCodeChatGPT, generateTestCodeGemini, analyzeRisks } = require('../controllers/codeGenerationController');
 const { createConversation, sendMessage, getConversationHistory, regenerateWithFeedback } = require('../controllers/chatgptConversationController');
 const { analyzeCoverage, extractRequirements, parseTestCases } = require('../controllers/coverageController');
+const { streamChatGPT, streamGemini, streamAI } = require('../controllers/streamController');
 
 // Validação
 const { validate } = require('../middlewares/validate');
@@ -67,5 +68,12 @@ router.get('/feedback/recent', getRecentFeedback);
 router.post('/analyze-coverage', validate(analyzeCoverageSchema), analyzeCoverage);
 router.post('/extract-requirements', validate(extractRequirementsSchema), extractRequirements);
 router.post('/parse-test-cases', validate(parseTestCasesSchema), parseTestCases);
+
+// ============================================
+// ROTAS DE STREAMING (Server-Sent Events)
+// ============================================
+router.post('/stream/chatgpt', streamChatGPT);
+router.post('/stream/gemini', streamGemini);
+router.post('/stream/:provider', streamAI);
 
 module.exports = router;

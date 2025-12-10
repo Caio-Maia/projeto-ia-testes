@@ -113,7 +113,9 @@ function TokenDialog({ open, onClose, permitClose, onSuccess }) {
                 sx: {
                     borderRadius: 2,
                     boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
-                    backgroundColor: isDarkMode ? '#0f1419' : '#ffffff'
+                    backgroundColor: isDarkMode ? '#0f1419' : '#ffffff',
+                    border: 'none',
+                    outline: 'none'
                 }
             }}
         >

@@ -480,57 +480,88 @@ GET /api/jobs/:jobId -> { status: 'completed', result: {...} }
 ## 🎨 Arquitetura Frontend
 
 ### 1. Custom Hooks Melhorados
-**Status**: Parcialmente implementado  
+**Status**: ✅ Implementado  
 **Prioridade**: Alta  
-**Esforço**: Médio
+**Esforço**: Médio  
+**Implementado em**: v1.x.x
 
+**Implementação**:
+Os seguintes hooks foram criados em `front/src/hooks/`:
+
+- **useAI.js**: Hook genérico para chamadas de IA
+  - `useImproveTask()` - Melhoria de tarefas
+  - `useGenerateTests()` - Geração de casos de teste
+  - `useGenerateTestCode()` - Geração de código de teste
+  - `useAnalyzeRisks()` - Análise de riscos
+  
+- **useJira.js**: Integração com JIRA
+  - `fetchTask(taskCode)` - Buscar tarefa do JIRA
+  - `updateDescription(taskCode, description)` - Atualizar descrição
+  
+- **useGenerationHistory.js**: Gerenciamento de versões
+  - `addNewVersion()`, `restore()`, `clear()`, `toggleHistory()`
+  
+- **useLocalStorage.js**: Storage com sincronização de estado
+  - `useLocalStorage(key, initialValue)` - Hook genérico
+  - `useEducationMode()` - Modo educacional
+  - `useApiToken(provider)` - Tokens de API
+
+**Uso**:
 ```javascript
-// hooks/useAI.js - Hook genérico para chamadas de IA
-const useAI = (endpoint) => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  
-  const execute = useCallback(async (payload) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await apiClient.post(endpoint, payload);
-      setData(result.data);
-      return result.data;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [endpoint]);
-  
-  return { data, loading, error, execute };
-};
+import { useImproveTask, useJira, useGenerationHistory, useEducationMode } from '../hooks';
 
-// Uso:
-const { data, loading, execute } = useAI('/api/chatgpt/improve-task');
-await execute({ task: description, model: selectedModel });
+function MyPage() {
+  const [educationMode] = useEducationMode();
+  const { improveTask, result, loading, error, generationId } = useImproveTask();
+  const { fetchTask, isConfigured } = useJira();
+  const { versions, showHistory, toggleHistory } = useGenerationHistory(generationId);
+
+  const handleSubmit = async () => {
+    await improveTask(prompt, model, taskInfo);
+  };
+}
 ```
+
+**Páginas refatoradas**:
+- ✅ ImproveTaskPage.js
+- ✅ GenerateTestsPage.js
+- ✅ RiskAnalysisPage.js
 
 ---
 
 ### 2. React Query / TanStack Query
-**Status**: Não implementado  
+**Status**: ✅ Implementado  
 **Prioridade**: Alta  
 **Esforço**: Médio
 
-**Benefícios**: Cache automático, refetch, loading states.
+**Implementação**:
+- `front/src/config/queryClient.js` - Configuração do QueryClient
+- `front/src/hooks/useAIMutations.js` - Mutations com React Query
+- `App.js` - QueryClientProvider e ReactQueryDevtools
 
+**Hooks disponíveis**:
 ```javascript
-const { data, isLoading, mutate } = useMutation({
-  mutationFn: (payload) => axios.post('/api/chatgpt/improve-task', payload),
-  onSuccess: (data) => {
-    queryClient.invalidateQueries(['history']);
-  }
+import { 
+  useImproveTaskMutation,
+  useGenerateTestsMutation,
+  useGenerateTestCodeMutation,
+  useAnalyzeRisksMutation
+} from '../hooks';
+
+// Uso
+const mutation = useImproveTaskMutation({
+  onSuccess: (data, variables, id) => { /* ... */ },
+  onError: (err) => { /* ... */ }
 });
+
+mutation.mutate({ promptText, model, taskInfo, generationId });
 ```
+
+**Benefícios**:
+- Cache automático
+- Estados `isPending`, `isError`, `isSuccess`
+- DevTools para debug
+- Invalidação automática de queries
 
 ---
 
@@ -572,35 +603,65 @@ const useSettingsStore = create((set) => ({
 ---
 
 ### 5. Streaming de Respostas
-**Status**: Não implementado  
+**Status**: ✅ Implementado  
 **Prioridade**: Alta  
 **Esforço**: Alto
 
-**Problema Atual**: Usuário espera resposta completa (pode demorar 30s+).
+**Implementação**:
 
+**Backend** (`backend/controllers/streamController.js`):
+- `streamChatGPT` - SSE streaming para OpenAI
+- `streamGemini` - SSE streaming para Gemini
+- `streamAI` - Roteador genérico por provider
+
+**Rotas**:
 ```javascript
-// Backend: Server-Sent Events
-router.get('/api/ai/stream', async (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  
-  const stream = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [...],
-    stream: true
-  });
-  
-  for await (const chunk of stream) {
-    res.write(`data: ${JSON.stringify(chunk)}\n\n`);
-  }
-  res.end();
-});
-
-// Frontend: EventSource
-const eventSource = new EventSource('/api/ai/stream?prompt=...');
-eventSource.onmessage = (event) => {
-  setResult((prev) => prev + JSON.parse(event.data).content);
-};
+POST /api/stream/chatgpt  // Streaming ChatGPT
+POST /api/stream/gemini   // Streaming Gemini
+POST /api/stream/:provider // Roteador genérico
 ```
+
+**Frontend** (`front/src/hooks/useAIStream.js`):
+```javascript
+import { 
+  useAIStream,
+  useImproveTaskStream,
+  useGenerateTestsStream,
+  useGenerateTestCodeStream,
+  useAnalyzeRisksStream
+} from '../hooks';
+
+// Uso
+const { 
+  stream, 
+  result, 
+  isStreaming, 
+  error, 
+  abort 
+} = useAIStream();
+
+await stream({
+  provider: 'chatgpt',
+  promptText: 'Minha tarefa...',
+  model: { apiName: 'chatgpt', version: 'gpt-4o' },
+  feature: 'improve-task',
+  onChunk: (chunk, fullContent) => setResult(fullContent),
+  onComplete: (finalContent, id) => console.log('Done!'),
+  onError: (err) => console.error(err)
+});
+```
+
+**Features**:
+- Toggle para ativar/desativar streaming na UI
+- Cursor piscante durante streaming
+- Botão para cancelar streaming
+- Callbacks: `onChunk`, `onComplete`, `onError`
+- Função `abort()` para cancelar
+
+**Benefícios**:
+- Resposta aparece em tempo real
+- Menor tempo percebido de espera
+- Melhor UX para respostas longas
 
 ---
 
@@ -813,7 +874,25 @@ services:
 **Esforço**: Médio
 
 **Implementado**:
-- `.github/workflows/auto-version.yml` - Versionamento semântico automático
+- `.github/workflows/auto-version.yml` - Versionamento semântico automático com Git Flow
+
+**Estratégia de Branches (Git Flow)**:
+```
+develop (desenvolvimento) → main (produção/deploy)
+       ↓                        ↓
+   Push trigger            Merge automático
+       ↓                        ↓
+   Version bump              Tag + Release
+```
+
+**Fluxo**:
+1. Desenvolver na branch `develop`
+2. Push para `develop` aciona o workflow
+3. Workflow detecta tipo de bump pelos commits
+4. Atualiza versão nos `package.json`
+5. Faz merge para `main` automaticamente
+6. Cria tag e GitHub Release
+7. Netlify faz deploy da `main`
 
 **Padrão de Commits para Versionamento**:
 | Tipo de Bump | Palavras-chave no Commit |
@@ -822,14 +901,9 @@ services:
 | **MINOR** (0.X.0) | `feat`, `feature:`, `minor:`, `add` |
 | **PATCH** (0.0.X) | `fix`, `patch`, `bugfix`, `hotfix`, `chore`, `refactor` |
 
-**Funcionalidades**:
-- Atualiza `package.json` do frontend e backend
-- Cria tag git automaticamente
-- Gera GitHub Release com changelog
-
 **Pendente**: 
 - Workflow de CI para testes
-- Workflow de deploy
+- Proteção de branches
 
 ---
 
@@ -878,11 +952,11 @@ router.get('/health', async (req, res) => {
 ### Fase 2 (2-3 semanas)
 - [ ] Integração GitHub Issues
 - [ ] Integração Azure DevOps
-- [ ] React Query no frontend
+- [x] ~~React Query no frontend~~ ✅ Implementado
 - [ ] Testes unitários (50% cobertura)
 
 ### Fase 3 (3-4 semanas)
-- [ ] Streaming de respostas
+- [x] ~~Streaming de respostas~~ ✅ Implementado
 - [ ] Docker + CI/CD
 - [ ] Cache com Redis
 

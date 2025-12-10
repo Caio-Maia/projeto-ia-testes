@@ -14,11 +14,17 @@
       }
       html {
         background-color: #f9fafb;
+        transition: background-color 0.3s ease;
       }
       body {
         background-color: #f9fafb;
         margin: 0;
         padding: 0;
+        transition: background-color 0.3s ease;
+      }
+      html[data-theme="dark"],
+      html[data-theme="dark"] body {
+        background-color: #0f1419;
       }
     </style>
   </head>

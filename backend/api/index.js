@@ -28,6 +28,10 @@ app.use(cors());
 const compressionOptions = {
   // Filter which responses to compress
   filter: (req, res) => {
+    // Don't compress streaming routes (SSE) - they need immediate delivery
+    if (req.path.startsWith('/api/stream')) {
+      return false;
+    }
     // Don't compress if client sends no-compression header
     if (req.headers['x-no-compression']) {
       return false;
@@ -240,13 +244,38 @@ app.use(enforceHTTPS);
 
 // CSRF Protection: Protects against Cross-Site Request Forgery
 // Generates and validates CSRF tokens for state-changing operations
-const csrfProtection = csrf({ cookie: true });
-app.use(csrfProtection);
+// NOTA: CSRF desabilitado em desenvolvimento - habilitar em produção com frontend configurado
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Endpoint to get CSRF token for client
-app.get('/api/csrf-token', (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
-});
+if (isProduction) {
+  const csrfProtection = csrf({ cookie: true });
+
+  // Middleware condicional para CSRF - exclui rotas de streaming (SSE)
+  // Rotas de streaming não podem usar CSRF tradicional devido à natureza da conexão
+  const conditionalCsrf = (req, res, next) => {
+    // Excluir rotas de streaming da proteção CSRF
+    if (req.path.startsWith('/api/stream')) {
+      return next();
+    }
+    return csrfProtection(req, res, next);
+  };
+
+  app.use(conditionalCsrf);
+
+  // Endpoint to get CSRF token for client
+  app.get('/api/csrf-token', (req, res) => {
+    res.json({ csrfToken: req.csrfToken() });
+  });
+  
+  logger.info('CSRF protection enabled (production mode)');
+} else {
+  // Em desenvolvimento, apenas log
+  app.get('/api/csrf-token', (req, res) => {
+    res.json({ csrfToken: 'development-mode-no-csrf' });
+  });
+  
+  logger.info('CSRF protection disabled (development mode)');
+}
 
 // Health Check Endpoint (exempted from rate limiting via globalLimiter skip)
 app.get('/health', (req, res) => {

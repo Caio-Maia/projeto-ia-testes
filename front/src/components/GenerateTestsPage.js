@@ -1,40 +1,66 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { Box, Button, TextField, Typography, Grid,  Alert, Snackbar, CircularProgress } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
-import { addVersion, getVersions, restoreVersion } from '../utils/generationHistory';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
-import { usePrompt } from '../hooks/usePrompt';
+import { 
+  useJira, 
+  useGenerationHistory,
+  useEducationMode,
+  usePrompt,
+  useGenerateTestsMutation
+} from '../hooks';
 
 function GenerateTestsPage() {
   const { t } = useLanguage();
   const { isDarkMode } = useDarkMode();
   const { prompt } = usePrompt('testCasesModel');
+  
+  // Custom Hooks
+  const { educationMode } = useEducationMode();
+  
+  // React Query Mutation para gerar testes
+  const [generationId, setGenerationId] = useState(null);
+  const [result, setResult] = useState('');
+  const [error, setError] = useState(null);
+  
+  const generateTestsMutation = useGenerateTestsMutation({
+    onSuccess: (data, variables, id) => {
+      setResult(data);
+      setGenerationId(id);
+    },
+    onError: (err) => {
+      setError(err.message);
+    }
+  });
+  
+  const isLoading = generateTestsMutation.isPending;
+  
+  const { 
+    fetchTask, 
+    loading: isJiraLoading, 
+    error: jiraError,
+    isConfigured: isJiraConfigured 
+  } = useJira();
+  const { 
+    versions, 
+    showHistory, 
+    addNewVersion,
+    restore: handleRestore, 
+    toggleHistory 
+  } = useGenerationHistory(generationId);
+
+  // Local state
   const [taskDescription, setTaskDescription] = useState('');
   const [jiraTaskCode, setJiraTaskCode] = useState('');
-  const [isJiraLoading, setIsJiraLoading] = useState(false);
   const [model, setModel] = useState({ apiName: '', version: '' });
-  const [result, setResult] = useState('');
-  const [showHistory, setShowHistory] = useState(false);
-  const [versions, setVersions] = useState([]);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [generationId, setGenerationId] = useState(null);
-  
-  // Education mode state (read from localStorage)
-  const [educationMode] = useState(() => {
-    const savedMode = localStorage.getItem('educationMode');
-    return savedMode ? JSON.parse(savedMode) : false;
-  });
   
   // Exclusividade: só pode preencher um dos campos
   const isManualEnabled = !jiraTaskCode;
@@ -59,106 +85,65 @@ function GenerateTestsPage() {
 
   const fetchJiraTaskDescription = async () => {
     if (!jiraTaskCode) return;
-    setIsJiraLoading(true);
-    setError(null);
+    if (!isJiraConfigured) {
+      setError(t('generateTests.jiraNotConfigured'));
+      return;
+    }
     try {
-      const backendUrl = 'http://localhost:5000';
-      const jiraToken = localStorage.getItem('jiraToken');
-      const jiraEmail = localStorage.getItem('jiraEmail');
-      const jiraBaseUrl = localStorage.getItem('jiraBaseUrl');
-      if (!jiraToken || !jiraEmail || !jiraBaseUrl) {
-        setError(t('generateTests.jiraNotConfigured'));
-        setIsJiraLoading(false);
+      const response = await fetchTask(jiraTaskCode);
+      if (!response?.fields?.description?.content?.[0]?.content?.[0]?.text) {
+        setError(t('generateTests.descriptionNotFound'));
         return;
       }
-      const response = await axios.post(
-        `${backendUrl}/api/jira-task`,
-        {
-          jiraTaskCode,
-          jiraToken,
-          jiraEmail,
-          jiraBaseUrl
-        }
-      );
-      if (!response.data.fields.description.content[0].content[0].text) setError(t('generateTests.descriptionNotFound'));
-      const description = 'Titulo: '+ response.data.fields.summary + '\n\nDescrição: ' + response.data.fields.description.content[0].content[0].text || '';
+      const description = 'Titulo: '+ response.fields.summary + '\n\nDescrição: ' + response.fields.description.content[0].content[0].text || '';
       setTaskDescription(description);
     } catch (err) {
-      setError(t('generateTests.errorFetchingJira'));
+      setError(jiraError || t('generateTests.errorFetchingJira'));
       console.error(err);
-    } finally {
-      setIsJiraLoading(false);
     }
   };
 
   const handleSubmit = async (e) => {
-    setIsLoading(true);
-    setError(null);
     e.preventDefault();
     
     // Validar modelo selecionado
     if (!model || !model.apiName) {
       setError(t('generateTests.selectModel') || 'Por favor, selecione um modelo');
-      setIsLoading(false);
       return;
     }
     
-    let token = localStorage.getItem(`${model.apiName}Token`);
-    if (!token) {
-      setError(t('generateTests.tokenNotFound') || 'Token não configurado para ' + model.apiName);
-      setIsLoading(false);
-      return;
+    // Add education mode instruction if enabled
+    let promptText = `${prompt} \n\n Aqui está uma história de usuário:\n\n "${taskDescription}"`;
+    
+    if (educationMode) {
+      promptText += `\n\n---\n${t('generateTests.educationalPrompt')}\n`;
     }
-    try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-      
-      // Add education mode instruction if enabled
-      let promptText = `${prompt} \n\n Aqui está uma história de usuário:\n\n "${taskDescription}"`;
-      
-      let educationalPrompt = '';
-      if (educationMode) {
-        educationalPrompt += `\n\n---\n${t('generateTests.educationalPrompt')}\n`;
-      }
-      const response = await axios.post(`${backendUrl}/api/${model.apiName}/generate-tests?token=${token}`, {
-        model: model.version,
-        data: promptText + (educationMode ? educationalPrompt : ''),
-        educationMode,
-        promptSupplement: educationMode ? educationalPrompt : undefined
-      });
-      
-      setResult(response.data.data);
-      if (generationId) {
-        addVersion(generationId, response.data.data, { type: 'testcase', model: model.version });
-      }
-      const id = saveGenerationToLocalStorage(response.data.data, 'testcase', model.version);
-      setGenerationId(id);
-      setVersions(getVersions(id));
-    } catch (error) {
-      setError(error);
-      console.error('Erro ao gerar casos de teste: ', error);
-    } finally {
-      setIsLoading(false);
-    }
+    
+    const taskInfo = jiraTaskCode
+      ? `JIRA: ${jiraTaskCode} - ${taskDescription.substring(0, 100)}`
+      : `Manual: ${taskDescription.substring(0, 100)}`;
+    
+    // Usa React Query mutation
+    generateTestsMutation.mutate({ 
+      promptText, 
+      model, 
+      taskInfo,
+      generationId 
+    });
   };
 
   const handleRegeneratedContent = (regeneratedContent) => {
     if (generationId && result) {
-      addVersion(generationId, result, { type: 'testcase', model: model.version });
+      addNewVersion(result, { type: 'testcase', model: model.version });
     }
     setResult(regeneratedContent);
-    if (generationId) setVersions(getVersions(generationId));
   };
 
-  const openVersionsModal = () => {
-    if (generationId) setVersions(getVersions(generationId));
-    setShowHistory(true);
-  };
-  const closeVersionsModal = () => setShowHistory(false);
-  const handleRestore = idx => {
-    if (!generationId) return;
-    const v = restoreVersion(generationId, idx);
-    if (v && v.content) setResult(v.content);
-    setShowHistory(false);
+  const openVersionsModal = () => toggleHistory();
+  const closeVersionsModal = () => toggleHistory();
+  const handleRestoreVersion = (idx) => {
+    const restored = handleRestore(idx);
+    if (restored?.content) setResult(restored.content);
   };
 
   return (
@@ -177,7 +162,7 @@ function GenerateTestsPage() {
             {t('generateTests.title')}
           </Typography>
         </Box>
-        {generationId && getVersions(generationId).length > 0 && (
+        {generationId && versions.length > 0 && (
             <Box my={2} display="flex" justifyContent="center">
                 <Button 
                   variant="outlined" 
@@ -361,7 +346,7 @@ function GenerateTestsPage() {
                   <Button 
                     variant="outlined" 
                     size="small" 
-                    onClick={() => handleRestore(idx)}
+                    onClick={() => handleRestoreVersion(idx)}
                     sx={{
                       fontWeight: 600,
                       textTransform: 'none',

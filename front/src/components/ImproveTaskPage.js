@@ -1,44 +1,87 @@
-
 import React, { useState } from 'react';
-import axios from 'axios';
 import {
     Box, Button, TextField, Typography, Grid,
     Alert, Snackbar, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions,
-    useMediaQuery, useTheme
+    useMediaQuery, useTheme, Switch, FormControlLabel, Tooltip
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { saveGenerationToLocalStorage } from '../utils/saveGenerationLocalStorage';
+import StreamIcon from '@mui/icons-material/Stream';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
-import { addVersion, getVersions, restoreVersion } from '../utils/generationHistory';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
-import { usePrompt } from '../hooks/usePrompt';
+import { 
+    useJira, 
+    useGenerationHistory,
+    useEducationMode,
+    usePrompt,
+    useImproveTaskMutation,
+    useImproveTaskStream
+} from '../hooks';
 
 function ImproveTaskPage() {
     const { t } = useLanguage();
     const { isDarkMode } = useDarkMode();
     const { prompt } = usePrompt('taskModel');
-    const [isLoading, setIsLoading] = useState(false);
-    const [model, setModel] = useState({ apiName: '', version: '' });
-    const [error, setError] = useState(null);
-    const [result, setResult] = useState('');
-    const [showHistory, setShowHistory] = useState(false);
-    const [versions, setVersions] = useState([]);
-    const [taskDescription, setTaskDescription] = useState('');
-    const [jiraTaskCode, setJiraTaskCode] = useState('');
-    const [isJiraLoading, setIsJiraLoading] = useState(false);
-    const [generationId, setGenerationId] = useState(null);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-    // Education mode state (read from localStorage)
-    const [educationMode] = useState(() => {
-        const savedMode = localStorage.getItem('educationMode');
-        return savedMode ? JSON.parse(savedMode) : false;
+    
+    // Custom Hooks
+    const { educationMode } = useEducationMode();
+    
+    // Estado para modo streaming
+    const [useStreaming, setUseStreaming] = useState(true);
+    
+    // React Query Mutation para melhorar tarefa (modo normal)
+    const [generationId, setGenerationId] = useState(null);
+    const [result, setResult] = useState('');
+    const [error, setError] = useState(null);
+    
+    const improveTaskMutation = useImproveTaskMutation({
+        onSuccess: (data, variables, id) => {
+            setResult(data);
+            setGenerationId(id);
+        },
+        onError: (err) => {
+            setError(err.message);
+        }
     });
+    
+    // Hook de streaming
+    const { 
+        improveTask: improveTaskStream,
+        isStreaming,
+        abort: abortStream,
+        generationId: streamGenerationId
+    } = useImproveTaskStream();
+    
+    // Loading combinado
+    const isLoading = improveTaskMutation.isPending || isStreaming;
+    
+    // Usar generationId do streaming se disponível
+    const activeGenerationId = streamGenerationId || generationId;
+    
+    const { 
+        fetchTask, 
+        updateDescription, 
+        loading: isJiraLoading, 
+        error: jiraError,
+        isConfigured: isJiraConfigured 
+    } = useJira();
+    const { 
+        versions, 
+        showHistory, 
+        addNewVersion,
+        restore: handleRestore, 
+        toggleHistory 
+    } = useGenerationHistory(activeGenerationId);
+
+    // Local state
+    const [model, setModel] = useState({ apiName: '', version: '' });
+    const [taskDescription, setTaskDescription] = useState('');
+    const [jiraTaskCode, setJiraTaskCode] = useState('');
 
     // Novos estados para dialog de atualização JIRA
     const [jiraDialogOpen, setJiraDialogOpen] = useState(false);
@@ -70,94 +113,73 @@ function ImproveTaskPage() {
 
     const fetchJiraTaskDescription = async () => {
         if (!jiraTaskCode) return;
-        setIsJiraLoading(true);
-        setError(null);
+        if (!isJiraConfigured) {
+            setError(t('improveTask.jiraNotConfigured'));
+            return;
+        }
         try {
-            const backendUrl = 'http://localhost:5000';
-            const jiraToken = localStorage.getItem('jiraToken');
-            const jiraEmail = localStorage.getItem('jiraEmail');
-            const jiraBaseUrl = localStorage.getItem('jiraBaseUrl');
-            if (!jiraToken || !jiraEmail || !jiraBaseUrl) {
-                setError(t('improveTask.jiraNotConfigured'));
-                setIsJiraLoading(false);
+            const response = await fetchTask(jiraTaskCode);
+            if (!response?.fields?.description?.content?.[0]?.content?.[0]?.text) {
+                setError(t('improveTask.descriptionNotFound'));
                 return;
             }
-            const response = await axios.post(
-                `${backendUrl}/api/jira-task`,
-                {
-                    jiraTaskCode,
-                    jiraToken,
-                    jiraEmail,
-                    jiraBaseUrl
-                }
-            );
-            if (!response.data.fields.description.content[0].content[0].text) setError(t('improveTask.descriptionNotFound'));
-            const description = 'Titulo: '+ response.data.fields.summary + '\n\nDescrição: ' + response.data.fields.description.content[0].content[0].text || '';
+            const description = 'Titulo: '+ response.fields.summary + '\n\nDescrição: ' + response.fields.description.content[0].content[0].text || '';
             setTaskDescription(description);
         } catch (err) {
-            setError(t('improveTask.errorFetchingJira'));
+            setError(jiraError || t('improveTask.errorFetchingJira'));
             console.error(err);
-        } finally {
-            setIsJiraLoading(false);
         }
     };
 
     const handleSubmit = async (e) => {
-        setIsLoading(true);
-        setError(null);
         e.preventDefault();
-        let token = localStorage.getItem(`${model.apiName}Token`);
-        if (!token) {
-            setError('Sem token para realizar requisição');
-            setIsLoading(false);
-            return;
-        }
-        try {
-            const backendUrl =  'http://localhost:5000';
-            const userStory = taskDescription;
-            
-            // Add education mode instruction if enabled
-            let promptText = `${prompt}
+        const userStory = taskDescription;
+        
+        // Add education mode instruction if enabled
+        let promptText = `${prompt}
 
 Aqui está uma história de usuário:
 
 "${userStory}"
 `;
-            if (educationMode) {
-                promptText += `
+        if (educationMode) {
+            promptText += `
 
 ---
 ## ${t('improveTask.educationalPrompt')}`;
-            }
-            
-            const response = await axios.post(
-                `${backendUrl}/api/${model.apiName}/improve-task?token=${token}`,
-                {
-                    model: model.version,
-                    data: promptText,
-                    educationMode // Sinaliza explicitamente para o backend também
+        }
+        
+        const taskInfo = jiraTaskCode
+            ? `JIRA: ${jiraTaskCode} - ${userStory.substring(0, 100)}`
+            : `Manual: ${userStory.substring(0, 100)}`;
+        
+        if (useStreaming) {
+            // Usa streaming (SSE)
+            setResult(''); // Limpa resultado anterior
+            console.log('[Streaming] Iniciando streaming...');
+            await improveTaskStream(promptText, model, taskInfo, {
+                onChunk: (chunk, fullContent) => {
+                    console.log('[Streaming] Chunk recebido:', chunk.length, 'chars');
+                    setResult(fullContent);
+                },
+                onComplete: (finalContent, id) => {
+                    console.log('[Streaming] Completo:', finalContent.length, 'chars');
+                    setResult(finalContent);
+                    setGenerationId(id);
+                },
+                onError: (err) => {
+                    console.error('[Streaming] Erro:', err);
+                    setError(err.message);
                 }
-            );
-            setResult(response.data.data);
-            if (generationId) {
-                addVersion(generationId, response.data.data, { type: 'task', model: model.version });
-            }
-            const taskInfo = jiraTaskCode
-                ? `JIRA: ${jiraTaskCode} - ${userStory.substring(0, 100)}`
-                : `Manual: ${userStory.substring(0, 100)}`;
-            const id = saveGenerationToLocalStorage(
-                response.data.data,
-                'task',
-                model.version,
-                taskInfo
-            );
-            setGenerationId(id);
-            setVersions(getVersions(id));
-        } catch (error) {
-            setError(t('improveTask.errorImproving'));
-            console.error('Erro ao melhorar a tarefa:', error);
-        } finally {
-            setIsLoading(false);
+            });
+        } else {
+            // Usa React Query mutation (modo normal)
+            improveTaskMutation.mutate({ 
+                promptText, 
+                model, 
+                taskInfo,
+                generationId 
+            });
         }
     };
 
@@ -185,27 +207,17 @@ Aqui está uma história de usuário:
         setError(null);
         setJiraUpdateSuccess(false);
         try {
-            const backendUrl = 'http://localhost:5000';
-            const jiraToken = localStorage.getItem('jiraToken');
-            const jiraEmail = localStorage.getItem('jiraEmail');
-            const jiraBaseUrl = localStorage.getItem('jiraBaseUrl');
             const newDescription = extractJiraUpdateText();
-            if (!jiraTaskCode || !jiraToken || !jiraEmail || !jiraBaseUrl || !newDescription) {
+            if (!jiraTaskCode || !newDescription) {
                 setError('Dados insuficientes para atualizar o cartão JIRA.');
                 setJiraUpdateLoading(false);
                 return;
             }
-            await axios.post(`${backendUrl}/api/jira-task/update`, {
-                jiraTaskCode,
-                jiraToken,
-                jiraEmail,
-                jiraBaseUrl,
-                newDescription
-            });
+            await updateDescription(jiraTaskCode, newDescription);
             setJiraUpdateSuccess(true);
             setJiraDialogOpen(false);
         } catch (err) {
-            setError('Erro ao atualizar cartão JIRA.');
+            setError(jiraError || 'Erro ao atualizar cartão JIRA.');
             console.error(err);
         } finally {
             setJiraUpdateLoading(false);
@@ -214,21 +226,15 @@ Aqui está uma história de usuário:
 
     const handleRegeneratedContent = (regeneratedContent) => {
         if (generationId && result) {
-            addVersion(generationId, result, { type: 'task', model: model.version });
+            addNewVersion(result, { type: 'task', model: model.version });
         }
         setResult(regeneratedContent);
-        if (generationId) setVersions(getVersions(generationId));
     };
-    const openVersionsModal = () => {
-        if (generationId) setVersions(getVersions(generationId));
-        setShowHistory(true);
-    };
-    const closeVersionsModal = () => setShowHistory(false);
-    const handleRestore = idx => {
-        if (!generationId) return;
-        const v = restoreVersion(generationId, idx);
-        if (v && v.content) setResult(v.content);
-        setShowHistory(false);
+    const openVersionsModal = () => toggleHistory();
+    const closeVersionsModal = () => toggleHistory();
+    const handleRestoreVersion = (idx) => {
+        const restored = handleRestore(idx);
+        if (restored?.content) setResult(restored.content);
     };
 
     return (
@@ -262,7 +268,7 @@ Aqui está uma história de usuário:
                         {t('improveTask.title')}
                     </Typography>
                 </Box>
-                {generationId && getVersions(generationId).length > 0 && (
+                {generationId && versions.length > 0 && (
                     <Box my={2} display="flex" justifyContent="center">
                         <Button 
                           variant="outlined" 
@@ -353,32 +359,62 @@ Aqui está uma história de usuário:
                     helperText={!isManualEnabled ? t('improveTask.disabledJira') : ""}
                 />
 
-                <Box textAlign="center">
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        disabled={isButtonDisabled || isLoading}
-                        onClick={handleSubmit}
-                        size={isMobile ? "medium" : "large"}
-                        sx={{
-                          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                          fontWeight: 600,
-                          textTransform: 'none',
-                          padding: '10px 32px',
-                          '&:hover': {
-                            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                            boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
-                            transform: 'translateY(-2px)',
-                            transition: '0.2s ease-in-out'
-                          },
-                          '&:disabled': {
-                            background: '#d1d5db',
-                            color: '#9ca3af'
-                          }
-                        }}
-                    >
-                        {isLoading ? <CircularProgress size={24} /> : t('common.submit')}
-                    </Button>
+                <Box textAlign="center" sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <Tooltip title={t('improveTask.streamingTooltip') || "Streaming mostra a resposta em tempo real conforme é gerada"}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={useStreaming}
+                                    onChange={(e) => setUseStreaming(e.target.checked)}
+                                    color="primary"
+                                    size="small"
+                                />
+                            }
+                            label={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <StreamIcon fontSize="small" />
+                                    <Typography variant="body2">Streaming</Typography>
+                                </Box>
+                            }
+                        />
+                    </Tooltip>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            disabled={isButtonDisabled || isLoading}
+                            onClick={handleSubmit}
+                            size={isMobile ? "medium" : "large"}
+                            sx={{
+                              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                              fontWeight: 600,
+                              textTransform: 'none',
+                              padding: '10px 32px',
+                              '&:hover': {
+                                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                                boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+                                transform: 'translateY(-2px)',
+                                transition: '0.2s ease-in-out'
+                              },
+                              '&:disabled': {
+                                background: '#d1d5db',
+                                color: '#9ca3af'
+                              }
+                            }}
+                        >
+                            {isLoading ? <CircularProgress size={24} /> : t('common.submit')}
+                        </Button>
+                        {isStreaming && (
+                            <Button
+                                variant="outlined"
+                                color="error"
+                                onClick={abortStream}
+                                size={isMobile ? "medium" : "large"}
+                            >
+                                {t('common.cancel') || 'Cancelar'}
+                            </Button>
+                        )}
+                    </Box>
                 </Box>
             </Grid>
             <div hidden={!isLoading}>
@@ -450,8 +486,26 @@ Aqui está uma história de usuário:
                     )}
 
                     {/* Apresentação do resultado e explicação */}
-                    <Box sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
+                    <Box sx={{ color: isDarkMode ? '#f3f4f6' : '#1f2937', position: 'relative' }}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{result}</ReactMarkdown>
+                        {isStreaming && (
+                            <Box 
+                                component="span" 
+                                sx={{ 
+                                    display: 'inline-block',
+                                    width: '8px',
+                                    height: '20px',
+                                    backgroundColor: 'primary.main',
+                                    animation: 'blink 1s infinite',
+                                    verticalAlign: 'text-bottom',
+                                    ml: 0.5,
+                                    '@keyframes blink': {
+                                        '0%, 50%': { opacity: 1 },
+                                        '51%, 100%': { opacity: 0 }
+                                    }
+                                }}
+                            />
+                        )}
                     </Box>
                     {educationMode && (
                         <Box mt={3}>
@@ -515,7 +569,7 @@ Aqui está uma história de usuário:
                                     <Button 
                                       variant="outlined" 
                                       size="small" 
-                                      onClick={() => handleRestore(idx)}
+                                      onClick={() => handleRestoreVersion(idx)}
                                       sx={{
                                         fontWeight: 600,
                                         textTransform: 'none',

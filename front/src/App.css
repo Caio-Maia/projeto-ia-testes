@@ -17,9 +17,18 @@
   --font-main: 'Roboto', 'Segoe UI', Arial, sans-serif;
 }
 
-/* Dark mode CSS variables */
+/* Dark mode CSS variables - via data-theme attribute */
+html[data-theme="dark"] {
+  --background-main: #0f1419;
+  --background-card: #1a202c;
+  --text-main: #f3f4f6;
+  --text-secondary: #d1d5db;
+  --border-color: #374151;
+}
+
+/* Dark mode CSS variables - via system preference (fallback) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --background-main: #0f1419;
     --background-card: #1a202c;
     --text-main: #f3f4f6;
@@ -35,6 +44,12 @@ body, .app-container {
   margin: 0;
   min-height: 100vh;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html[data-theme="light"] body,
+html[data-theme="light"] .app-container {
+  background: #f9fafb !important;
+  color: #1f2937 !important;
 }
 
 html[data-theme="dark"] body,
@@ -104,8 +119,7 @@ html[data-theme="dark"] .app-container {
 /* ===================== */
 /* 📑 CARDS */
 /* ===================== */
-.card-responsive,
-.MuiPaper-root {
+.card-responsive {
   background: var(--background-card);
   box-shadow: var(--shadow-soft);
   border-radius: var(--border-radius);
@@ -116,6 +130,12 @@ html[data-theme="dark"] .app-container {
 .card-responsive:hover {
   box-shadow: 0 8px 32px rgba(50,71,101,0.18);
   transform: translateY(-2px);
+}
+
+/* Dialog específico - remover bordas */
+.MuiDialog-paper {
+  border: none !important;
+  outline: none !important;
 }
 
 /* ===================== */
@@ -129,10 +149,14 @@ html[data-theme="dark"] .app-container {
   height: 100vh;
   z-index: 1200;
   box-shadow: var(--shadow-soft);
-  background: #2c3e50;
+  background: #f3f4f6;
   border-radius: 0 12px 12px 0;
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+html[data-theme="dark"] .sidebar-drawer {
+  background: #1a202c;
 }
 .sidebar-drawer.open {
   width: 240px;
@@ -147,13 +171,19 @@ html[data-theme="dark"] .app-container {
   justify-content: space-between;
   padding: 0 14px;
   height: 56px;
-  background: #34495e;
-  color: #fff;
+  background: #e5e7eb;
+  color: #1f2937;
   font-weight: 600;
   position: sticky;
   top: 0;
   z-index: 1;
-  border-bottom: 1px solid #3d566e;
+  border-bottom: 1px solid #d1d5db;
+}
+
+html[data-theme="dark"] .sidebar-header {
+  background: #0f1419;
+  color: #f3f4f6;
+  border-bottom: 1px solid #374151;
 }
 
 .sidebar-item {
@@ -161,16 +191,25 @@ html[data-theme="dark"] .app-container {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #ecf0f1;
+  color: #1f2937;
   cursor: pointer;
   border-radius: 8px;
   transition: background 0.2s, transform 0.1s;
   text-decoration: none;
 }
 .sidebar-item:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  transform: translateX(3px);
+}
+
+html[data-theme="dark"] .sidebar-item {
+  color: #ecf0f1;
+}
+
+html[data-theme="dark"] .sidebar-item:hover {
   background: rgba(52, 152, 219, 0.15);
   color: #3498db;
-  transform: translateX(3px);
 }
 .sidebar-drawer.closed .sidebar-item span {
   display: none;
@@ -193,6 +232,10 @@ html[data-theme="dark"] .app-container {
 .sidebar-title {
   font-weight: 600;
   font-size: 1.1em;
+  color: #1f2937;
+}
+
+html[data-theme="dark"] .sidebar-title {
   color: #ecf0f1;
 }
 

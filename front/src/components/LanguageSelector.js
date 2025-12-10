@@ -1,10 +1,12 @@
 import React from 'react';
 import { Box, Button, Menu, MenuItem, Typography } from '@mui/material';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useDarkMode } from '../contexts/DarkModeContext';
 import { FaGlobe } from 'react-icons/fa';
 
 function LanguageSelector() {
   const { language, changeLanguage, t } = useLanguage();
+  const { isDarkMode } = useDarkMode();
   const [anchorEl, setAnchorEl] = React.useState(null);
 
   const handleClick = (event) => {
@@ -33,7 +35,7 @@ function LanguageSelector() {
         onClick={handleClick}
         sx={{
           textTransform: 'none',
-          color: 'white',
+          color: '#ffffff !important',
           fontWeight: '700',
           fontSize: '0.95rem',
           px: 2.2,
@@ -54,13 +56,14 @@ function LanguageSelector() {
           }
         }}
       >
-        <FaGlobe style={{ fontSize: '1rem' }} />
+        <FaGlobe style={{ fontSize: '1rem', color: '#ffffff' }} />
         <Typography 
           component="span"
           sx={{
             fontWeight: '700',
             display: { xs: 'none', sm: 'inline' },
-            letterSpacing: '0.3px'
+            letterSpacing: '0.3px',
+            color: '#ffffff !important'
           }}
         >
           {currentLanguage?.flag} {currentLanguage?.label}
@@ -70,7 +73,8 @@ function LanguageSelector() {
           sx={{
             fontWeight: '700',
             display: { xs: 'inline', sm: 'none' },
-            fontSize: '1.1rem'
+            fontSize: '1.1rem',
+            color: '#ffffff !important'
           }}
         >
           {currentLanguage?.flag}
@@ -82,12 +86,35 @@ function LanguageSelector() {
         onClose={handleClose}
         PaperProps={{
           sx: {
-            boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+            boxShadow: isDarkMode 
+              ? '0 10px 24px rgba(0, 0, 0, 0.5)' 
+              : '0 10px 24px rgba(59, 130, 246, 0.15)',
             borderRadius: '8px',
             mt: 1.5,
             minWidth: '220px',
-            background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
-            border: 'none'
+            background: isDarkMode 
+              ? '#1a202c' 
+              : 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
+            border: 'none !important',
+            outline: 'none !important',
+            '&::before': {
+              display: 'none'
+            }
+          }
+        }}
+        MenuListProps={{
+          sx: {
+            border: 'none !important',
+            outline: 'none !important',
+            padding: '4px 0'
+          }
+        }}
+        slotProps={{
+          paper: {
+            sx: {
+              border: 'none !important',
+              outline: 'none !important'
+            }
           }
         }}
       >
@@ -101,10 +128,14 @@ function LanguageSelector() {
               px: 2.2,
               fontSize: '0.95rem',
               fontWeight: language === lang.code ? '700' : '500',
-              backgroundColor: language === lang.code ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
-              color: language === lang.code ? '#3b82f6' : '#1f2937',
+              backgroundColor: language === lang.code 
+                ? (isDarkMode ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.12)') 
+                : 'transparent',
+              color: language === lang.code 
+                ? '#3b82f6' 
+                : (isDarkMode ? '#f3f4f6' : '#1f2937'),
               '&:hover': {
-                backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.08)',
               },
               transition: '0.2s ease-in-out',
               borderRadius: '6px',
@@ -117,7 +148,7 @@ function LanguageSelector() {
             }}
           >
             <span style={{ fontSize: '1.3rem' }}>{lang.flag}</span>
-            <Typography sx={{ fontWeight: 'inherit' }}>
+            <Typography sx={{ fontWeight: 'inherit', color: 'inherit' }}>
               {lang.label}
             </Typography>
           </MenuItem>

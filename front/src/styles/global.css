@@ -177,11 +177,16 @@ html[data-theme="dark"] * {
   top: 0;
   left: 0;
   z-index: 1200;
-  background: #2c3e50;
-  color: #fff;
+  background: #f3f4f6;
+  color: #1f2937;
   border-top: none;
   border-radius: 0 12px 12px 0;
   box-shadow: 0 2px 12px 0 rgba(50, 71, 101, 0.08);
+}
+
+html[data-theme="dark"] .sidebar-drawer {
+  background: #1a202c;
+  color: #f3f4f6;
 }
 
 /* Sidebar Header */
@@ -193,11 +198,18 @@ html[data-theme="dark"] * {
   height: 56px;
   min-height: 56px;
   max-width: 100%;
-  background: #34495e;
-  color: #fff;
-  border-bottom: 1px solid #3d566e;
+  background: #e5e7eb;
+  color: #1f2937;
+  border-bottom: 1px solid #d1d5db;
   overflow: hidden;
 }
+
+html[data-theme="dark"] .sidebar-header {
+  background: #0f1419;
+  color: #f3f4f6;
+  border-bottom: 1px solid #374151;
+}
+
 .sidebar-title {
   font-weight: bold;
   font-size: 1.12em;
@@ -209,6 +221,10 @@ html[data-theme="dark"] * {
   white-space: pre-line;
   margin-right: 9px;
   padding-right: 2px;
+  color: #1f2937;
+}
+
+html[data-theme="dark"] .sidebar-title {
   color: #ecf0f1;
 }
 .sidebar-logo {

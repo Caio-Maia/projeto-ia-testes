@@ -11,6 +11,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import ModelSelector from './ModelSelector';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import { submitFeedback, regenerateFeedback } from '../services/feedbackStorageService';
+import { parseError, logError } from '../utils/errorHandler';
 
 function FeedbackComponent({ generationId, type, originalContent, onRegenerateContent }) {
   const { isDarkMode } = useDarkMode();
@@ -80,8 +81,9 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
         setShowCommentField(false);
       }
     } catch (err) {
-      setError('Erro ao enviar feedback');
-      console.error('Erro ao enviar feedback:', err);
+      const appError = parseError(err);
+      setError(appError.message);
+      logError('FeedbackComponent submit', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -133,8 +135,9 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
       }, 500); // Aguarda um pouco para o conteúdo ser atualizado
       
     } catch (err) {
-      setError('Erro ao regenerar conteúdo');
-      console.error('Erro ao regenerar conteúdo:', err);
+      const appError = parseError(err);
+      setError(appError.message);
+      logError('FeedbackComponent regenerate', err);
     } finally {
       setIsRegenerating(false);
     }

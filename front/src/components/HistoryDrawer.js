@@ -343,12 +343,12 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
           {generations.length > 0 ? (paginatedGenerations.map((gen) => (
             <ListItem
               key={gen.id}
-              button
               onClick={() => handleDialogOpen(gen)}
               sx={{
                 borderRadius: 2,
                 mb: 0.5,
                 transition: '.15s',
+                cursor: 'pointer',
                 '&:hover': {
                   background: 'rgba(33,150,243,0.08)',
                   boxShadow: 2
@@ -418,7 +418,7 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
       </Drawer>
 
       {/* Dialog para exibir o conteúdo da geração */}
-      <Dialog open={dialogOpen} onClose={handleDialogClose} fullWidth maxWidth={'lg'} PaperProps={{ sx: { backgroundColor: isDarkMode ? '#0f1419' : '#ffffff', color: isDarkMode ? '#f3f4f6' : '#1f2937' } }}>
+      <Dialog open={dialogOpen} onClose={handleDialogClose} fullWidth maxWidth={'lg'} PaperProps={{ sx: { backgroundColor: isDarkMode ? '#0f1419' : '#ffffff', color: isDarkMode ? '#f3f4f6' : '#1f2937', border: 'none', outline: 'none' } }}>
         <DialogTitle sx={{ pb: 1.5, mb: 0, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff', color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Box>

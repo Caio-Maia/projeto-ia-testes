@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { IconButton, Tooltip, Menu, MenuItem, Box, CircularProgress, Alert } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { AI_MODELS } from '../utils/aiModels';
+import { parseError, logError } from '../utils/errorHandler';
 
 /**
  * Botão para regenerar conteúdo com IA selecionada
@@ -98,14 +99,15 @@ const RegenerateButton = ({ generation, onRegenerateStart, onRegenerateComplete,
       // Limpar status após 3 segundos
       setTimeout(() => setStatus(null), 3000);
     } catch (error) {
-      console.error('Erro ao regenerar:', error);
+      const appError = parseError(error);
+      logError('RegenerateButton', error);
 
       setStatus({
         type: 'error',
-        message: `Erro ao regenerar: ${error.message}`
+        message: `Erro ao regenerar: ${appError.message}`
       });
 
-      onRegenerateError?.(error, model);
+      onRegenerateError?.(appError, model);
 
       // Limpar status após 5 segundos
       setTimeout(() => setStatus(null), 5000);
