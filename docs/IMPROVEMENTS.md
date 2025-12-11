@@ -1163,6 +1163,16 @@ develop (desenvolvimento) → main (produção/deploy)
 12. **Virtualização de Listas** - react-window component
 13. **Debounce/Throttle** - Hooks otimizados
 
+### 🧹 Limpezas Realizadas:
+- **Pacotes removidos (frontend)**:
+  - `@testing-library/user-event` - Não utilizado
+  - `@craco/craco` - Não utilizado
+  - `terser-webpack-plugin` - Não utilizado (já incluído no CRA)
+- **Arquivos removidos**:
+  - `front/src/contexts/DarkModeContext.js` - Substituído por Zustand
+  - `front/src/contexts/LanguageContext.js` - Substituído por Zustand
+  - Pasta `front/src/contexts/` removida
+
 ---
 
-**Última atualização**: Dezembro 2025
+**Última atualização**: Janeiro 2025
