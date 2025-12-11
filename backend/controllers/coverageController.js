@@ -1,4 +1,7 @@
 const axios = require('axios');
+const { queueCoverageAnalysis, getAIJobStatus } = require('../services/aiQueueService');
+const { isRedisEnabled } = require('../services/queueService');
+const { logger } = require('../utils/logger');
 
 // Helpers para chamadas de API
 const callOpenAI = async (model, messages) => {
@@ -281,4 +284,138 @@ RETORNE um JSON com esta estrutura:
   }
 };
 
-module.exports = { analyzeCoverage, extractRequirements, parseTestCases };
+/**
+ * Analyze coverage async (queue-based)
+ * Retorna job ID imediatamente para consulta posterior
+ */
+const analyzeCoverageAsync = async (req, res) => {
+  const { requirements, testCases, model } = req.body;
+  const token = req.query.token;
+  const language = req.query.language || 'pt-BR';
+
+  // Validation
+  if (!requirements || !Array.isArray(requirements) || requirements.length === 0) {
+    return res.status(400).json({ 
+      error: 'Requirements array is required and must not be empty' 
+    });
+  }
+
+  if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+    return res.status(400).json({ 
+      error: 'Test cases array is required and must not be empty' 
+    });
+  }
+
+  // Se Redis não está disponível, faz processamento síncrono
+  if (!isRedisEnabled()) {
+    logger.info('Redis not available, falling back to sync processing');
+    return analyzeCoverage(req, res);
+  }
+
+  try {
+    const modelInfo = getModelVersion(model);
+    if (!modelInfo) {
+      return res.status(400).json({ 
+        error: 'Invalid model specified. Use "chatgpt", "gemini", or specific model version.' 
+      });
+    }
+
+    const result = await queueCoverageAnalysis(
+      requirements,
+      testCases,
+      token,
+      modelInfo.version,
+      { language }
+    );
+
+    // Se fila não disponível, processa sync
+    if (result.sync) {
+      return analyzeCoverage(req, res);
+    }
+
+    logger.info({ jobId: result.jobId }, 'Coverage analysis queued');
+
+    res.status(202).json({
+      message: 'Análise de cobertura adicionada à fila',
+      jobId: result.jobId,
+      status: 'queued',
+      checkStatusUrl: `/api/jobs/${result.jobId}`
+    });
+  } catch (error) {
+    logger.error({ error: error.message }, 'Error queuing coverage analysis');
+    handleApiError(error, res, 'Erro ao enfileirar análise de cobertura');
+  }
+};
+
+/**
+ * Função interna para processamento pelo worker
+ * Não é rota, é chamada pelo aiQueueService
+ */
+const analyzeWithAIInternal = async ({ requirements, testCases, model, token, language, onProgress }) => {
+  const systemPrompt = `Você é um especialista em Qualidade de Software e Análise de Cobertura de Testes.
+Sua função é:
+1. Analisar requisitos versus casos de teste
+2. Calcular percentuais de cobertura por requisito
+3. Identificar gaps (requisitos sem testes)
+4. Gerar recomendações acionáveis e priorizadas
+5. Sugerir novos testes para melhorar cobertura
+
+IMPORTANTE: Retorne APENAS um JSON válido, sem texto adicional, sem markdown code blocks.`;
+
+  const analysisPrompt = `Analise a cobertura de testes do seguinte projeto:
+
+REQUISITOS:
+${JSON.stringify(requirements, null, 2)}
+
+CASOS DE TESTE:
+${JSON.stringify(testCases, null, 2)}
+
+INSTRUÇÕES:
+1. Para cada requisito, identifique os casos de teste associados
+2. Calcule o percentual de cobertura por requisito (0-100%)
+3. Identifique requisitos sem testes (cobertura 0%)
+4. Gere recomendações priorizadas por severidade
+
+RETORNE um JSON com estrutura de análise de cobertura.`;
+
+  if (onProgress) await onProgress(0.3);
+
+  let result;
+  const modelInfo = getModelVersion(model);
+  
+  if (!modelInfo) {
+    throw new Error('Invalid model specified');
+  }
+
+  if (modelInfo.type === 'chatgpt') {
+    result = await callOpenAI(modelInfo.version, [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: analysisPrompt }
+    ]);
+  } else {
+    if (!token) throw new Error('Token não fornecido para Gemini');
+    result = await callGemini(modelInfo.version, `${systemPrompt}\n\n${analysisPrompt}`, token);
+  }
+
+  if (onProgress) await onProgress(0.9);
+
+  return {
+    ...result,
+    report_metadata: {
+      generated_at: new Date().toISOString(),
+      analysis_model: modelInfo.version,
+      analysis_version: '1.0',
+      source_requirements_count: requirements.length,
+      source_tests_count: testCases.length,
+      processed_async: true
+    }
+  };
+};
+
+module.exports = { 
+  analyzeCoverage, 
+  analyzeCoverageAsync,
+  analyzeWithAIInternal,
+  extractRequirements, 
+  parseTestCases 
+};
