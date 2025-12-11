@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import { Box, useMediaQuery, ThemeProvider, CssBaseline } from '@mui/material';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -16,17 +16,17 @@ import DarkModeToggle from './components/DarkModeToggle';
 import './App.css';
 import './styles/global.css';
 
-// Lazy load page components
-const LandingPage = React.lazy(() => import('./components/LandingPage'));
-const HomePage = React.lazy(() => import('./components/HomePage'));
-const ImproveTaskPage = React.lazy(() => import('./components/ImproveTaskPage'));
-const GenerateTestsPage = React.lazy(() => import('./components/GenerateTestsPage'));
-const CodeGenerationPage = React.lazy(() => import('./components/CodeGenerationPage'));
-const RiskAnalysisPage = React.lazy(() => import('./components/RiskAnalysisPage'));
-const FeedbackDashboard = React.lazy(() => import('./components/FeedbackDashboard'));
-const TestCoverageAnalysis = React.lazy(() => import('./components/TestCoverageAnalysis'));
-const DocumentationPage = React.lazy(() => import('./components/DocumentationPage'));
-const PromptPage = React.lazy(() => import('./components/PromptPage'));
+// Lazy load page components with webpack chunk names for better bundle splitting
+const LandingPage = lazy(() => import(/* webpackChunkName: "landing" */ './components/LandingPage'));
+const HomePage = lazy(() => import(/* webpackChunkName: "home" */ './components/HomePage'));
+const ImproveTaskPage = lazy(() => import(/* webpackChunkName: "improve-task" */ './components/ImproveTaskPage'));
+const GenerateTestsPage = lazy(() => import(/* webpackChunkName: "generate-tests" */ './components/GenerateTestsPage'));
+const CodeGenerationPage = lazy(() => import(/* webpackChunkName: "code-generation" */ './components/CodeGenerationPage'));
+const RiskAnalysisPage = lazy(() => import(/* webpackChunkName: "risk-analysis" */ './components/RiskAnalysisPage'));
+const FeedbackDashboard = lazy(() => import(/* webpackChunkName: "feedback" */ './components/FeedbackDashboard'));
+const TestCoverageAnalysis = lazy(() => import(/* webpackChunkName: "coverage" */ './components/TestCoverageAnalysis'));
+const DocumentationPage = lazy(() => import(/* webpackChunkName: "docs" */ './components/DocumentationPage'));
+const PromptPage = lazy(() => import(/* webpackChunkName: "prompts" */ './components/PromptPage'));
 
 // Token Dialog Wrapper with navigation support
 function TokenDialogWithNavigation({ open, onClose }) {
