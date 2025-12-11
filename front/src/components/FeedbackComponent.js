@@ -10,11 +10,13 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ModelSelector from './ModelSelector';
 import { useDarkMode } from '../stores/hooks';
+import { useLanguage } from '../stores/hooks';
 import { submitFeedback, regenerateFeedback } from '../services/feedbackStorageService';
 import { parseError, logError } from '../utils/errorHandler';
 
 function FeedbackComponent({ generationId, type, originalContent, onRegenerateContent }) {
   const { isDarkMode } = useDarkMode();
+  const { t } = useLanguage();
   const feedbackRef = useRef(null); // Ref para scroll
   const [rating, setRating] = useState(null);
   const [comment, setComment] = useState('');
@@ -82,7 +84,7 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
       }
     } catch (err) {
       const appError = parseError(err);
-      setError(appError.message);
+      setError(appError.getTranslatedMessage(t));
       logError('FeedbackComponent submit', err);
     } finally {
       setIsSubmitting(false);
@@ -136,7 +138,7 @@ function FeedbackComponent({ generationId, type, originalContent, onRegenerateCo
       
     } catch (err) {
       const appError = parseError(err);
-      setError(appError.message);
+      setError(appError.getTranslatedMessage(t));
       logError('FeedbackComponent regenerate', err);
     } finally {
       setIsRegenerating(false);

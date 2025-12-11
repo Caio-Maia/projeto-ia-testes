@@ -258,6 +258,7 @@ const translations = {
       positive: 'Positivo',
       negative: 'Negativo',
       approve: 'aprovam',
+      approval: 'aprovação',
       feedbacksReceived: 'feedbacks recebidos',
       noFeedback: 'Nenhum feedback recebido',
       tasks: 'Tarefas',
@@ -274,6 +275,38 @@ const translations = {
       clearLocal: 'Limpar',
       clearLocalTitle: 'Limpar Feedbacks Locais',
       clearLocalConfirm: 'Tem certeza que deseja excluir todos os feedbacks salvos localmente? Esta ação não pode ser desfeita.',
+      // KPIs
+      totalFeedbacks: 'Total de Feedbacks',
+      approvalRate: 'Taxa de Aprovação',
+      todayFeedbacks: 'Feedbacks Hoje',
+      avgPerDay: 'Média/Dia',
+      // Table & Filters
+      searchPlaceholder: 'Buscar comentários...',
+      filterAll: 'Todos',
+      filterAllRatings: 'Todas',
+      filterUseful: 'Útil',
+      filterImprove: 'Melhorar',
+      results: 'resultado',
+      resultsPlural: 'resultados',
+      autoRefresh: 'Auto-atualizar',
+      refresh: 'Atualizar',
+      export: 'Exportar',
+      tryAgain: 'Tentar Novamente',
+      // Trend
+      trendTitle: 'Tendência (últimos 7 dias)',
+      comparisonByType: 'Comparativo por Tipo',
+      // Export dialog
+      exportTitle: 'Exportar Feedbacks',
+      exportConfirm: 'Você deseja exportar',
+      feedbackSingular: 'feedback',
+      feedbackPlural: 'feedbacks',
+      inCsvFormat: 'em formato CSV?',
+      // Empty states
+      noResultsFiltered: 'Nenhum resultado encontrado com os filtros aplicados',
+      feedbacksWillAppear: 'Os feedbacks aparecerão aqui quando começarem a chegar',
+      // Performance by model
+      byModel: 'Por Modelo de IA',
+      noModelData: 'Sem dados de modelo',
     },
 
     // Prompts
@@ -369,6 +402,51 @@ const translations = {
         made: 'Feito',
         by: 'por',
       },
+    },
+
+    // Error Messages
+    errors: {
+      // Auth/Authorization
+      unauthorized: 'Não autorizado. Verifique seu token.',
+      forbidden: 'Acesso negado.',
+      aiTokenMissing: 'Token da API não configurado. Configure nas configurações.',
+      
+      // Validation
+      validationError: 'Dados inválidos. Verifique os campos preenchidos.',
+      badRequest: 'Requisição inválida.',
+      
+      // Resources
+      notFound: 'Recurso não encontrado.',
+      
+      // Rate Limiting
+      tooManyRequests: 'Muitas requisições. Aguarde um momento e tente novamente.',
+      
+      // External Services
+      aiServiceError: 'Erro no serviço de IA. Tente novamente.',
+      externalServiceError: 'Erro no serviço externo.',
+      
+      // Server
+      internalError: 'Erro interno do servidor. Tente novamente mais tarde.',
+      
+      // Network
+      networkError: 'Erro de conexão. Verifique sua internet e tente novamente.',
+      connectionError: 'Não foi possível conectar ao servidor.',
+      timeoutError: 'A requisição demorou muito. Tente novamente.',
+      
+      // HTTP Status
+      http400: 'Requisição inválida',
+      http401: 'Não autorizado. Verifique seu token.',
+      http403: 'Acesso negado.',
+      http404: 'Recurso não encontrado.',
+      http429: 'Muitas requisições. Aguarde um momento.',
+      http500: 'Erro interno do servidor.',
+      http502: 'Serviço indisponível no momento.',
+      http503: 'Serviço temporariamente indisponível.',
+      http504: 'Tempo de resposta esgotado.',
+      
+      // Default
+      unknownError: 'Ocorreu um erro inesperado.',
+      httpError: 'Erro HTTP',
     },
   },
   
@@ -647,6 +725,39 @@ const translations = {
       clearLocal: 'Clear',
       clearLocalTitle: 'Clear Local Feedback',
       clearLocalConfirm: 'Are you sure you want to delete all locally saved feedback? This action cannot be undone.',
+      // KPIs
+      totalFeedbacks: 'Total Feedbacks',
+      approvalRate: 'Approval Rate',
+      todayFeedbacks: 'Today\'s Feedbacks',
+      avgPerDay: 'Avg/Day',
+      approval: 'approval',
+      // Table & Filters
+      searchPlaceholder: 'Search comments...',
+      filterAll: 'All',
+      filterAllRatings: 'All',
+      filterUseful: 'Useful',
+      filterImprove: 'Improve',
+      results: 'result',
+      resultsPlural: 'results',
+      autoRefresh: 'Auto-refresh',
+      refresh: 'Refresh',
+      export: 'Export',
+      tryAgain: 'Try Again',
+      // Trend
+      trendTitle: 'Trend (last 7 days)',
+      comparisonByType: 'Comparison by Type',
+      // Export dialog
+      exportTitle: 'Export Feedbacks',
+      exportConfirm: 'Do you want to export',
+      feedbackSingular: 'feedback',
+      feedbackPlural: 'feedbacks',
+      inCsvFormat: 'in CSV format?',
+      // Empty states
+      noResultsFiltered: 'No results found with applied filters',
+      feedbacksWillAppear: 'Feedbacks will appear here when they start arriving',
+      // Performance by model
+      byModel: 'By AI Model',
+      noModelData: 'No model data',
     },
 
     // Prompts
@@ -758,6 +869,51 @@ const translations = {
       allRightsReserved: 'All rights reserved',
       made: 'Made',
       by: 'by',
+    },
+
+    // Error Messages
+    errors: {
+      // Auth/Authorization
+      unauthorized: 'Unauthorized. Check your token.',
+      forbidden: 'Access denied.',
+      aiTokenMissing: 'API token not configured. Set it in settings.',
+      
+      // Validation
+      validationError: 'Invalid data. Check the filled fields.',
+      badRequest: 'Invalid request.',
+      
+      // Resources
+      notFound: 'Resource not found.',
+      
+      // Rate Limiting
+      tooManyRequests: 'Too many requests. Wait a moment and try again.',
+      
+      // External Services
+      aiServiceError: 'AI service error. Try again.',
+      externalServiceError: 'External service error.',
+      
+      // Server
+      internalError: 'Internal server error. Try again later.',
+      
+      // Network
+      networkError: 'Connection error. Check your internet and try again.',
+      connectionError: 'Could not connect to server.',
+      timeoutError: 'Request took too long. Try again.',
+      
+      // HTTP Status
+      http400: 'Invalid request',
+      http401: 'Unauthorized. Check your token.',
+      http403: 'Access denied.',
+      http404: 'Resource not found.',
+      http429: 'Too many requests. Wait a moment.',
+      http500: 'Internal server error.',
+      http502: 'Service unavailable at the moment.',
+      http503: 'Service temporarily unavailable.',
+      http504: 'Response timeout.',
+      
+      // Default
+      unknownError: 'An unexpected error occurred.',
+      httpError: 'HTTP Error',
     },
   },
 };
