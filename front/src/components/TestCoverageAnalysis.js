@@ -6,8 +6,7 @@ import {
   Button, Dialog, DialogTitle, DialogContent, DialogActions,
   LinearProgress, Switch, FormControlLabel, TextField, Snackbar
 } from '@mui/material';
-import { useLanguage } from '../contexts/LanguageContext';
-import { useDarkMode } from '../contexts/DarkModeContext';
+import { useLanguage, useDarkMode } from '../stores/hooks';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';

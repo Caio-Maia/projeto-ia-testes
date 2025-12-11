@@ -1,6 +1,6 @@
 import React from "react";
 import { Link as RouterLink } from "react-router-dom";
-import { useLanguage } from "../contexts/LanguageContext";
+import { useLanguage } from '../stores/hooks';
 import { Box, Container, Typography, Link as MuiLink, Grid, Divider } from "@mui/material";
 import { FaGithub, FaLinkedin, FaCode } from "react-icons/fa";
 import packageJson from "../../package.json";

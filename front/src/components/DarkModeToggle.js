@@ -1,6 +1,6 @@
 import React from 'react';
 import { IconButton, Tooltip, Box } from '@mui/material';
-import { useDarkMode } from '../contexts/DarkModeContext';
+import { useDarkMode } from '../stores/hooks';
 import { FaSun, FaMoon } from 'react-icons/fa';
 
 const DarkModeToggle = () => {

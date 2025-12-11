@@ -4,7 +4,7 @@ import { Box, useMediaQuery, ThemeProvider, CssBaseline } from '@mui/material';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from './config/queryClient';
-import { DarkModeProvider, useDarkMode } from './contexts/DarkModeContext';
+import { useDarkMode } from './stores/hooks';
 import { lightTheme, darkTheme } from './theme/themes';
 import LoadingFallback from './components/LoadingFallback';
 import Footer from './components/Footer';
@@ -13,7 +13,6 @@ import TokenDialog from './components/TokenDialog';
 import EducationModeToggle from './components/EducationModeToggle';
 import LanguageSelector from './components/LanguageSelector';
 import DarkModeToggle from './components/DarkModeToggle';
-import { LanguageProvider } from './contexts/LanguageContext';
 import './App.css';
 import './styles/global.css';
 
@@ -188,11 +187,7 @@ function AppContent() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <DarkModeProvider>
-        <LanguageProvider>
-          <AppContent />
-        </LanguageProvider>
-      </DarkModeProvider>
+      <AppContent />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );

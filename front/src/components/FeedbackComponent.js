@@ -9,7 +9,7 @@ import FeedbackIcon from '@mui/icons-material/Feedback';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ModelSelector from './ModelSelector';
-import { useDarkMode } from '../contexts/DarkModeContext';
+import { useDarkMode } from '../stores/hooks';
 import { submitFeedback, regenerateFeedback } from '../services/feedbackStorageService';
 import { parseError, logError } from '../utils/errorHandler';
 

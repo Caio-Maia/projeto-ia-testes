@@ -17,7 +17,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import LockIcon from '@mui/icons-material/Lock';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import { useDarkMode } from '../contexts/DarkModeContext';
+import { useDarkMode } from '../stores/hooks';
 
 function TokenDialog({ open, onClose, permitClose, onSuccess }) {
     const { isDarkMode } = useDarkMode();

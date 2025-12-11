@@ -5,8 +5,7 @@ import {
   Typography, Paper, CircularProgress, Container, Box, Chip, Dialog, DialogTitle, 
   DialogContent, DialogActions, IconButton, Tooltip, Divider, Card, CardContent
 } from '@mui/material';
-import { useLanguage } from '../contexts/LanguageContext';
-import { useDarkMode } from '../contexts/DarkModeContext';
+import { useLanguage, useDarkMode } from '../stores/hooks';
 import SaveIcon from '@mui/icons-material/Save';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
