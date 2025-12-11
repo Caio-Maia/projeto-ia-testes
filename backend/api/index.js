@@ -14,6 +14,7 @@ const { errorHandler, notFoundHandler } = require('../middlewares/errorHandler')
 const { auditMiddleware, logRateLimit } = require('../middlewares/audit');
 const { initAIWorker } = require('../services/aiQueueService');
 const { closeAll: closeQueues, isRedisEnabled } = require('../services/queueService');
+const { initCache, closeCache } = require('../services/cacheService');
 const AuditLog = require('../models/auditLogModel');
 
 const app = express();
@@ -360,6 +361,14 @@ if (isRedisEnabled()) {
   } catch (error) {
     logger.warn({ error: error.message }, 'Failed to initialize AI Queue Worker');
   }
+  
+  // Initialize Cache Service
+  try {
+    initCache();
+    logger.info('Cache Service initialized');
+  } catch (error) {
+    logger.warn({ error: error.message }, 'Failed to initialize Cache Service');
+  }
 }
 
 // Graceful shutdown
@@ -371,6 +380,13 @@ const gracefulShutdown = async (signal) => {
     logger.info('Queue connections closed');
   } catch (error) {
     logger.error({ error: error.message }, 'Error closing queue connections');
+  }
+  
+  try {
+    await closeCache();
+    logger.info('Cache connections closed');
+  } catch (error) {
+    logger.error({ error: error.message }, 'Error closing cache connections');
   }
   
   process.exit(0);

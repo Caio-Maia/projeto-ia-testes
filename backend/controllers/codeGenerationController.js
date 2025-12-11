@@ -1,4 +1,6 @@
 const axios = require('axios');
+const { getFromCache, setInCache, getTTL } = require('../services/cacheService');
+const { logger } = require('../utils/logger');
 
 // API Constants
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
@@ -49,14 +51,33 @@ const buildRiskPrompt = (feature) =>
 // Generate test code using ChatGPT
 const generateTestCodeChatGPT = async (req, res) => {
   const { testCases, framework, language, model } = req.body;
+  const skipCache = req.query.skipCache === 'true';
+  const selectedModel = model || DEFAULT_CHATGPT_MODEL;
   
   if (!testCases || !framework) {
     return res.status(400).json({ error: 'Test cases and framework are required' });
   }
   
+  const prompt = buildTestCodePrompt(testCases, framework, language);
+  
+  // Check cache first
+  if (!skipCache) {
+    const cached = await getFromCache('chatgpt', selectedModel, 'generate-code', prompt);
+    if (cached.hit) {
+      return res.json({
+        ...cached.data.result,
+        cached: true,
+        cachedAt: cached.data.cachedAt
+      });
+    }
+  }
+  
   try {
-    const prompt = buildTestCodePrompt(testCases, framework, language);
-    const result = await callOpenAI(prompt, model || DEFAULT_CHATGPT_MODEL);
+    const result = await callOpenAI(prompt, selectedModel);
+    
+    // Save to cache
+    await setInCache('chatgpt', selectedModel, 'generate-code', prompt, result, getTTL('generate-code'));
+    
     res.json(result);
   } catch (error) {
     console.error('Error generating test code with ChatGPT:', error.message);
@@ -68,6 +89,8 @@ const generateTestCodeChatGPT = async (req, res) => {
 const generateTestCodeGemini = async (req, res) => {
   const { testCases, framework, language, model } = req.body;
   const token = req.query.token;
+  const skipCache = req.query.skipCache === 'true';
+  const selectedModel = model || DEFAULT_GEMINI_MODEL;
   
   if (!testCases || !framework) {
     return res.status(400).json({ error: 'Test cases and framework are required' });
@@ -77,9 +100,26 @@ const generateTestCodeGemini = async (req, res) => {
     return res.status(401).json({ error: 'Token não fornecido' });
   }
   
+  const prompt = buildTestCodePrompt(testCases, framework, language);
+  
+  // Check cache first
+  if (!skipCache) {
+    const cached = await getFromCache('gemini', selectedModel, 'generate-code', prompt);
+    if (cached.hit) {
+      return res.json({
+        data: cached.data.result,
+        cached: true,
+        cachedAt: cached.data.cachedAt
+      });
+    }
+  }
+  
   try {
-    const prompt = buildTestCodePrompt(testCases, framework, language);
-    const result = await callGemini(prompt, model || DEFAULT_GEMINI_MODEL, token);
+    const result = await callGemini(prompt, selectedModel, token);
+    
+    // Save to cache
+    await setInCache('gemini', selectedModel, 'generate-code', prompt, result, getTTL('generate-code'));
+    
     res.json({ data: result });
   } catch (error) {
     console.error('Error generating test code with Gemini:', error.message);
@@ -91,6 +131,7 @@ const generateTestCodeGemini = async (req, res) => {
 const analyzeRisks = async (req, res) => {
   const { feature, model } = req.body;
   const token = req.query.token;
+  const skipCache = req.query.skipCache === 'true';
   
   if (!feature) {
     return res.status(400).json({ error: 'Feature description is required' });
@@ -98,15 +139,44 @@ const analyzeRisks = async (req, res) => {
   
   const prompt = buildRiskPrompt(feature);
   
+  // Determine provider and model
+  const isGemini = model === 'gemini' || model?.startsWith('gemini-');
+  const isChatGPT = model === 'chatgpt' || model?.startsWith('gpt-');
+  const provider = isGemini ? 'gemini' : 'chatgpt';
+  const selectedModel = isGemini 
+    ? (model === 'gemini' ? DEFAULT_GEMINI_MODEL : model)
+    : (model === 'chatgpt' ? DEFAULT_CHATGPT_MODEL : model);
+  
+  // Check cache first
+  if (!skipCache) {
+    const cached = await getFromCache(provider, selectedModel, 'analyze-risks', prompt);
+    if (cached.hit) {
+      if (isGemini) {
+        return res.json({
+          data: cached.data.result,
+          cached: true,
+          cachedAt: cached.data.cachedAt
+        });
+      }
+      return res.json({
+        ...cached.data.result,
+        cached: true,
+        cachedAt: cached.data.cachedAt
+      });
+    }
+  }
+  
   try {
-    if (model === 'chatgpt' || model?.startsWith('gpt-')) {
-      const result = await callOpenAI(prompt, model === 'chatgpt' ? DEFAULT_CHATGPT_MODEL : model);
+    if (isChatGPT) {
+      const result = await callOpenAI(prompt, selectedModel);
+      await setInCache('chatgpt', selectedModel, 'analyze-risks', prompt, result, getTTL('analyze-risks'));
       res.json(result);
-    } else if (model === 'gemini' || model?.startsWith('gemini-')) {
+    } else if (isGemini) {
       if (!token) {
         return res.status(401).json({ error: 'Token não fornecido' });
       }
-      const result = await callGemini(prompt, model === 'gemini' ? DEFAULT_GEMINI_MODEL : model, token);
+      const result = await callGemini(prompt, selectedModel, token);
+      await setInCache('gemini', selectedModel, 'analyze-risks', prompt, result, getTTL('analyze-risks'));
       res.json({ data: result });
     } else {
       return res.status(400).json({ error: 'Invalid model specified' });

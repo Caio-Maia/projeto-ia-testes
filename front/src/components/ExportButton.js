@@ -20,8 +20,8 @@ const ExportButton = ({ data, onExportSuccess, onExportError, size = 'medium' })
     setAnchorEl(null);
   };
 
-  const handleExport = (format) => {
-    const result = exportGeneration(data, format);
+  const handleExport = async (format) => {
+    const result = await exportGeneration(data, format);
     
     if (result.success) {
       onExportSuccess?.(result.message);

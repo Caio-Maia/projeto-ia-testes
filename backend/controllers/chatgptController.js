@@ -1,9 +1,11 @@
 const axios = require('axios');
 const { logger, aiRequest, aiResponse, aiError } = require('../utils/logger');
 const { errors, asyncHandler } = require('../middlewares/errorHandler');
+const { getFromCache, setInCache, getTTL, isCacheEnabled } = require('../services/cacheService');
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const DEFAULT_MODEL = 'gpt-5-nano';
+const PROVIDER = 'chatgpt';
 
 /**
  * Helper function to call OpenAI API
@@ -24,16 +26,29 @@ const callOpenAI = async (content, model, token) => {
 };
 
 /**
- * Generic ChatGPT request handler with logging and error handling
+ * Generic ChatGPT request handler with logging, caching and error handling
  */
 const handleChatGPTRequest = (feature) => asyncHandler(async (req, res) => {
   const { task, data } = req.body;
   const taskContent = task || data;
   const model = req.body.model || DEFAULT_MODEL;
   const token = process.env.CHATGPT_API_KEY;
+  const skipCache = req.query.skipCache === 'true';
 
   if (!token) {
     throw errors.AI_TOKEN_MISSING('ChatGPT');
+  }
+
+  // Check cache first (unless skipCache is true)
+  if (!skipCache) {
+    const cached = await getFromCache(PROVIDER, model, feature, taskContent);
+    if (cached.hit) {
+      return res.json({
+        ...cached.data.result,
+        cached: true,
+        cachedAt: cached.data.cachedAt
+      });
+    }
   }
 
   // Log request
@@ -44,6 +59,9 @@ const handleChatGPTRequest = (feature) => asyncHandler(async (req, res) => {
     
     // Log response
     aiResponse(model, result.length, durationMs, feature);
+    
+    // Save to cache
+    await setInCache(PROVIDER, model, feature, taskContent, result, getTTL(feature));
     
     res.json(result);
   } catch (error) {
