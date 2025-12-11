@@ -37,7 +37,7 @@ function TestCoverageAnalysis({
   selectedModel = 'gpt-4o-mini',
   onAnalysisComplete = null
 }) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { isDarkMode } = useDarkMode();
   
   const [requirements, setRequirements] = useState([]);
@@ -225,8 +225,8 @@ function TestCoverageAnalysis({
       
       // Fallback to local analysis on error
       setError(language === 'pt-BR' 
-        ? `Erro na análise com IA: ${appError.message}. Usando análise local.` 
-        : `AI analysis error: ${appError.message}. Using local analysis.`);
+        ? `Erro na análise com IA: ${appError.getTranslatedMessage(t)}. Usando análise local.` 
+        : `AI analysis error: ${appError.getTranslatedMessage(t)}. Using local analysis.`);
       
       // Perform local fallback analysis
       performLocalAnalysis(requirementsData, testCasesData);

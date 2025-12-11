@@ -3,6 +3,7 @@ import { IconButton, Tooltip, Menu, MenuItem, Box, CircularProgress, Alert } fro
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { AI_MODELS } from '../utils/aiModels';
 import { parseError, logError } from '../utils/errorHandler';
+import { useLanguage } from '../stores/hooks';
 
 /**
  * Botão para regenerar conteúdo com IA selecionada
@@ -12,6 +13,7 @@ import { parseError, logError } from '../utils/errorHandler';
  * @param {function} onRegenerateError - Callback quando há erro
  */
 const RegenerateButton = ({ generation, onRegenerateStart, onRegenerateComplete, onRegenerateError, size = 'medium' }) => {
+  const { t } = useLanguage();
   const [anchorEl, setAnchorEl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingModel, setLoadingModel] = useState(null);
@@ -104,7 +106,7 @@ const RegenerateButton = ({ generation, onRegenerateStart, onRegenerateComplete,
 
       setStatus({
         type: 'error',
-        message: `Erro ao regenerar: ${appError.message}`
+        message: appError.getTranslatedMessage(t)
       });
 
       onRegenerateError?.(appError, model);
