@@ -9,7 +9,7 @@ Guia completo de todos os componentes React disponíveis no projeto.
 3. [Componentes de Formulário](#componentes-de-formulário)
 4. [Componentes de Controle](#componentes-de-controle)
 5. [Hooks Customizados](#hooks-customizados)
-6. [Context API](#context-api)
+6. [Stores (Zustand)](#stores-zustand)
 
 ---
 
@@ -543,25 +543,28 @@ function ImproveTask() {
 
 ---
 
-## 🌍 Context API
+## 🌍 Stores (Zustand)
 
-### LanguageContext
+O projeto utiliza **Zustand** para gerenciamento de estado global, substituindo a Context API anterior.
 
-Contexto global de idioma.
+### settingsStore
 
-**Localização**: `src/contexts/LanguageContext.js`
+Store para configurações do aplicativo (tema, idioma, modo educacional).
+
+**Localização**: `src/stores/settingsStore.js`
 
 **Usage**:
 ```jsx
-import { useContext } from 'react';
-import { LanguageContext } from './contexts/LanguageContext';
+import { useSettingsStore } from '../stores/settingsStore';
 
 function MyComponent() {
-  const { language, setLanguage, t } = useContext(LanguageContext);
+  const { isDarkMode, toggleDarkMode, language, setLanguage } = useSettingsStore();
   
   return (
     <div>
-      <p>{t('welcome')}</p>
+      <button onClick={toggleDarkMode}>
+        {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+      </button>
       <button onClick={() => setLanguage('en-US')}>English</button>
     </div>
   );
@@ -571,9 +574,75 @@ function MyComponent() {
 **Propriedades**:
 | Propriedade | Tipo | Descrição |
 |------------|------|-----------|
+| isDarkMode | boolean | Se o tema escuro está ativo |
+| toggleDarkMode | function | Alterna o tema |
 | language | string | Idioma atual (pt-BR, en-US) |
-| setLanguage | function | Setter de idioma |
-| t | function | Função de tradução |
+| setLanguage | function | Define o idioma |
+| educationMode | boolean | Se o modo educacional está ativo |
+| toggleEducationMode | function | Alterna o modo educacional |
+
+---
+
+### tokensStore
+
+Store para gerenciar tokens de API.
+
+**Localização**: `src/stores/tokensStore.js`
+
+**Usage**:
+```jsx
+import { useTokensStore } from '../stores/tokensStore';
+
+function TokenManager() {
+  const { tokens, setToken, hasToken } = useTokensStore();
+  
+  return (
+    <div>
+      <input 
+        value={tokens.openai || ''} 
+        onChange={(e) => setToken('openai', e.target.value)}
+      />
+      {hasToken('openai') && <span>✓ Token configurado</span>}
+    </div>
+  );
+}
+```
+
+---
+
+### uiStore
+
+Store para estado da UI (modais, sidebars, notificações).
+
+**Localização**: `src/stores/uiStore.js`
+
+---
+
+### generationStore
+
+Store para histórico de gerações e cache.
+
+**Localização**: `src/stores/generationStore.js`
+
+---
+
+### Hooks de Compatibilidade
+
+Para facilitar a migração, existem hooks de compatibilidade que mantêm a mesma interface dos contextos antigos:
+
+**Localização**: `src/stores/hooks.js`
+
+```jsx
+import { useDarkMode, useLanguage, useTokens } from '../stores/hooks';
+
+function MyComponent() {
+  // Mesma interface do contexto antigo
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
+  const { language, t } = useLanguage();
+  const { tokens, setToken } = useTokens();
+  
+  return <div>{t('welcome')}</div>;
+}
 
 ---
 
@@ -616,15 +685,15 @@ function MyComponent() {
 
 ```jsx
 // Componente funcional com hooks
-import { useState, useContext } from 'react';
-import { LanguageContext } from '../contexts/LanguageContext';
+import { useState } from 'react';
+import { useLanguage } from '../stores/hooks';
 import { usePrompt } from '../hooks/usePrompt';
 import ModelSelector from './ModelSelector';
 import FeedbackComponent from './FeedbackComponent';
 
 export default function MyFeaturePage() {
   // Hooks
-  const { language, t } = useContext(LanguageContext);
+  const { language, t } = useLanguage();
   const { prompt, setPrompt, generatePrompt, loading } = usePrompt('feature-name');
   
   // State
@@ -678,10 +747,11 @@ export default function MyFeaturePage() {
 ```
 src/
 ├── components/         # Componentes reutilizáveis
-├── contexts/          # Context API
+├── stores/            # Zustand stores para estado global
 ├── hooks/             # Custom hooks
 ├── pages/             # Componentes de página
 ├── utils/             # Funções auxiliares
+├── locales/           # Arquivos de tradução
 └── styles/            # Estilos globais
 ```
 
