@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { Box, Button, TextField, Typography, Grid,  Alert, Snackbar, CircularProgress } from '@mui/material';
+import { 
+  Box, Button, TextField, Typography, Grid, Alert, Snackbar, CircularProgress
+} from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import StopIcon from '@mui/icons-material/Stop';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
 import Dialog from '@mui/material/Dialog';
@@ -14,7 +17,7 @@ import {
   useGenerationHistory,
   useEducationMode,
   usePrompt,
-  useGenerateTestsMutation
+  useGenerateTestsStream
 } from '../hooks';
 
 function GenerateTestsPage() {
@@ -25,22 +28,24 @@ function GenerateTestsPage() {
   // Custom Hooks
   const { educationMode } = useEducationMode();
   
-  // React Query Mutation para gerar testes
+  // Estado local
   const [generationId, setGenerationId] = useState(null);
   const [result, setResult] = useState('');
   const [error, setError] = useState(null);
   
-  const generateTestsMutation = useGenerateTestsMutation({
-    onSuccess: (data, variables, id) => {
-      setResult(data);
-      setGenerationId(id);
-    },
-    onError: (err) => {
-      setError(err.message);
-    }
-  });
+  // Hook de streaming
+  const { 
+    generateTests: generateTestsStream,
+    isStreaming,
+    abort: abortStream,
+    generationId: streamGenerationId
+  } = useGenerateTestsStream();
   
-  const isLoading = generateTestsMutation.isPending;
+  // Loading
+  const isLoading = isStreaming;
+  
+  // Usar generationId do streaming se disponível
+  const activeGenerationId = streamGenerationId || generationId;
   
   const { 
     fetchTask, 
@@ -54,7 +59,7 @@ function GenerateTestsPage() {
     addNewVersion,
     restore: handleRestore, 
     toggleHistory 
-  } = useGenerationHistory(generationId);
+  } = useGenerationHistory(activeGenerationId);
 
   // Local state
   const [taskDescription, setTaskDescription] = useState('');
@@ -122,12 +127,19 @@ function GenerateTestsPage() {
       ? `JIRA: ${jiraTaskCode} - ${taskDescription.substring(0, 100)}`
       : `Manual: ${taskDescription.substring(0, 100)}`;
     
-    // Usa React Query mutation
-    generateTestsMutation.mutate({ 
-      promptText, 
-      model, 
-      taskInfo,
-      generationId 
+    // Usa streaming (SSE)
+    setResult(''); // Limpa resultado anterior
+    await generateTestsStream(promptText, model, taskInfo, {
+      onChunk: (chunk, fullContent) => {
+        setResult(fullContent);
+      },
+      onComplete: (finalContent, id) => {
+        setResult(finalContent);
+        setGenerationId(id);
+      },
+      onError: (err) => {
+        setError(err.message);
+      }
     });
   };
 
@@ -251,31 +263,55 @@ function GenerateTestsPage() {
           helperText={!isManualEnabled ? t('generateTests.disabledManual') : ""}
         />
 
-        <Box textAlign="center">
-          <Button 
-            variant="contained" 
-            color="primary" 
-            disabled={isButtonDisabled || isLoading} 
-            onClick={handleSubmit}
-            sx={{
-              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              fontWeight: 600,
-              textTransform: 'none',
-              padding: '10px 32px',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
-                transform: 'translateY(-2px)',
-                transition: '0.2s ease-in-out'
-              },
-              '&:disabled': {
-                background: '#d1d5db',
-                color: '#9ca3af'
-              }
-            }}
-          >
-            {t('common.submit')}
-          </Button>
+        <Box textAlign="center" display="flex" justifyContent="center" gap={2}>
+          {isLoading ? (
+            <Button 
+              variant="outlined" 
+              color="error" 
+              onClick={abortStream}
+              startIcon={<StopIcon />}
+              sx={{
+                fontWeight: 600,
+                textTransform: 'none',
+                padding: '10px 32px',
+                borderColor: '#ef4444',
+                color: '#ef4444',
+                '&:hover': {
+                  backgroundColor: '#fef2f2',
+                  borderColor: '#dc2626',
+                  color: '#dc2626',
+                  transition: '0.2s ease-in-out'
+                }
+              }}
+            >
+              {t('common.cancel') || 'Cancelar'}
+            </Button>
+          ) : (
+            <Button 
+              variant="contained" 
+              color="primary" 
+              disabled={isButtonDisabled} 
+              onClick={handleSubmit}
+              sx={{
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                fontWeight: 600,
+                textTransform: 'none',
+                padding: '10px 32px',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+                  transform: 'translateY(-2px)',
+                  transition: '0.2s ease-in-out'
+                },
+                '&:disabled': {
+                  background: '#d1d5db',
+                  color: '#9ca3af'
+                }
+              }}
+            >
+              {t('common.submit')}
+            </Button>
+          )}
         </Box>
         
       </Grid>  

@@ -6,22 +6,29 @@
  */
 
 const Joi = require('joi');
+const aiModelsConfig = require('../config/aiModels');
 
 // ============================================
 // CONSTANTES DE VALIDAÇÃO
 // ============================================
 
 const SUPPORTED_LANGUAGES = ['pt-BR', 'en-US'];
+
+// Extrai modelos suportados do config de AI
 const SUPPORTED_MODELS = [
-  // OpenAI
-  'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo',
-  // Legacy/test models
-  'gpt-5-nano',
-  // Gemini
-  'gemini-pro', 'gemini-1.5-pro', 'gemini-1.5-flash',
-  // Future: Claude
-  'claude-sonnet-4', 'claude-opus-4', 'claude-3-5-haiku',
+  // OpenAI/ChatGPT models (do config)
+  ...aiModelsConfig.chatgpt.versions.map(v => v.id),
+  // Gemini models (do config)
+  ...aiModelsConfig.gemini.versions.map(v => v.id),
+  // Claude (futuro - quando adicionado ao config, será automático)
+  ...aiModelsConfig.claude.versions.map(v => v.id),
 ];
+
+// Encontra o modelo default
+const getDefaultModel = () => {
+  const chatgptDefault = aiModelsConfig.chatgpt.versions.find(v => v.isDefault);
+  return chatgptDefault?.id || 'gpt-5-nano';
+};
 
 const FEEDBACK_TYPES = ['positive', 'negative', 'neutral'];
 const FEATURES = ['improve-task', 'generate-tests', 'generate-code', 'risk-analysis', 'coverage'];
@@ -30,19 +37,28 @@ const FEATURES = ['improve-task', 'generate-tests', 'generate-code', 'risk-analy
 // SCHEMAS BASE (Reutilizáveis)
 // ============================================
 
-const taskSchema = Joi.string()
+// Task schema base (sem required - o required é controlado pelo .or())
+const taskSchemaBase = Joi.string()
   .min(10)
   .max(50000)
-  .required()
   .messages({
     'string.min': 'A descrição da tarefa deve ter pelo menos 10 caracteres',
     'string.max': 'A descrição da tarefa deve ter no máximo 50000 caracteres',
     'any.required': 'A descrição da tarefa é obrigatória',
   });
 
+// Data schema (alternativa a task)
+const dataSchemaBase = Joi.string()
+  .min(10)
+  .max(50000)
+  .messages({
+    'string.min': 'O campo data deve ter pelo menos 10 caracteres',
+    'string.max': 'O campo data deve ter no máximo 50000 caracteres',
+  });
+
 const modelSchema = Joi.string()
   .valid(...SUPPORTED_MODELS)
-  .default('gpt-4o-mini')
+  .default(getDefaultModel())
   .messages({
     'any.only': `Modelo inválido. Modelos suportados: ${SUPPORTED_MODELS.join(', ')}`,
   });
@@ -62,10 +78,11 @@ const languageSchema = Joi.string()
  * Schema para melhorar tarefa (ChatGPT/Gemini)
  */
 const improveTaskSchema = Joi.object({
-  task: taskSchema,
-  data: Joi.string().min(10).max(50000), // Alternativa a 'task'
+  task: taskSchemaBase,
+  data: dataSchemaBase,
   model: modelSchema,
   language: languageSchema,
+  educationMode: Joi.boolean().default(false),
 }).or('task', 'data').messages({
   'object.missing': 'É necessário fornecer "task" ou "data"',
 });
@@ -74,33 +91,42 @@ const improveTaskSchema = Joi.object({
  * Schema para gerar casos de teste
  */
 const generateTestsSchema = Joi.object({
-  task: taskSchema,
-  data: Joi.string().min(10).max(50000),
+  task: taskSchemaBase,
+  data: dataSchemaBase,
   model: modelSchema,
   language: languageSchema,
-}).or('task', 'data');
+  educationMode: Joi.boolean().default(false),
+}).or('task', 'data').messages({
+  'object.missing': 'É necessário fornecer "task" ou "data"',
+});
 
 /**
  * Schema para gerar código de teste
  */
 const generateTestCodeSchema = Joi.object({
-  task: taskSchema,
-  data: Joi.string().min(10).max(50000),
+  task: taskSchemaBase,
+  data: dataSchemaBase,
   model: modelSchema,
   language: languageSchema,
   framework: Joi.string().max(50).default('jest'),
   programmingLanguage: Joi.string().max(50).default('javascript'),
-}).or('task', 'data');
+  educationMode: Joi.boolean().default(false),
+}).or('task', 'data').messages({
+  'object.missing': 'É necessário fornecer "task" ou "data"',
+});
 
 /**
  * Schema para análise de riscos
  */
 const analyzeRisksSchema = Joi.object({
-  task: taskSchema,
-  data: Joi.string().min(10).max(50000),
+  task: taskSchemaBase,
+  data: dataSchemaBase,
   model: modelSchema,
   language: languageSchema,
-}).or('task', 'data');
+  educationMode: Joi.boolean().default(false),
+}).or('task', 'data').messages({
+  'object.missing': 'É necessário fornecer "task" ou "data"',
+});
 
 /**
  * Schema para feedback

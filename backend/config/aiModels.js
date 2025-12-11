@@ -78,6 +78,16 @@ const aiModelsConfig = {
       }
     ],
     apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models'
+  },
+
+  /**
+   * Claude model configurations
+   */
+  claude: {
+    versions: [
+      
+    ],
+    apiEndpoint: ''
   }
 };
 

@@ -11,8 +11,10 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const { logger } = require('../utils/logger');
 const { errorHandler, notFoundHandler } = require('../middlewares/errorHandler');
+const { auditMiddleware, logRateLimit } = require('../middlewares/audit');
 const { initAIWorker } = require('../services/aiQueueService');
 const { closeAll: closeQueues, isRedisEnabled } = require('../services/queueService');
+const AuditLog = require('../models/auditLogModel');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -184,7 +186,10 @@ const apiLimiter = rateLimit({
     // Fallback to ipKeyGenerator for IPv6 support
     return ipKeyGenerator(req);
   },
-  handler: (req, res) => {
+  handler: async (req, res) => {
+    // Log rate limit hit to audit
+    await logRateLimit(req);
+    
     res.status(429).json({
       error: 'Muitas requisições',
       message: 'Você excedeu o limite de 10 requisições por minuto. Tente novamente mais tarde.',
@@ -325,7 +330,7 @@ app.post('/api/csp-report', (req, res) => {
   res.status(204).send();
 });
 
-app.use('/api', apiLimiter, routes);
+app.use('/api', apiLimiter, auditMiddleware(), routes);
 
 // 404 Handler for undefined routes
 app.use(notFoundHandler);
@@ -376,6 +381,13 @@ if (process.env.NODE_ENV === 'production') {
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
+
+// Sync AuditLog model
+AuditLog.sync().then(() => {
+  logger.info('AuditLog model synchronized');
+}).catch(error => {
+  logger.error({ error: error.message }, 'Failed to sync AuditLog model');
+});
 
 app.listen(PORT, () => {
   logger.info({ port: PORT, env: process.env.NODE_ENV || 'development' }, 'Server started');
