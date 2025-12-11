@@ -1,8 +1,7 @@
 import React from 'react';
 import { Box, Container, Typography, Button, Grid, Card, useTheme, IconButton } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '../contexts/LanguageContext';
-import { useDarkMode } from '../contexts/DarkModeContext';
+import { useLanguage, useDarkMode } from '../stores/hooks';
 import { FaArrowRight, FaSun, FaMoon } from 'react-icons/fa';
 
 // Icons

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FormControlLabel, Switch, Tooltip, Box, Typography } from '@mui/material';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage } from '../stores/hooks';
 import SchoolIcon from '@mui/icons-material/School';
 
 function EducationModeToggle() {

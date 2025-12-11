@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage } from '../stores/hooks';
 import { getPromptByLanguage } from '../utils/getPromptByLanguage';
 
 export const usePrompt = (fileName) => {

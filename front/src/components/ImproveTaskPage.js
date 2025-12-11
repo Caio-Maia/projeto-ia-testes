@@ -10,8 +10,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import StreamIcon from '@mui/icons-material/Stream';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
-import { useLanguage } from '../contexts/LanguageContext';
-import { useDarkMode } from '../contexts/DarkModeContext';
+import { useLanguage, useDarkMode } from '../stores/hooks';
 import { 
     useJira, 
     useGenerationHistory,

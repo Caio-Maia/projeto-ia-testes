@@ -10,7 +10,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { getGroupedModelsForMenu } from '../utils/modelUtils';
 import { AI_MODELS } from '../utils/aiModels';
-import { useDarkMode } from '../contexts/DarkModeContext';
+import { useDarkMode } from '../stores/hooks';
 
 /**
  * Componente de Select para escolher modelos de IA

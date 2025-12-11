@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useLanguage } from "../contexts/LanguageContext";
-import { useDarkMode } from "../contexts/DarkModeContext";
+import { useLanguage, useDarkMode } from '../stores/hooks';
 import { 
   FaHome, 
   FaTasks, 

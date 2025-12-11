@@ -1,7 +1,6 @@
 import React from 'react';
 import { Box, Button, Menu, MenuItem, Typography } from '@mui/material';
-import { useLanguage } from '../contexts/LanguageContext';
-import { useDarkMode } from '../contexts/DarkModeContext';
+import { useLanguage, useDarkMode } from '../stores/hooks';
 import { FaGlobe } from 'react-icons/fa';
 
 function LanguageSelector() {
