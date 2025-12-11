@@ -2,7 +2,8 @@ import React from 'react';
 import { Box, Container, Typography, Button, Grid, Card, useTheme, IconButton } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage, useDarkMode } from '../stores/hooks';
-import { FaArrowRight, FaSun, FaMoon } from 'react-icons/fa';
+import { FaArrowRight, FaSun, FaMoon, FaLinkedin, FaGithub } from 'react-icons/fa';
+import packageJson from '../../package.json';
 
 // Icons
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
@@ -793,17 +794,279 @@ const LandingPage = ({ onOpenTokenDialog }) => {
 
       {/* Footer */}
       <Box 
+        component="footer"
         sx={{ 
-          py: 4, 
+          py: { xs: 6, md: 8 }, 
           px: 2, 
-          backgroundColor: isDarkMode ? '#0f1419' : '#ffffff',
-          borderTop: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
-          textAlign: 'center',
+          backgroundColor: isDarkMode ? '#0a0d10' : '#f8fafc',
+          borderTop: `1px solid ${isDarkMode ? '#1f2937' : '#e2e8f0'}`,
         }}
       >
-        <Typography sx={{ color: isDarkMode ? '#6b7280' : '#9ca3af', fontSize: '0.875rem' }}>
-          {t('landing.footer.copyright')}
-        </Typography>
+        <Container maxWidth="lg">
+          <Grid container spacing={4}>
+            {/* Logo & Description */}
+            <Grid item xs={12} md={4}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <RocketLaunchIcon sx={{ fontSize: 32, color: '#3b82f6' }} />
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    fontWeight: 700, 
+                    color: isDarkMode ? '#f3f4f6' : '#1f2937',
+                  }}
+                >
+                  Task & Test Generator
+                </Typography>
+              </Box>
+              <Typography 
+                sx={{ 
+                  color: isDarkMode ? '#9ca3af' : '#6b7280', 
+                  fontSize: '0.9rem',
+                  lineHeight: 1.7,
+                  mb: 1,
+                  maxWidth: 280,
+                }}
+              >
+                {t('landing.footer.description') || 'Ferramenta de IA para auxiliar QAs e desenvolvedores na criação de testes, análise de riscos e melhoria de tarefas.'}
+              </Typography>
+              <Typography 
+                sx={{ 
+                  color: isDarkMode ? '#6b7280' : '#9ca3af', 
+                  fontSize: '0.8rem',
+                  mb: 2,
+                }}
+              >
+                {t('landing.footer.made') || 'Feito'} {t('landing.footer.by') || 'por'} Caio Maia
+              </Typography>
+            </Grid>
+
+            {/* Quick Links */}
+            <Grid item xs={6} md={2}>
+              <Typography 
+                sx={{ 
+                  fontWeight: 600, 
+                  color: isDarkMode ? '#f3f4f6' : '#1f2937',
+                  mb: 2,
+                  fontSize: '0.95rem',
+                }}
+              >
+                {t('landing.footer.features') || 'Recursos'}
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Typography 
+                  component="span"
+                  onClick={() => navigate('/improve-task')}
+                  sx={{ 
+                    color: isDarkMode ? '#9ca3af' : '#6b7280', 
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    '&:hover': { color: '#3b82f6' },
+                    transition: 'color 0.2s ease',
+                  }}
+                >
+                  {t('sidebar.improveTask')}
+                </Typography>
+                <Typography 
+                  component="span"
+                  onClick={() => navigate('/generate-tests')}
+                  sx={{ 
+                    color: isDarkMode ? '#9ca3af' : '#6b7280', 
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    '&:hover': { color: '#3b82f6' },
+                    transition: 'color 0.2s ease',
+                  }}
+                >
+                  {t('sidebar.generateTests')}
+                </Typography>
+                <Typography 
+                  component="span"
+                  onClick={() => navigate('/generate-code')}
+                  sx={{ 
+                    color: isDarkMode ? '#9ca3af' : '#6b7280', 
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    '&:hover': { color: '#3b82f6' },
+                    transition: 'color 0.2s ease',
+                  }}
+                >
+                  {t('sidebar.generateCode')}
+                </Typography>
+                <Typography 
+                  component="span"
+                  onClick={() => navigate('/risk-analysis')}
+                  sx={{ 
+                    color: isDarkMode ? '#9ca3af' : '#6b7280', 
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    '&:hover': { color: '#3b82f6' },
+                    transition: 'color 0.2s ease',
+                  }}
+                >
+                  {t('sidebar.riskAnalysis')}
+                </Typography>
+              </Box>
+            </Grid>
+
+            {/* More Links */}
+            <Grid item xs={6} md={2}>
+              <Typography 
+                sx={{ 
+                  fontWeight: 600, 
+                  color: isDarkMode ? '#f3f4f6' : '#1f2937',
+                  mb: 2,
+                  fontSize: '0.95rem',
+                }}
+              >
+                {t('landing.footer.more') || 'Mais'}
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Typography 
+                  component="span"
+                  onClick={() => navigate('/coverage')}
+                  sx={{ 
+                    color: isDarkMode ? '#9ca3af' : '#6b7280', 
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    '&:hover': { color: '#3b82f6' },
+                    transition: 'color 0.2s ease',
+                  }}
+                >
+                  {t('sidebar.coverage') || 'Cobertura'}
+                </Typography>
+                <Typography 
+                  component="span"
+                  onClick={() => navigate('/feedback-dashboard')}
+                  sx={{ 
+                    color: isDarkMode ? '#9ca3af' : '#6b7280', 
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    '&:hover': { color: '#3b82f6' },
+                    transition: 'color 0.2s ease',
+                  }}
+                >
+                  {t('sidebar.feedbackDashboard') || 'Dashboard'}
+                </Typography>
+                <Typography 
+                  component="span"
+                  onClick={() => navigate('/docs')}
+                  sx={{ 
+                    color: isDarkMode ? '#9ca3af' : '#6b7280', 
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    '&:hover': { color: '#3b82f6' },
+                    transition: 'color 0.2s ease',
+                  }}
+                >
+                  {t('sidebar.documentation') || 'Documentação'}
+                </Typography>
+              </Box>
+            </Grid>
+
+            {/* Security */}
+            <Grid item xs={12} md={4}>
+              <Typography 
+                sx={{ 
+                  fontWeight: 600, 
+                  color: isDarkMode ? '#f3f4f6' : '#1f2937',
+                  mb: 2,
+                  fontSize: '0.95rem',
+                }}
+              >
+                {t('landing.footer.security') || 'Segurança & Privacidade'}
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <LockIcon sx={{ fontSize: 20, color: '#22c55e' }} />
+                  <Typography sx={{ color: isDarkMode ? '#9ca3af' : '#6b7280', fontSize: '0.875rem' }}>
+                    {t('landing.footer.securityItem1') || 'Tokens armazenados apenas localmente'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <ShieldIcon sx={{ fontSize: 20, color: '#22c55e' }} />
+                  <Typography sx={{ color: isDarkMode ? '#9ca3af' : '#6b7280', fontSize: '0.875rem' }}>
+                    {t('landing.footer.securityItem2') || 'Nenhum dado enviado para nossos servidores'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <VisibilityOffIcon sx={{ fontSize: 20, color: '#22c55e' }} />
+                  <Typography sx={{ color: isDarkMode ? '#9ca3af' : '#6b7280', fontSize: '0.875rem' }}>
+                    {t('landing.footer.securityItem3') || 'Comunicação direta com APIs de IA'}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+
+          {/* Divider */}
+          <Box 
+            sx={{ 
+              borderTop: `1px solid ${isDarkMode ? '#1f2937' : '#e2e8f0'}`,
+              mt: 6,
+              pt: 4,
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 2,
+            }}
+          >
+            <Typography sx={{ color: isDarkMode ? '#6b7280' : '#9ca3af', fontSize: '0.875rem' }}>
+              {t('landing.footer.copyright')}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <IconButton 
+                component="a"
+                href="https://www.linkedin.com/in/caiojordan/"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ 
+                  color: isDarkMode ? '#6b7280' : '#9ca3af',
+                  padding: 0.5,
+                  '&:hover': { color: '#0077b5' },
+                  transition: 'color 0.2s ease',
+                }}
+              >
+                <FaLinkedin size={20} />
+              </IconButton>
+              <IconButton 
+                component="a"
+                href="https://github.com/Caio-Maia"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ 
+                  color: isDarkMode ? '#6b7280' : '#9ca3af',
+                  padding: 0.5,
+                  '&:hover': { color: isDarkMode ? '#fff' : '#1f2937' },
+                  transition: 'color 0.2s ease',
+                }}
+              >
+                <FaGithub size={20} />
+              </IconButton>
+              <Typography 
+                component="span"
+                onClick={() => changeLanguage(language === 'pt-BR' ? 'en-US' : 'pt-BR')}
+                sx={{ 
+                  color: isDarkMode ? '#6b7280' : '#9ca3af', 
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  '&:hover': { color: '#3b82f6' },
+                  transition: 'color 0.2s ease',
+                }}
+              >
+                {language === 'pt-BR' ? '🇧🇷 Português' : '🇺🇸 English'}
+              </Typography>
+              <Typography 
+                sx={{ 
+                  color: isDarkMode ? '#6b7280' : '#9ca3af', 
+                  fontSize: '0.875rem',
+                }}
+              >
+                v{packageJson.version}
+              </Typography>
+            </Box>
+          </Box>
+        </Container>
       </Box>
     </Box>
   );
