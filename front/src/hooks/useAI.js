@@ -62,7 +62,6 @@ export const useAI = (endpoint) => {
         `${BACKEND_URL}/api/${model.apiName}/${endpoint}?token=${token}`,
         {
           model: model.version,
-          data: fullPrompt,
           task: fullPrompt,
           educationMode,
           ...extraData
@@ -138,7 +137,7 @@ export const useImproveTask = () => {
         `${BACKEND_URL}/api/${model.apiName}/improve-task?token=${token}`,
         {
           model: model.version,
-          data: promptText,
+          task: promptText,
           educationMode
         }
       );
@@ -218,7 +217,7 @@ export const useGenerateTests = () => {
         `${BACKEND_URL}/api/${model.apiName}/generate-tests?token=${token}`,
         {
           model: model.version,
-          data: promptText,
+          task: promptText,
           educationMode
         }
       );
@@ -296,7 +295,7 @@ export const useGenerateTestCode = () => {
         `${BACKEND_URL}/api/${model.apiName}/generate-test-code?token=${token}`,
         {
           model: model.version,
-          data: promptText,
+          task: promptText,
           educationMode,
           ...extraConfig
         }

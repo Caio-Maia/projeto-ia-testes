@@ -41,7 +41,7 @@ const improveTaskAPI = async ({ promptText, model }) => {
     `${BACKEND_URL}/api/${model.apiName}/improve-task?token=${token}`,
     {
       model: model.version,
-      data: promptText,
+      task: promptText,
       educationMode: getEducationMode()
     }
   );
@@ -60,7 +60,7 @@ const generateTestsAPI = async ({ promptText, model }) => {
     `${BACKEND_URL}/api/${model.apiName}/generate-tests?token=${token}`,
     {
       model: model.version,
-      data: promptText,
+      task: promptText,
       educationMode: getEducationMode()
     }
   );
@@ -79,7 +79,7 @@ const generateTestCodeAPI = async ({ promptText, model, extraConfig = {} }) => {
     `${BACKEND_URL}/api/${model.apiName}/generate-test-code?token=${token}`,
     {
       model: model.version,
-      data: promptText,
+      task: promptText,
       educationMode: getEducationMode(),
       ...extraConfig
     }

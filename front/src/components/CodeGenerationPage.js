@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import StopIcon from '@mui/icons-material/Stop';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
 import Dialog from '@mui/material/Dialog';
@@ -14,29 +15,31 @@ import DialogActions from '@mui/material/DialogActions';
 import { useLanguage, useDarkMode } from '../stores/hooks';
 import { 
   useGenerationHistory,
-  useGenerateTestCodeMutation
+  useGenerateTestCodeStream
 } from '../hooks';
 
 function CodeGenerationPage() {
   const { t } = useLanguage();
   const { isDarkMode } = useDarkMode();
   
-  // React Query Mutation para gerar código de teste
+  // Estado local
   const [generationId, setGenerationId] = useState(null);
   const [result, setResult] = useState('');
   const [error, setError] = useState(null);
   
-  const generateTestCodeMutation = useGenerateTestCodeMutation({
-    onSuccess: (data, variables, id) => {
-      setResult(data);
-      setGenerationId(id);
-    },
-    onError: (err) => {
-      setError(err.message);
-    }
-  });
+  // Hook de streaming
+  const { 
+    generateTestCode: generateTestCodeStream,
+    isStreaming,
+    abort: abortStream,
+    generationId: streamGenerationId
+  } = useGenerateTestCodeStream();
   
-  const isLoading = generateTestCodeMutation.isPending;
+  // Loading
+  const isLoading = isStreaming;
+  
+  // Usar generationId do streaming se disponível
+  const activeGenerationId = streamGenerationId || generationId;
   
   const { 
     versions, 
@@ -44,7 +47,7 @@ function CodeGenerationPage() {
     addNewVersion,
     restore: handleRestore, 
     toggleHistory 
-  } = useGenerationHistory(generationId);
+  } = useGenerationHistory(activeGenerationId);
 
   // Local state
   const [testCases, setTestCases] = useState('');
@@ -102,16 +105,18 @@ function CodeGenerationPage() {
     const promptText = testCases;
     const taskInfo = `${framework} tests in ${language}`;
     
-    // Usa React Query mutation
-    generateTestCodeMutation.mutate({ 
-      promptText, 
-      model, 
-      taskInfo,
-      generationId,
-      extraConfig: { 
-        framework, 
-        language,
-        testCases 
+    // Usa streaming (SSE)
+    setResult(''); // Limpa resultado anterior
+    await generateTestCodeStream(promptText, model, taskInfo, {
+      onChunk: (chunk, fullContent) => {
+        setResult(fullContent);
+      },
+      onComplete: (finalContent, id) => {
+        setResult(finalContent);
+        setGenerationId(id);
+      },
+      onError: (err) => {
+        setError(err.message);
       }
     });
   };
@@ -226,31 +231,55 @@ function CodeGenerationPage() {
           placeholder={t('generateCode.testCasesPlaceholder')}
         />
 
-        <Box textAlign="center">
-          <Button
-            variant="contained"
-            color="primary"
-            disabled={isButtonDisabled || isLoading}
-            onClick={handleSubmit}
-            sx={{
-              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              fontWeight: 600,
-              textTransform: 'none',
-              padding: '10px 32px',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
-                transform: 'translateY(-2px)',
-                transition: '0.2s ease-in-out'
-              },
-              '&:disabled': {
-                background: '#d1d5db',
-                color: '#9ca3af'
-              }
-            }}
-          >
-            {isLoading ? <CircularProgress size={24} /> : t('generateCode.submit')}
-          </Button>
+        <Box textAlign="center" display="flex" justifyContent="center" gap={2}>
+          {isLoading ? (
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={abortStream}
+              startIcon={<StopIcon />}
+              sx={{
+                fontWeight: 600,
+                textTransform: 'none',
+                padding: '10px 32px',
+                borderColor: '#ef4444',
+                color: '#ef4444',
+                '&:hover': {
+                  backgroundColor: '#fef2f2',
+                  borderColor: '#dc2626',
+                  color: '#dc2626',
+                  transition: '0.2s ease-in-out'
+                }
+              }}
+            >
+              {t('common.cancel') || 'Cancelar'}
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              color="primary"
+              disabled={isButtonDisabled}
+              onClick={handleSubmit}
+              sx={{
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                fontWeight: 600,
+                textTransform: 'none',
+                padding: '10px 32px',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+                  transform: 'translateY(-2px)',
+                  transition: '0.2s ease-in-out'
+                },
+                '&:disabled': {
+                  background: '#d1d5db',
+                  color: '#9ca3af'
+                }
+              }}
+            >
+              {t('generateCode.submit')}
+            </Button>
+          )}
         </Box>
       </Grid>
       

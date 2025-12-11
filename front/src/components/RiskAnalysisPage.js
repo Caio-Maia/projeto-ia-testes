@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import StopIcon from '@mui/icons-material/Stop';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
 import Dialog from '@mui/material/Dialog';
@@ -15,7 +16,7 @@ import { useLanguage, useDarkMode } from '../stores/hooks';
 import { 
   useJira, 
   useGenerationHistory,
-  useAnalyzeRisksMutation
+  useAnalyzeRisksStream
 } from '../hooks';
 
 function RiskAnalysisPage() {
@@ -24,22 +25,24 @@ function RiskAnalysisPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  // React Query Mutation para análise de riscos
+  // Estado local
   const [generationId, setGenerationId] = useState(null);
   const [result, setResult] = useState('');
   const [error, setError] = useState(null);
   
-  const analyzeRisksMutation = useAnalyzeRisksMutation({
-    onSuccess: (data, variables, id) => {
-      setResult(data);
-      setGenerationId(id);
-    },
-    onError: (err) => {
-      setError(err.message);
-    }
-  });
+  // Hook de streaming
+  const { 
+    analyzeRisks: analyzeRisksStream,
+    isStreaming,
+    abort: abortStream,
+    generationId: streamGenerationId
+  } = useAnalyzeRisksStream();
   
-  const isLoading = analyzeRisksMutation.isPending;
+  // Loading
+  const isLoading = isStreaming;
+  
+  // Usar generationId do streaming se disponível
+  const activeGenerationId = streamGenerationId || generationId;
   
   const { 
     fetchTask, 
@@ -53,7 +56,7 @@ function RiskAnalysisPage() {
     addNewVersion,
     restore: handleRestore, 
     toggleHistory 
-  } = useGenerationHistory(generationId);
+  } = useGenerationHistory(activeGenerationId);
 
   // Local state
   const [feature, setFeature] = useState('');
@@ -108,12 +111,19 @@ function RiskAnalysisPage() {
       ? `JIRA: ${jiraTaskCode} - ${feature.substring(0, 50)}`
       : `Risk Analysis: ${feature.substring(0, 50)}...`;
     
-    // Usa React Query mutation
-    analyzeRisksMutation.mutate({ 
-      feature, 
-      model, 
-      taskInfo,
-      generationId 
+    // Usa streaming (SSE)
+    setResult(''); // Limpa resultado anterior
+    await analyzeRisksStream(feature, model, taskInfo, {
+      onChunk: (chunk, fullContent) => {
+        setResult(fullContent);
+      },
+      onComplete: (finalContent, id) => {
+        setResult(finalContent);
+        setGenerationId(id);
+      },
+      onError: (err) => {
+        setError(err.message);
+      }
     });
   };
 
@@ -239,31 +249,55 @@ function RiskAnalysisPage() {
           helperText={!isManualEnabled ? t('riskAnalysis.disabledManual') : ""}
         />
 
-        <Box textAlign="center">
-          <Button
-            variant="contained"
-            color="primary"
-            disabled={isButtonDisabled || isLoading}
-            onClick={handleSubmit}
-            sx={{
-              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-              fontWeight: 600,
-              textTransform: 'none',
-              padding: '10px 32px',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
-                transform: 'translateY(-2px)',
-                transition: '0.2s ease-in-out'
-              },
-              '&:disabled': {
-                background: '#d1d5db',
-                color: '#9ca3af'
-              }
-            }}
-          >
-            {isLoading ? <CircularProgress size={24} /> : t('riskAnalysis.submit')}
-          </Button>
+        <Box textAlign="center" display="flex" justifyContent="center" gap={2}>
+          {isLoading ? (
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={abortStream}
+              startIcon={<StopIcon />}
+              sx={{
+                fontWeight: 600,
+                textTransform: 'none',
+                padding: '10px 32px',
+                borderColor: '#ef4444',
+                color: '#ef4444',
+                '&:hover': {
+                  backgroundColor: '#fef2f2',
+                  borderColor: '#dc2626',
+                  color: '#dc2626',
+                  transition: '0.2s ease-in-out'
+                }
+              }}
+            >
+              {t('common.cancel') || 'Cancelar'}
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              color="primary"
+              disabled={isButtonDisabled}
+              onClick={handleSubmit}
+              sx={{
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                fontWeight: 600,
+                textTransform: 'none',
+                padding: '10px 32px',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+                  transform: 'translateY(-2px)',
+                  transition: '0.2s ease-in-out'
+                },
+                '&:disabled': {
+                  background: '#d1d5db',
+                  color: '#9ca3af'
+                }
+              }}
+            >
+              {t('riskAnalysis.submit')}
+            </Button>
+          )}
         </Box>
       </Grid>
       

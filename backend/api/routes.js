@@ -12,6 +12,7 @@ const { createConversation, sendMessage, getConversationHistory, regenerateWithF
 const { analyzeCoverage, analyzeCoverageAsync, extractRequirements, parseTestCases } = require('../controllers/coverageController');
 const { streamChatGPT, streamGemini, streamAI } = require('../controllers/streamController');
 const { getJob, listQueueJobs, cancelQueueJob, getStats, healthCheck } = require('../controllers/jobsController');
+const auditController = require('../controllers/auditController');
 
 // Validação
 const { validate } = require('../middlewares/validate');
@@ -86,5 +87,17 @@ router.get('/jobs/stats', getStats);
 router.get('/jobs', listQueueJobs);
 router.get('/jobs/:jobId', getJob);
 router.delete('/jobs/:jobId', cancelQueueJob);
+
+// ============================================
+// ROTAS DE AUDIT LOG
+// ============================================
+router.get('/audit/logs', auditController.getLogs);
+router.get('/audit/stats', auditController.getStats);
+router.get('/audit/stats/hourly', auditController.getHourlyStats);
+router.get('/audit/actions', auditController.getActions);
+router.get('/audit/resources', auditController.getResources);
+router.get('/audit/errors', auditController.getRecentErrors);
+router.get('/audit/logs/:id', auditController.getLogById);
+router.delete('/audit/logs', auditController.clearOldLogs);
 
 module.exports = router;

@@ -875,17 +875,24 @@ const handleScroll = useThrottledCallback((e) => {
 
 ## 🔒 Segurança
 
-### 1. Tokens no Backend
-**Status**: Não implementado  
-**Prioridade**: Alta  
-**Esforço**: Alto
+### 1. Tokens no Frontend (Decisão Arquitetural)
+**Status**: ✅ Implementado (por design)  
+**Prioridade**: N/A
 
-**Problema Atual**: Tokens de IA enviados do frontend para backend em cada request.
+**Decisão**: Tokens de API são armazenados **apenas no frontend** (localStorage do navegador).
 
-**Solução**: 
-- Usuário configura token uma vez
-- Backend armazena encrypted
-- Frontend só envia session token
+**Justificativa**:
+- ✅ **Zero armazenamento server-side** → Sem risco de vazamento de banco
+- ✅ **Usuário tem controle total** → Pode revogar/limpar a qualquer momento
+- ✅ **Sem responsabilidade legal** → Não guardamos dados sensíveis de terceiros
+- ✅ **Compliance simplificado** → LGPD/GDPR mais fácil
+- ✅ **Arquitetura stateless** → Backend escala horizontalmente
+
+**Fluxo**:
+1. Usuário configura token no frontend
+2. Token salvo no localStorage (browser)
+3. Token enviado em cada request via header
+4. Backend usa token e descarta (não persiste)
 
 ---
 
@@ -904,20 +911,72 @@ const userRateLimiter = rateLimit({
 ---
 
 ### 3. Audit Log
-**Status**: Não implementado  
+**Status**: ✅ Implementado  
 **Prioridade**: Média  
 **Esforço**: Médio
 
+**Implementação**:
+
+**Modelo** (`backend/models/auditLogModel.js`):
 ```javascript
-// Logar todas as operações
-await AuditLog.create({
-  userId: req.user?.id,
-  action: 'GENERATE_TESTS',
-  resource: 'ai',
-  details: { model, promptLength: prompt.length },
-  ip: req.ip
+const AuditLog = sequelize.define('AuditLog', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  action: { type: DataTypes.STRING }, // IMPROVE_TASK, GENERATE_TESTS, etc.
+  resource: { type: DataTypes.STRING }, // ai, jira, feedback, job, stream, system
+  method: { type: DataTypes.STRING },   // GET, POST, etc.
+  path: { type: DataTypes.STRING },     // /api/improve-task
+  statusCode: { type: DataTypes.INTEGER },
+  details: { type: DataTypes.JSON },    // model, promptLength, etc.
+  ip: { type: DataTypes.STRING },
+  userAgent: { type: DataTypes.STRING },
+  duration: { type: DataTypes.INTEGER }, // ms
+  success: { type: DataTypes.BOOLEAN },
+  errorMessage: { type: DataTypes.TEXT }
 });
+
+// Métodos estáticos
+AuditLog.logAI(action, details, req, options);
+AuditLog.logJira(action, details, req, options);
+AuditLog.logFeedback(action, details, req, options);
+AuditLog.logError(action, error, req, options);
+AuditLog.getStats(options);
 ```
+
+**Middleware** (`backend/middlewares/audit.js`):
+```javascript
+// Middleware automático que registra todas as operações
+app.use('/api', auditMiddleware(), routes);
+
+// Helpers para logging manual
+import { logAIOperation, logJiraOperation, logError, logRateLimit, logStreamOperation } from './middlewares/audit';
+```
+
+**API Endpoints**:
+```javascript
+GET  /api/audit/logs          // Lista logs com filtros e paginação
+GET  /api/audit/stats         // Estatísticas gerais
+GET  /api/audit/stats/hourly  // Estatísticas por hora (24h)
+GET  /api/audit/actions       // Lista ações disponíveis
+GET  /api/audit/resources     // Lista recursos disponíveis
+GET  /api/audit/errors        // Últimos erros
+GET  /api/audit/logs/:id      // Detalhes de um log
+DELETE /api/audit/logs        // Limpar logs antigos (query: olderThanDays)
+```
+
+**Ações Registradas**:
+- `IMPROVE_TASK`, `GENERATE_TESTS`, `GENERATE_CODE`, `ANALYZE_RISKS`, `ANALYZE_COVERAGE`
+- `STREAM_START`, `STREAM_COMPLETE`, `STREAM_ERROR`
+- `JIRA_FETCH`, `JIRA_UPDATE`
+- `FEEDBACK_CREATE`, `FEEDBACK_UPDATE`
+- `JOB_CREATE`, `JOB_COMPLETE`, `JOB_FAIL`
+- `API_ERROR`, `RATE_LIMIT_HIT`, `VALIDATION_ERROR`
+
+**Benefícios**:
+- Rastreamento completo de operações
+- Detecção de abusos e rate limit hits
+- Análise de performance (duração)
+- Debugging facilitado
+- Estatísticas de uso
 
 ---
 
@@ -1144,7 +1203,7 @@ develop (desenvolvimento) → main (produção/deploy)
 | Arquitetura Backend | 6 | 5 | 1 | 0 |
 | Arquitetura Frontend | 5 | 4 | 0 | 1 |
 | Performance | 3 | 3 | 0 | 0 |
-| Segurança | 3 | 0 | 1 | 2 |
+| Segurança | 3 | 2 | 1 | 0 |
 | Testes | 4 | 0 | 1 | 3 |
 | DevOps | 4 | 2 | 1 | 1 |
 
@@ -1162,6 +1221,8 @@ develop (desenvolvimento) → main (produção/deploy)
 11. **Bundle Splitting** - Chunks semânticos com webpack
 12. **Virtualização de Listas** - react-window component
 13. **Debounce/Throttle** - Hooks otimizados
+14. **Tokens no Frontend** - Arquitetura stateless por design (segurança)
+15. **Audit Log** - Registro completo de operações com API de consulta
 
 ### 🧹 Limpezas Realizadas:
 - **Pacotes removidos (frontend)**:
