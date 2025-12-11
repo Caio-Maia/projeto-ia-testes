@@ -905,6 +905,19 @@ const LandingPage = ({ onOpenTokenDialog }) => {
                 >
                   {t('sidebar.riskAnalysis')}
                 </Typography>
+                <Typography 
+                  component="span"
+                  onClick={() => navigate('/test-coverage')}
+                  sx={{ 
+                    color: isDarkMode ? '#9ca3af' : '#6b7280', 
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    '&:hover': { color: '#3b82f6' },
+                    transition: 'color 0.2s ease',
+                  }}
+                >
+                  {t('sidebar.coverage') || 'Cobertura'}
+                </Typography>
               </Box>
             </Grid>
 
@@ -923,19 +936,6 @@ const LandingPage = ({ onOpenTokenDialog }) => {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <Typography 
                   component="span"
-                  onClick={() => navigate('/coverage')}
-                  sx={{ 
-                    color: isDarkMode ? '#9ca3af' : '#6b7280', 
-                    fontSize: '0.875rem',
-                    cursor: 'pointer',
-                    '&:hover': { color: '#3b82f6' },
-                    transition: 'color 0.2s ease',
-                  }}
-                >
-                  {t('sidebar.coverage') || 'Cobertura'}
-                </Typography>
-                <Typography 
-                  component="span"
                   onClick={() => navigate('/feedback-dashboard')}
                   sx={{ 
                     color: isDarkMode ? '#9ca3af' : '#6b7280', 
@@ -949,7 +949,7 @@ const LandingPage = ({ onOpenTokenDialog }) => {
                 </Typography>
                 <Typography 
                   component="span"
-                  onClick={() => navigate('/docs')}
+                  onClick={() => navigate('/documentation')}
                   sx={{ 
                     color: isDarkMode ? '#9ca3af' : '#6b7280', 
                     fontSize: '0.875rem',
@@ -959,6 +959,19 @@ const LandingPage = ({ onOpenTokenDialog }) => {
                   }}
                 >
                   {t('sidebar.documentation') || 'Documentação'}
+                </Typography>
+                <Typography 
+                  component="span"
+                  onClick={() => navigate('/adjust-prompts')}
+                  sx={{ 
+                    color: isDarkMode ? '#9ca3af' : '#6b7280', 
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    '&:hover': { color: '#3b82f6' },
+                    transition: 'color 0.2s ease',
+                  }}
+                >
+                  {t('sidebar.adjustPrompts') || 'Ajustar Prompts'}
                 </Typography>
               </Box>
             </Grid>
