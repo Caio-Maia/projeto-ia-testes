@@ -102,7 +102,8 @@ function PromptPage() {
             setHistory([]);
             setIsDirty(false);
         }
-    }, [selectedFile, language, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedFile, language]);
 
     // Atualiza contadores ao mudar conteúdo
     useEffect(() => {

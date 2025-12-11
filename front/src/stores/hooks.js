@@ -12,6 +12,7 @@
  * import { useDarkMode } from '../stores/hooks';
  */
 
+import { useCallback, useMemo } from 'react';
 import { useSettingsStore } from './settingsStore';
 import { useTokensStore } from './tokensStore';
 import { useUIStore } from './uiStore';
@@ -49,11 +50,11 @@ export const useLanguage = () => {
   const setLanguage = useSettingsStore((state) => state.setLanguage);
   
   /**
-   * Função de tradução
+   * Função de tradução (memoizada para evitar re-renders)
    * @param {string} key - Chave da tradução (ex: 'common.save')
    * @returns {string}
    */
-  const t = (key) => {
+  const t = useCallback((key) => {
     const keys = key.split('.');
     let value = translations[language];
     
@@ -66,19 +67,19 @@ export const useLanguage = () => {
     }
     
     return value || key;
-  };
+  }, [language]);
   
-  const changeLanguage = (lang) => {
+  const changeLanguage = useCallback((lang) => {
     if (translations[lang]) {
       setLanguage(lang);
     }
-  };
+  }, [setLanguage]);
   
-  return {
+  return useMemo(() => ({
     language,
     changeLanguage,
     t,
-  };
+  }), [language, changeLanguage, t]);
 };
 
 // ============================================

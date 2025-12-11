@@ -74,3 +74,14 @@ export {
   useGenerateTestCodeStream,
   useAnalyzeRisksStream
 } from './useAIStream';
+
+// ============================================
+// HOOKS DE DEBOUNCE/THROTTLE
+// ============================================
+
+export {
+  useDebouncedValue,
+  useDebouncedCallback,
+  useDebouncedInput,
+  useThrottledCallback
+} from './useDebounce';
