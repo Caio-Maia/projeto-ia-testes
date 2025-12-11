@@ -126,10 +126,10 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
     setExportMenuAnchor(null);
   };
 
-  const handleExport = (format) => {
+  const handleExport = async (format) => {
     if (!selectedGeneration) return;
     
-    const result = exportGeneration(selectedGeneration, format);
+    const result = await exportGeneration(selectedGeneration, format);
     
     setExportMessage({
       type: result.success ? 'success' : 'error',

@@ -460,19 +460,60 @@ backend/
 ---
 
 ### 5. Cache com Redis
-**Status**: Não implementado  
+**Status**: ✅ Implementado  
 **Prioridade**: Média  
 **Esforço**: Médio
 
-```javascript
-// Cache de respostas de IA para prompts idênticos
-const cacheKey = `ai:${model}:${hashPrompt(prompt)}`;
-const cached = await redis.get(cacheKey);
-if (cached) return JSON.parse(cached);
+**Implementação**:
 
-const result = await aiProvider.generateContent(prompt);
-await redis.setex(cacheKey, 3600, JSON.stringify(result)); // 1 hora
+**Serviço de Cache** (`backend/services/cacheService.js`):
+```javascript
+const { getFromCache, setInCache, getTTL, isCacheEnabled } = require('../services/cacheService');
+
+// Verificar cache antes de chamar IA
+const cached = await getFromCache('chatgpt', model, feature, prompt);
+if (cached.hit) {
+  return res.json({ ...cached.data.result, cached: true, cachedAt: cached.data.cachedAt });
+}
+
+// Salvar no cache após resposta
+await setInCache('chatgpt', model, feature, prompt, result, getTTL(feature));
 ```
+
+**Features**:
+- Cache de respostas de IA para prompts idênticos
+- Hash SHA256 do prompt + modelo + feature como chave
+- TTL configurável por feature (1h para improve-task, 30min para generate-code)
+- Skip cache via query param `?skipCache=true`
+- Estatísticas de hit/miss rate
+- API REST para gerenciamento
+
+**TTL por Feature**:
+| Feature | TTL |
+|---------|-----|
+| improve-task | 1 hora |
+| generate-tests | 1 hora |
+| generate-code | 30 minutos |
+| analyze-risks | 1 hora |
+| analyze-coverage | 30 minutos |
+
+**API Endpoints**:
+```javascript
+GET    /api/cache/health    // Health check do cache
+GET    /api/cache/stats     // Estatísticas (hits, misses, hit rate)
+DELETE /api/cache           // Limpar todo o cache
+DELETE /api/cache/invalidate // Invalidar por padrão (query: provider, feature, model)
+```
+
+**Controllers Integrados**:
+- ✅ chatgptController.js
+- ✅ geminiController.js  
+- ✅ codeGenerationController.js (generate-code, analyze-risks)
+
+**Benefícios**:
+- Redução de custos com chamadas repetidas
+- Resposta instantânea para prompts já processados
+- Redução de latência
 
 ---
 
@@ -523,6 +564,36 @@ GET /api/jobs/{jobId}
 - Graceful shutdown com fechamento de conexões
 - Retry automático em caso de falha
 - Jobs de diferentes prioridades
+
+### 7. Monitoramento de Uso e Analytics
+**Status**: Não implementado  
+**Prioridade**: Alta  
+**Esforço**: Médio
+
+**Problema Atual**: Não há visibilidade centralizada sobre quais features, modelos e idiomas geram mais valor, nem sobre gargalos (tempo médio por geração, erros frequentes, cancelamentos).
+
+**Solução Proposta**:
+- Instrumentar todos os controllers de IA para enviar eventos para um `analyticsService`.
+- Persistir métricas agregadas em uma tabela `AnalyticsEvent` (ou armazenar em Redis + job diário que consolida em banco).
+- Expor dashboards via `/api/analytics` e uma página em React mostrando gráficos (Top modelos, tempo médio por feature, distribuição de idiomas, taxa de erro/cancelamento).
+
+**Exemplo de Evento**:
+```javascript
+await analyticsService.trackGeneration({
+  feature: 'generate-tests',
+  provider: 'chatgpt',
+  model: 'gpt-5-nano',
+  language: req.body.language || 'pt-BR',
+  durationMs,
+  cached: Boolean(req.query.skipCache),
+  success: true
+});
+```
+
+**Benefícios**:
+- Produto guiado por dados (priorizar modelos/features com maior ROI).
+- Identificação rápida de regressões (aumento de erros ou tempo médio).
+- Possibilidade de mostrar métricas para usuários Enterprise (relatórios de adoção).
 
 ---
 
@@ -773,6 +844,38 @@ await stream({
 - Resposta aparece em tempo real
 - Menor tempo percebido de espera
 - Melhor UX para respostas longas
+
+### 6. Templates Personalizados de Prompts
+**Status**: Não implementado  
+**Prioridade**: Média  
+**Esforço**: Médio
+
+**Problema Atual**: Cada squad precisa reescrever prompts semelhantes (ex.: "Checklist de segurança mobile", "Plano de testes regressivos") e não há forma de padronizar boas práticas ou compartilhar modelos aprovados.
+
+**Solução Proposta**:
+- Criar um módulo "Templates" onde o usuário monta um prompt com variáveis (`{{feature}}`, `{{language}}`, etc.), define linguagem/stack padrão e salva localmente ou no backend.
+- Mostrar lista de templates na sidebar/HistoryDrawer, permitindo aplicar rapidamente em qualquer página de geração.
+- Compatível com multi-idioma: campos de descrição/labels entram no arquivo `translations.js`.
+
+**Estrutura Sugestão**:
+```javascript
+// front/src/utils/templates.js
+export const defaultTemplates = [
+  {
+    id: 'regression-mobile',
+    label: {
+      'pt-BR': 'Regressivo Mobile',
+      'en-US': 'Mobile Regression'
+    },
+    prompt: 'Gere casos para {{platform}} focando em regressão de {{feature}}...'
+  }
+];
+```
+
+**Benefícios**:
+- Reaproveitamento de conhecimento entre times.
+- Redução de tempo para configurar prompts complexos.
+- Maior consistência nas entregas (especialmente para empresas com compliance).
 
 ---
 
@@ -1200,8 +1303,8 @@ develop (desenvolvimento) → main (produção/deploy)
 | Padrões de Projeto | 5 | 1 | 0 | 4 |
 | Novas IAs | 5 | 0 | 0 | 5 |
 | Integrações | 7 | 0 | 0 | 7 |
-| Arquitetura Backend | 6 | 5 | 1 | 0 |
-| Arquitetura Frontend | 5 | 4 | 0 | 1 |
+| Arquitetura Backend | 7 | 6 | 0 | 1 |
+| Arquitetura Frontend | 6 | 4 | 0 | 2 |
 | Performance | 3 | 3 | 0 | 0 |
 | Segurança | 3 | 2 | 1 | 0 |
 | Testes | 4 | 0 | 1 | 3 |
@@ -1212,17 +1315,18 @@ develop (desenvolvimento) → main (produção/deploy)
 2. **Error Handling Centralizado** - Backend + Frontend
 3. **Logging Estruturado** - Pino com formatação
 4. **Queue com BullMQ** - Processamento assíncrono
-5. **Custom Hooks** - useAI, useJira, useAIStream, etc.
-6. **React Query** - Mutations e cache
-7. **Zustand** - Estado global sem Context
-8. **Streaming SSE** - Respostas em tempo real
-9. **Health Check** - Endpoint de status
-10. **CI/CD Auto-versioning** - GitHub Actions
-11. **Bundle Splitting** - Chunks semânticos com webpack
-12. **Virtualização de Listas** - react-window component
-13. **Debounce/Throttle** - Hooks otimizados
-14. **Tokens no Frontend** - Arquitetura stateless por design (segurança)
-15. **Audit Log** - Registro completo de operações com API de consulta
+5. **Cache com Redis** - Cache de prompts idênticos com TTL configurável
+6. **Custom Hooks** - useAI, useJira, useAIStream, etc.
+7. **React Query** - Mutations e cache
+8. **Zustand** - Estado global sem Context
+9. **Streaming SSE** - Respostas em tempo real
+10. **Health Check** - Endpoint de status
+11. **CI/CD Auto-versioning** - GitHub Actions
+12. **Bundle Splitting** - Chunks semânticos com webpack
+13. **Virtualização de Listas** - react-window component
+14. **Debounce/Throttle** - Hooks otimizados
+15. **Tokens no Frontend** - Arquitetura stateless por design (segurança)
+16. **Audit Log** - Registro completo de operações com API de consulta
 
 ### 🧹 Limpezas Realizadas:
 - **Pacotes removidos (frontend)**:
@@ -1236,4 +1340,4 @@ develop (desenvolvimento) → main (produção/deploy)
 
 ---
 
-**Última atualização**: Janeiro 2025
+**Última atualização**: Dezembro 2025

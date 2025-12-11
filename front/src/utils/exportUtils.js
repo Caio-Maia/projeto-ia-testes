@@ -200,7 +200,7 @@ export const generateFilename = (baseFilename, extension) => {
  * @param {Object} generation - Objeto de geração com title, description, type, model, generation
  * @param {string} format - Formato de exportação (pdf, docx, md, json, csv)
  */
-export const exportGeneration = (generation, format = 'pdf') => {
+export const exportGeneration = async (generation, format = 'pdf') => {
   const { description = 'Geração', type = '', model = '', generation: content = '' } = generation;
   const baseFilename = description.toLowerCase().replace(/\s+/g, '-');
   
@@ -218,7 +218,7 @@ export const exportGeneration = (generation, format = 'pdf') => {
     
     case 'docx':
     case 'word':
-      return exportToWord(description, content, generateFilename(baseFilename, 'docx'));
+      return await exportToWord(description, content, generateFilename(baseFilename, 'docx'));
     
     case 'md':
     case 'markdown':

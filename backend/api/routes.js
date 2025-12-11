@@ -13,6 +13,7 @@ const { analyzeCoverage, analyzeCoverageAsync, extractRequirements, parseTestCas
 const { streamChatGPT, streamGemini, streamAI } = require('../controllers/streamController');
 const { getJob, listQueueJobs, cancelQueueJob, getStats, healthCheck } = require('../controllers/jobsController');
 const auditController = require('../controllers/auditController');
+const cacheController = require('../controllers/cacheController');
 
 // Validação
 const { validate } = require('../middlewares/validate');
@@ -99,5 +100,13 @@ router.get('/audit/resources', auditController.getResources);
 router.get('/audit/errors', auditController.getRecentErrors);
 router.get('/audit/logs/:id', auditController.getLogById);
 router.delete('/audit/logs', auditController.clearOldLogs);
+
+// ============================================
+// ROTAS DE CACHE
+// ============================================
+router.get('/cache/health', cacheController.healthCheck);
+router.get('/cache/stats', cacheController.getStats);
+router.delete('/cache', cacheController.clear);
+router.delete('/cache/invalidate', cacheController.invalidate);
 
 module.exports = router;

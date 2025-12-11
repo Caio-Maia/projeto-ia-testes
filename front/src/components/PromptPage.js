@@ -33,17 +33,20 @@ function PromptPage() {
     const [serverContent, setServerContent] = useState('');
     const [syncLoading, setSyncLoading] = useState(false);
 
-    // Descrições dos prompts
-    const fileDescriptions = {
-        taskModel: 'Prompt para análise e melhoria de histórias de usuário',
-        testCasesModel: 'Prompt para geração de casos de teste abrangentes'
-    };
-
     // Carrega histórico do localStorage
     const loadHistory = (fileName) => {
         const historyKey = `${fileName}History`;
         const savedHistory = localStorage.getItem(historyKey);
         setHistory(savedHistory ? JSON.parse(savedHistory) : []);
+    };
+
+    // Obtém título e descrição traduzidos para cada prompt
+    const getFileTitle = (file) => {
+        const titles = {
+            taskModel: t('promptPage.taskModelTitle'),
+            testCasesModel: t('promptPage.testCasesModelTitle')
+        };
+        return titles[file] || file;
     };
 
     useEffect(() => {
@@ -118,14 +121,15 @@ function PromptPage() {
         // Salva versão anterior no histórico (local)
         const historyKey = `${selectedFile}History`;
         const currentHistory = history.length > 0 ? history : [];
+        const locale = language === 'en' ? 'en-US' : 'pt-BR';
         const newHistory = [
             {
                 id: Date.now(),
                 content: originalContent,
                 timestamp: new Date().toISOString(),
-                description: `Versão anterior - ${new Date().toLocaleString('pt-BR')}`
+                description: `${t('promptPage.previousVersion')} - ${new Date().toLocaleString(locale)}`
             },
-            ...currentHistory.slice(0, 9) // Mantém apenas as 10 últimas versões
+            ...currentHistory.slice(0, 9) // Keep only the last 10 versions
         ];
         
         localStorage.setItem(historyKey, JSON.stringify(newHistory));
@@ -136,7 +140,7 @@ function PromptPage() {
         localStorage.setItem(localKey, content);
         setOriginalContent(content);
         setIsDirty(false);
-        showSnackbar('Prompt salvo localmente (não afeta outros usuários)', 'success');
+        showSnackbar(t('promptPage.savedLocally'), 'success');
     };
 
     const handleSyncWithServer = async () => {
@@ -158,10 +162,10 @@ function PromptPage() {
             setOriginalContent(promptContent);
             setIsDirty(false);
             
-            showSnackbar('Sincronizado com o servidor com sucesso!', 'success');
+            showSnackbar(t('promptPage.syncSuccess'), 'success');
         } catch (error) {
             console.error('Erro ao sincronizar:', error);
-            showSnackbar('Erro ao sincronizar com o servidor', 'error');
+            showSnackbar(t('promptPage.syncError'), 'error');
         } finally {
             setSyncLoading(false);
         }
@@ -174,12 +178,12 @@ function PromptPage() {
     const handleReset = () => {
         setContent(originalContent);
         setIsDirty(false);
-        showSnackbar('Alterações descartadas', 'info');
+        showSnackbar(t('promptPage.discardChanges'), 'info');
     };
 
     const handleCopy = () => {
         navigator.clipboard.writeText(content);
-        showSnackbar('Copiado para a área de transferência!', 'success');
+        showSnackbar(t('promptPage.copiedToClipboard'), 'success');
     };
 
     const handleDownload = () => {
@@ -190,13 +194,13 @@ function PromptPage() {
         document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
-        showSnackbar('Prompt baixado com sucesso!', 'success');
+        showSnackbar(t('promptPage.downloadSuccess'), 'success');
     };
 
     const handleRestoreVersion = (version) => {
         setContent(version.content);
         setDiffOpen(false);
-        showSnackbar('Versão restaurada. Clique em Salvar para confirmar.', 'info');
+        showSnackbar(t('promptPage.versionRestored'), 'info');
     };
 
     const showSnackbar = (message, severity) => {
@@ -227,7 +231,7 @@ function PromptPage() {
                 {t('promptPage.title')}
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 400, opacity: 0.95 }}>
-                Customize e gerencie seus prompts de IA
+                {t('promptPage.subtitle')}
               </Typography>
             </Paper>
 
@@ -246,7 +250,7 @@ function PromptPage() {
                   }}
                 >
                   <Typography variant="h6" fontWeight={700} mb={3} sx={{ color: isDarkMode ? '#f3f4f6' : '#1e293b', textAlign: 'center' }}>
-                    Arquivos
+                    {t('promptPage.files')}
                   </Typography>
                   
                   <FormControl fullWidth>
@@ -272,7 +276,7 @@ function PromptPage() {
                     >
                         {fileList.map((file) => (
                             <MenuItem key={file} value={file}>
-                                {fileDescriptions[file] || file}
+                                {getFileTitle(file)}
                             </MenuItem>
                         ))}
                     </Select>
@@ -283,12 +287,12 @@ function PromptPage() {
                           <Divider sx={{ my: 2 }} />
                           
                           <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#666', display: 'block', mb: 1 }}>
-                            Status do Arquivo
+                            {t('promptPage.fileStatus')}
                           </Typography>
                           
                           {isDirty && (
                             <Chip 
-                              label="Alterações não salvas" 
+                              label={t('promptPage.unsavedChanges')} 
                               color="warning" 
                               size="small"
                               sx={{ width: '100%', mb: 2 }}
@@ -297,7 +301,7 @@ function PromptPage() {
                           
                           {!isDirty && (
                             <Chip 
-                              label="Tudo sincronizado" 
+                              label={t('promptPage.allSynced')} 
                               color="success" 
                               size="small"
                               sx={{ width: '100%', mb: 2 }}
@@ -307,7 +311,7 @@ function PromptPage() {
                           <Divider sx={{ my: 2 }} />
                           
                           <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#666', display: 'block', mb: 1.5, fontWeight: 600 }}>
-                            Histórico ({history.length})
+                            {t('promptPage.history')} ({history.length})
                           </Typography>
                           
                           {history.length > 0 ? (
@@ -341,7 +345,7 @@ function PromptPage() {
                             </Box>
                           ) : (
                             <Typography variant="caption" sx={{ color: isDarkMode ? '#6b7280' : '#cbd5e1' }}>
-                              Nenhuma versão anterior
+                              {t('promptPage.noHistory')}
                             </Typography>
                           )}
                         </>
@@ -374,7 +378,7 @@ function PromptPage() {
                             {t('promptPage.selectFileToEdit')}
                           </Typography>
                           <Typography variant="body2" sx={{ color: isDarkMode ? '#6b7280' : '#cbd5e1', mt: 1 }}>
-                            Selecione um arquivo na lista acima para começar
+                            {t('promptPage.selectFileHint')}
                           </Typography>
                         </Box>
                     ) : isLoading ? (
@@ -395,7 +399,7 @@ function PromptPage() {
                               alignItems: 'center'
                             }}
                           >
-                            <Tooltip title="Salvar localmente (não afeta o servidor)">
+                            <Tooltip title={t('promptPage.saveLocallyTooltip')}>
                               <span>
                                 <Button
                                     variant="contained"
@@ -404,13 +408,13 @@ function PromptPage() {
                                     disabled={!isDirty}
                                     sx={{ fontWeight: 600 }}
                                 >
-                                    Salvar Localmente
+                                    {t('promptPage.saveLocally')}
                                 </Button>
                               </span>
                             </Tooltip>
 
                             {hasServerChanges() && (
-                              <Tooltip title="Sincronizar com o prompt do servidor">
+                              <Tooltip title={t('promptPage.syncTooltip')}>
                                 <span>
                                   <Button
                                       variant="contained"
@@ -420,13 +424,13 @@ function PromptPage() {
                                       disabled={syncLoading}
                                       sx={{ fontWeight: 600 }}
                                   >
-                                      {syncLoading ? 'Sincronizando...' : 'Sincronizar com Servidor'}
+                                      {syncLoading ? t('promptPage.syncing') : t('promptPage.syncWithServer')}
                                   </Button>
                                 </span>
                               </Tooltip>
                             )}
 
-                            <Tooltip title="Descartar alterações locais">
+                            <Tooltip title={t('promptPage.discardTooltip')}>
                               <span>
                                 <Button
                                     variant="outlined"
@@ -434,26 +438,26 @@ function PromptPage() {
                                     onClick={handleReset}
                                     disabled={!isDirty}
                                 >
-                                    Descartar
+                                    {t('promptPage.discard')}
                                 </Button>
                               </span>
                             </Tooltip>
 
                             <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
 
-                            <Tooltip title="Copiar para área de transferência">
+                            <Tooltip title={t('promptPage.copyTooltip')}>
                               <IconButton size="small" onClick={handleCopy}>
                                 <ContentCopyIcon />
                               </IconButton>
                             </Tooltip>
 
-                            <Tooltip title="Baixar como arquivo">
+                            <Tooltip title={t('promptPage.downloadTooltip')}>
                               <IconButton size="small" onClick={handleDownload}>
                                 <DownloadIcon />
                               </IconButton>
                             </Tooltip>
 
-                            <Tooltip title="Ver histórico">
+                            <Tooltip title={t('promptPage.historyTooltip')}>
                               <IconButton size="small" onClick={() => setDiffOpen(true)}>
                                 <HistoryIcon />
                               </IconButton>
@@ -463,7 +467,7 @@ function PromptPage() {
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 {hasServerChanges() && (
                                   <Chip 
-                                    label="Modificado localmente" 
+                                    label={t('promptPage.modifiedLocally')} 
                                     color="warning" 
                                     size="small"
                                     variant="outlined"
@@ -471,7 +475,7 @@ function PromptPage() {
                                 )}
                               </Box>
                               <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#64748b' }}>
-                                {charCount} caracteres • {wordCount} palavras
+                                {charCount} {t('promptPage.characters')} • {wordCount} {t('promptPage.words')}
                               </Typography>
                             </Box>
                           </Box>
@@ -486,7 +490,7 @@ function PromptPage() {
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                                 variant="outlined"
-                                placeholder="Digite ou cole o conteúdo do prompt aqui..."
+                                placeholder={t('promptPage.placeholder')}
                                 sx={{
                                   backgroundColor: isDarkMode ? '#0f1419' : '#ffffff',
                                   '& .MuiInputBase-input': {
@@ -519,7 +523,7 @@ function PromptPage() {
             {/* History/Diff Dialog */}
             <Dialog open={diffOpen} onClose={() => setDiffOpen(false)} maxWidth="sm" fullWidth>
               <DialogTitle sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#f5f7fa', color: isDarkMode ? '#f3f4f6' : '#1e293b' }}>
-                Histórico de Versões
+                {t('promptPage.versionHistory')}
               </DialogTitle>
               <DialogContent sx={{ backgroundColor: isDarkMode ? '#0f1419' : '#ffffff' }}>
                 {history.length > 0 ? (
@@ -530,10 +534,10 @@ function PromptPage() {
                           <Box display="flex" justifyContent="space-between" alignItems="center">
                             <Box>
                               <Typography variant="subtitle2" sx={{ color: isDarkMode ? '#d1d5db' : '#1e293b', fontWeight: 600 }}>
-                                Versão {history.length - idx}
+                                {t('promptPage.version')} {history.length - idx}
                               </Typography>
                               <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#64748b' }}>
-                                {new Date(version.timestamp).toLocaleString('pt-BR')}
+                                {new Date(version.timestamp).toLocaleString(language === 'en' ? 'en-US' : 'pt-BR')}
                               </Typography>
                             </Box>
                             <Button 
@@ -541,7 +545,7 @@ function PromptPage() {
                               variant="outlined"
                               onClick={() => handleRestoreVersion(version)}
                             >
-                              Restaurar
+                              {t('promptPage.restore')}
                             </Button>
                           </Box>
                         </CardContent>
@@ -550,12 +554,12 @@ function PromptPage() {
                   </Box>
                 ) : (
                   <Typography sx={{ color: isDarkMode ? '#9ca3af' : '#64748b', mt: 2 }}>
-                    Nenhuma versão anterior disponível
+                    {t('promptPage.noVersionsAvailable')}
                   </Typography>
                 )}
               </DialogContent>
               <DialogActions sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#f5f7fa' }}>
-                <Button onClick={() => setDiffOpen(false)}>Fechar</Button>
+                <Button onClick={() => setDiffOpen(false)}>{t('promptPage.close')}</Button>
               </DialogActions>
             </Dialog>
 
