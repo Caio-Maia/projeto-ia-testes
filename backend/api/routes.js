@@ -68,8 +68,13 @@ router.get('/feedback/stats', getFeedbackStats);
 router.get('/feedback/recent', getRecentFeedback);
 
 // Rotas para Análise de Cobertura de Testes
-router.post('/analyze-coverage', validate(analyzeCoverageSchema), analyzeCoverage);
+router.post('/analyze-coverage', analyzeCoverage);
 router.post('/analyze-coverage/async', validate(analyzeCoverageSchema), analyzeCoverageAsync);
+// Provider-specific endpoints (chatgpt/gemini) to match front-end pattern /api/{provider}/analyze-coverage
+router.post('/chatgpt/analyze-coverage', analyzeCoverage);
+router.post('/chatgpt/analyze-coverage/async', validate(analyzeCoverageSchema), analyzeCoverageAsync);
+router.post('/gemini/analyze-coverage', analyzeCoverage);
+router.post('/gemini/analyze-coverage/async', validate(analyzeCoverageSchema), analyzeCoverageAsync);
 router.post('/extract-requirements', validate(extractRequirementsSchema), extractRequirements);
 router.post('/parse-test-cases', validate(parseTestCasesSchema), parseTestCases);
 

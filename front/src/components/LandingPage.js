@@ -220,7 +220,7 @@ const LandingPage = ({ onOpenTokenDialog }) => {
                   fontSize: '0.9rem'
                 }}
               >
-                IA-Powered QA Automation
+                AITest Hub
               </Typography>
             </Box>
             
@@ -232,6 +232,7 @@ const LandingPage = ({ onOpenTokenDialog }) => {
                 lineHeight: 1.2,
                 mb: 3,
                 letterSpacing: '-0.02em',
+                color: '#ffffff !important',
               }}
             >
               {t('landing.hero.title')}
@@ -245,6 +246,7 @@ const LandingPage = ({ onOpenTokenDialog }) => {
                 mb: 4,
                 maxWidth: '600px',
                 mx: 'auto',
+                color: '#ffffff !important',
               }}
             >
               {t('landing.hero.subtitle')}
@@ -815,7 +817,7 @@ const LandingPage = ({ onOpenTokenDialog }) => {
                     color: isDarkMode ? '#f3f4f6' : '#1f2937',
                   }}
                 >
-                  Task & Test Generator
+                  AITest Hub
                 </Typography>
               </Box>
               <Typography 
