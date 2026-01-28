@@ -47,7 +47,7 @@ const Footer = () => {
                 WebkitTextFillColor: 'transparent',
               }}
             >
-              Task & Test Generator
+              AITest Hub
             </Typography>
             <Typography variant="body2" sx={{ color: isDarkMode ? '#d1d5db' : '#6b7280', lineHeight: 1.8, maxWidth: 220 }}>
               {isPT ? 'Gerador inteligente de tarefas e testes com IA' : 'Intelligent AI-powered task and test generator'}
@@ -232,7 +232,7 @@ const Footer = () => {
         {/* Footer Bottom */}
         <Box sx={{ textAlign: 'center' }}>
           <Typography variant="body2" sx={{ color: isDarkMode ? '#9ca3af' : '#6b7280', mb: 1 }}>
-            © {currentYear} Task & Test Generator. {isPT ? 'Todos os direitos reservados' : 'All rights reserved'}.
+            © {currentYear} AITest Hub. {isPT ? 'Todos os direitos reservados' : 'All rights reserved'}.
           </Typography>
           <Typography variant="caption" sx={{ color: isDarkMode ? '#6b7280' : '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
             <FaCode size={12} /> {isPT ? 'Feito com' : 'Made with'} ❤️ {isPT ? 'por' : 'by'} Caio Maia

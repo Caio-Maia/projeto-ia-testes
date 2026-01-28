@@ -1,4 +1,4 @@
-# 🚀 Projeto IA Testes - Task & Test Generator
+# 🚀 Projeto IA Testes - AITest Hub
 
 Uma aplicação web moderna que utiliza Inteligência Artificial (ChatGPT e Gemini) para gerar e melhorar histórias de usuário, casos de teste, código de teste e análise de riscos. Integração completa com JIRA para facilitar o fluxo de trabalho.
 

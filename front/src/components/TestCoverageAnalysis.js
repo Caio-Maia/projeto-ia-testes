@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-  Box, Typography, Paper, CircularProgress, Alert, Grid, Card, CardContent,
+  Box, Typography, Paper, CircularProgress, Alert, Card, CardContent,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip,
   Button, Dialog, DialogTitle, DialogContent, DialogActions,
-  LinearProgress, Switch, FormControlLabel, TextField, Snackbar
+  LinearProgress, TextField, Snackbar
 } from '@mui/material';
-import { useLanguage, useDarkMode } from '../stores/hooks';
+import Grid from '@mui/material/Grid';
+import ModelSelector from './ModelSelector';
+import { AI_MODELS } from '../utils/aiModels';
+import { useLanguage, useDarkMode, useTokens, useUI } from '../stores/hooks';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
@@ -39,6 +42,8 @@ function TestCoverageAnalysis({
 }) {
   const { language, t } = useLanguage();
   const { isDarkMode } = useDarkMode();
+  const { getToken } = useTokens();
+  const { dialogs } = useUI();
   
   const [requirements, setRequirements] = useState([]);
   const [testCases, setTestCases] = useState([]);
@@ -54,7 +59,9 @@ function TestCoverageAnalysis({
   // eslint-disable-next-line no-unused-vars
   const [testMetrics, setTestMetrics] = useState({});
   const [selectedReq, setSelectedReq] = useState(null);
-  const [aiAnalysisEnabled, setAiAnalysisEnabled] = useState(true);
+  const [localSelectedModel, setLocalSelectedModel] = useState(() => {
+    return AI_MODELS.find(m => m.version === selectedModel) || AI_MODELS[0] || null;
+  });
   const [requirementsText, setRequirementsText] = useState('');
   const [testCasesText, setTestCasesText] = useState('');
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
@@ -80,11 +87,38 @@ function TestCoverageAnalysis({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialRequirements, initialTestCases]);
 
+  // Normalize status to standard values
+  const normalizeStatus = (status) => {
+    if (!status) return 'pending';
+    const s = status.toLowerCase().trim();
+    // Passed variants (EN + PT)
+    if (['passed', 'pass', 'success', 'ok', 'sucesso', 'aprovado', 'passou', 'passou'].includes(s)) {
+      return 'passed';
+    }
+    // Failed variants (EN + PT)
+    if (['failed', 'fail', 'error', 'failure', 'falha', 'falhou', 'erro', 'reprovado'].includes(s)) {
+      return 'failed';
+    }
+    // Pending variants (EN + PT)
+    if (['pending', 'not-run', 'skipped', 'todo', 'pendente', 'não executado', 'nao executado', 'aguardando'].includes(s)) {
+      return 'pending';
+    }
+    return 'pending';
+  };
+
   // Parse text input to JSON
   const parseInputToJSON = (text, type) => {
     try {
       // Try to parse as JSON first
-      return JSON.parse(text);
+      const parsed = JSON.parse(text);
+      // Normalize status for test cases
+      if (type === 'testCases' && Array.isArray(parsed)) {
+        return parsed.map(tc => ({
+          ...tc,
+          status: normalizeStatus(tc.status)
+        }));
+      }
+      return parsed;
     } catch (e) {
       // If not JSON, try to parse as simple list
       const lines = text.split('\n').filter(line => line.trim());
@@ -98,11 +132,12 @@ function TestCoverageAnalysis({
             priority: parts[3] || 'medium'
           };
         } else {
+          // TC-001: Login válido: REQ-001: passed
           return {
             id: parts[0] || `TC-${String(idx + 1).padStart(3, '0')}`,
             title: parts[1] || line,
             requirement: parts[2] || '',
-            status: 'pending'
+            status: normalizeStatus(parts[3])
           };
         }
       });
@@ -113,6 +148,14 @@ function TestCoverageAnalysis({
   const analyzeWithAI = async (reqs = null, tests = null) => {
     const requirementsData = reqs || requirements;
     const testCasesData = tests || testCases;
+
+    // Normalize selected model to the model object used across the app
+    const modelObj = localSelectedModel && localSelectedModel.apiName
+      ? localSelectedModel
+      : (typeof selectedModel === 'object' && selectedModel?.apiName)
+        ? selectedModel
+        : AI_MODELS.find(m => m.version === (localSelectedModel?.version || selectedModel)) || AI_MODELS[0];
+    const modelToUse = modelObj.version || modelObj;
 
     if (!requirementsData.length || !testCasesData.length) {
       setError(language === 'pt-BR' 
@@ -128,16 +171,32 @@ function TestCoverageAnalysis({
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
       
-      // Determine which endpoint to use based on model
-      const isGemini = selectedModel.toLowerCase().includes('gemini');
-      const endpoint = isGemini 
-        ? `${backendUrl}/api/analyze-coverage?token=${encodeURIComponent(process.env.REACT_APP_GEMINI_API_KEY || '')}`
-        : `${backendUrl}/api/analyze-coverage`;
+      // Retrieve token: prefer persisted tokens store, fallback to legacy localStorage key and env vars
+      const tokenFromStore = getToken ? getToken(modelObj.apiName) : null;
+      const localToken = typeof window !== 'undefined'
+        ? localStorage.getItem(`${modelObj.apiName}Token`)
+        : null;
+      const envToken = modelObj.apiName === 'gemini'
+        ? process.env.REACT_APP_GEMINI_API_KEY
+        : process.env.REACT_APP_CHATGPT_API_KEY || process.env.REACT_APP_OPENAI_API_KEY;
+      const token = tokenFromStore || localToken || envToken;
+
+      if (!token) {
+        // Open token configuration dialog and show contextual error
+        try { dialogs?.token?.show && dialogs.token.show(modelObj.apiName); } catch (e) {}
+        setError(language === 'pt-BR'
+          ? `Configure um token para ${modelObj.apiName === 'gemini' ? 'Gemini' : 'ChatGPT'} nas configurações ou defina a variável ${modelObj.apiName === 'gemini' ? 'REACT_APP_GEMINI_API_KEY' : 'REACT_APP_CHATGPT_API_KEY'}.`
+          : `Please configure a token for ${modelObj.apiName === 'gemini' ? 'Gemini' : 'ChatGPT'} or set ${modelObj.apiName === 'gemini' ? 'REACT_APP_GEMINI_API_KEY' : 'REACT_APP_CHATGPT_API_KEY'}.`);
+        return;
+      }
+
+      // Call backend route for the provider (same pattern as useAI hooks)
+      const endpoint = `${backendUrl}/api/${modelObj.apiName}/analyze-coverage?token=${encodeURIComponent(token)}`;
 
       const response = await axios.post(endpoint, {
         requirements: requirementsData,
         testCases: testCasesData,
-        model: selectedModel,
+        model: modelObj.version || modelToUse,
         language: language
       }, {
         headers: {
@@ -150,18 +209,38 @@ function TestCoverageAnalysis({
       const analysis = response.data.data || response.data;
       
       if (analysis) {
-        // Update state with AI analysis results
-        if (analysis.analysis) {
+        // Calculate local stats from input data as fallback
+        const localStats = calculateCoverageStats(requirementsData, testCasesData);
+        
+        // Count suggested tests from AI recommendations for better coverage calculation
+        const aiSuggestedTestsCount = analysis.recommendations
+          ? analysis.recommendations.reduce((acc, rec) => {
+              const suggested = rec.suggested_tests || rec.suggestedTests || [];
+              return acc + suggested.length;
+            }, 0)
+          : 0;
+        
+        // Calculate real coverage considering missing tests
+        const existingTests = testCasesData.length;
+        const totalNeededTests = existingTests + aiSuggestedTestsCount;
+        const realCoveragePercentage = totalNeededTests > 0 
+          ? Math.round((existingTests / totalNeededTests) * 100) 
+          : (requirementsData.length > 0 ? 0 : 100);
+        
+        // Update state with AI analysis results, using local fallback for missing values
+        if (analysis.analysis || localStats) {
+          const aiStats = analysis.analysis || {};
           setCoverageStats({
-            totalRequirements: analysis.analysis.totalRequirements || requirementsData.length,
-            coveredRequirements: analysis.analysis.coveredRequirements || 0,
-            notCoveredRequirements: analysis.analysis.notCoveredRequirements || analysis.analysis.uncoveredRequirements || 0,
-            coveragePercentage: analysis.analysis.coveragePercentage || 0,
-            totalTests: analysis.analysis.totalTests || analysis.analysis.totalTestCases || testCasesData.length,
-            passedTests: analysis.analysis.passedTests || 0,
-            failedTests: analysis.analysis.failedTests || 0,
-            pendingTests: analysis.analysis.pendingTests || 0,
-            testSuccessRate: analysis.analysis.testSuccessRate || 0
+            totalRequirements: aiStats.totalRequirements || localStats.totalRequirements,
+            coveredRequirements: aiStats.coveredRequirements || localStats.coveredRequirements,
+            notCoveredRequirements: aiStats.notCoveredRequirements || aiStats.uncoveredRequirements || localStats.notCoveredRequirements,
+            coveragePercentage: aiSuggestedTestsCount > 0 ? realCoveragePercentage : (aiStats.coveragePercentage || localStats.coveragePercentage),
+            totalTests: aiStats.totalTests || aiStats.totalTestCases || localStats.totalTests,
+            passedTests: aiStats.passedTests ?? localStats.passedTests,
+            failedTests: aiStats.failedTests ?? localStats.failedTests,
+            pendingTests: aiStats.pendingTests ?? localStats.pendingTests,
+            testSuccessRate: aiStats.testSuccessRate || localStats.testSuccessRate,
+            suggestedTestsCount: aiSuggestedTestsCount
           });
         }
 
@@ -199,6 +278,25 @@ function TestCoverageAnalysis({
             suggestedTests: rec.suggested_tests || rec.suggestedTests
           }));
           setRecommendations(mappedRecs);
+          
+          // Recalculate coverage with suggested tests count
+          const suggestedCount = mappedRecs.reduce((acc, rec) => {
+            return acc + (rec.suggestedTests?.length || 0);
+          }, 0);
+          if (suggestedCount > 0) {
+            const existingTests = testCasesData.length;
+            const totalNeeded = existingTests + suggestedCount;
+            const adjustedCoverage = Math.round((existingTests / totalNeeded) * 100);
+            setCoverageStats(prev => ({
+              ...prev,
+              coveragePercentage: adjustedCoverage,
+              suggestedTestsCount: suggestedCount
+            }));
+          }
+        } else {
+          // Generate local recommendations if AI didn't provide them
+          const localRecs = generateRecommendations(requirementsData, testCasesData);
+          setRecommendations(localRecs);
         }
 
         if (analysis.coverageHeatmap) {
@@ -258,11 +356,8 @@ function TestCoverageAnalysis({
       setRequirements(parsedReqs);
       setTestCases(parsedTests);
 
-      if (aiAnalysisEnabled) {
-        analyzeWithAI(parsedReqs, parsedTests);
-      } else {
-        performLocalAnalysis(parsedReqs, parsedTests);
-      }
+      // Always use AI analysis by default (local fallback happens on error)
+      analyzeWithAI(parsedReqs, parsedTests);
     } catch (err) {
       setError(language === 'pt-BR' 
         ? 'Erro ao processar entrada. Verifique o formato dos dados.' 
@@ -299,38 +394,82 @@ function TestCoverageAnalysis({
 
   const calculateTraceabilityMatrix = (reqs, tests) => {
     return reqs.map(req => {
-      const associatedTests = tests.filter(tc => 
-        tc.requirement === req.id || 
-        tc.requirementId === req.id ||
-        (tc.requirements && tc.requirements.includes(req.id))
-      );
-      const passedTests = associatedTests.filter(tc => tc.status === 'passed' || tc.status === 'pass').length;
-      const coverage = associatedTests.length > 0 ? (passedTests / associatedTests.length) * 100 : 0;
+      // Normalize requirement ID for comparison (case-insensitive, trimmed)
+      const reqIdNormalized = (req.id || '').toLowerCase().trim();
+      
+      const associatedTests = tests.filter(tc => {
+        // Check multiple possible requirement fields
+        const tcReq = (tc.requirement || tc.requirementId || '').toLowerCase().trim();
+        const tcReqs = tc.requirements || [];
+        
+        return tcReq === reqIdNormalized || 
+               tcReqs.some(r => (r || '').toLowerCase().trim() === reqIdNormalized);
+      });
+      
+      // Count by normalized status
+      const passedTests = associatedTests.filter(tc => {
+        const status = normalizeStatus(tc.status);
+        return status === 'passed';
+      }).length;
+      
+      const failedTests = associatedTests.filter(tc => {
+        const status = normalizeStatus(tc.status);
+        return status === 'failed';
+      }).length;
+      
+      const pendingTests = associatedTests.filter(tc => {
+        const status = normalizeStatus(tc.status);
+        return status === 'pending';
+      }).length;
+      
+      // Coverage = passed tests / total associated tests (if any tests exist)
+      // If no tests, coverage is 0%
+      const coverage = associatedTests.length > 0 
+        ? (passedTests / associatedTests.length) * 100 
+        : 0;
+      
+      // Map tests with normalized status for display
+      const mappedTests = associatedTests.map(tc => ({
+        ...tc,
+        status: normalizeStatus(tc.status)
+      }));
       
       return {
         requirement: req,
         requirementId: req.id,
         testCount: associatedTests.length,
         passedCount: passedTests,
+        failedCount: failedTests,
+        pendingCount: pendingTests,
         coverage: Math.round(coverage),
-        tests: associatedTests,
+        tests: mappedTests,
         status: coverage >= 80 ? 'covered' : coverage >= 50 ? 'partial' : coverage > 0 ? 'low' : 'uncovered'
       };
     });
   };
 
   const calculateCoverageStats = (reqs, tests) => {
-    const covered = reqs.filter(req => tests.some(tc => 
-      tc.requirement === req.id || 
-      tc.requirementId === req.id ||
-      (tc.requirements && tc.requirements.includes(req.id))
-    )).length;
+    // Helper para verificar se teste está associado ao requisito
+    const isTestForReq = (tc, req) => {
+      const reqIdNormalized = (req.id || '').toLowerCase().trim();
+      const tcReq = (tc.requirement || tc.requirementId || '').toLowerCase().trim();
+      const tcReqs = tc.requirements || [];
+      return tcReq === reqIdNormalized || 
+             tcReqs.some(r => (r || '').toLowerCase().trim() === reqIdNormalized);
+    };
+    
+    const covered = reqs.filter(req => tests.some(tc => isTestForReq(tc, req))).length;
     const notCovered = reqs.length - covered;
     const totalTests = tests.length;
-    const passedTests = tests.filter(tc => tc.status === 'passed' || tc.status === 'pass').length;
-    const failedTests = tests.filter(tc => tc.status === 'failed' || tc.status === 'fail').length;
-    const pendingTests = tests.filter(tc => tc.status === 'pending' || tc.status === 'not-run').length;
+    
+    // Count tests by normalized status
+    const passedTests = tests.filter(tc => normalizeStatus(tc.status) === 'passed').length;
+    const failedTests = tests.filter(tc => normalizeStatus(tc.status) === 'failed').length;
+    const pendingTests = tests.filter(tc => normalizeStatus(tc.status) === 'pending').length;
 
+    // Testes que realmente foram executados
+    const executedTests = passedTests + failedTests;
+    
     return {
       totalRequirements: reqs.length,
       coveredRequirements: covered,
@@ -340,7 +479,9 @@ function TestCoverageAnalysis({
       passedTests,
       failedTests,
       pendingTests,
-      testSuccessRate: totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0
+      executedTests,
+      testSuccessRate: executedTests > 0 ? Math.round((passedTests / executedTests) * 100) : 0,
+      suggestedTestsCount: 0
     };
   };
 
@@ -348,12 +489,17 @@ function TestCoverageAnalysis({
     const recs = [];
     const actualMatrix = matrix || calculateTraceabilityMatrix(reqs, tests);
 
+    // Helper para verificar se teste está associado ao requisito
+    const isTestForReq = (tc, req) => {
+      const reqIdNormalized = (req.id || '').toLowerCase().trim();
+      const tcReq = (tc.requirement || tc.requirementId || '').toLowerCase().trim();
+      const tcReqs = tc.requirements || [];
+      return tcReq === reqIdNormalized || 
+             tcReqs.some(r => (r || '').toLowerCase().trim() === reqIdNormalized);
+    };
+
     // Requisitos sem testes
-    const uncovered = reqs.filter(req => !tests.some(tc => 
-      tc.requirement === req.id || 
-      tc.requirementId === req.id ||
-      (tc.requirements && tc.requirements.includes(req.id))
-    ));
+    const uncovered = reqs.filter(req => !tests.some(tc => isTestForReq(tc, req)));
     uncovered.forEach(req => {
       recs.push({
         id: `REC-${req.id}`,
@@ -383,7 +529,7 @@ function TestCoverageAnalysis({
     });
 
     // Testes falhando
-    const failingTests = tests.filter(tc => tc.status === 'failed' || tc.status === 'fail');
+    const failingTests = tests.filter(tc => normalizeStatus(tc.status) === 'failed');
     if (failingTests.length > 0) {
       recs.push({
         id: 'REC-FAILING',
@@ -463,7 +609,7 @@ function TestCoverageAnalysis({
 RELATÓRIO DE COBERTURA DE TESTES
 ================================
 Data: ${new Date().toLocaleString('pt-BR')}
-Modelo de IA: ${selectedModel}
+Modelo de IA: ${localSelectedModel?.label || localSelectedModel?.version || selectedModel}
 
 ESTATÍSTICAS GERAIS
 ==================
@@ -491,7 +637,7 @@ ${recommendations.map(rec => `- [${rec.severity?.toUpperCase() || 'INFO'}] ${rec
 TEST COVERAGE REPORT
 ====================
 Date: ${new Date().toLocaleString('en-US')}
-AI Model: ${selectedModel}
+AI Model: ${localSelectedModel?.label || localSelectedModel?.version || selectedModel}
 
 GENERAL STATISTICS
 ==================
@@ -557,131 +703,347 @@ ${recommendations.map(rec => `- [${rec.severity?.toUpperCase() || 'INFO'}] ${rec
               {isPortuguese ? 'Dados para Análise' : 'Data for Analysis'}
             </Typography>
           </Box>
-          <FormControlLabel
-            control={
-              <Switch 
-                checked={aiAnalysisEnabled} 
-                onChange={(e) => setAiAnalysisEnabled(e.target.checked)}
-                color="primary"
-              />
-            }
-            label={
-              <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#64748b' }}>
-                {isPortuguese ? 'Usar IA' : 'Use AI'}
-              </Typography>
-            }
-          />
+          <Box sx={{ minWidth: 320 }}>
+            <ModelSelector
+              value={localSelectedModel}
+              onChange={(e) => setLocalSelectedModel(e.target.value)}
+              label={isPortuguese ? 'Modelo' : 'Model'}
+              required={false}
+            />
+          </Box>
         </Box>
 
-        <Box sx={{ p: 3 }}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: isDarkMode ? '#d1d5db' : '#1e293b' }}>
-                {isPortuguese ? 'Requisitos (JSON ou lista)' : 'Requirements (JSON or list)'}
-              </Typography>
-              <TextField
-                fullWidth
-                multiline
-                rows={8}
-                placeholder={isPortuguese 
-                  ? `[{"id": "REQ-001", "title": "Login", "description": "...", "priority": "high"}]
-ou
-REQ-001: Login: Autenticação de usuário: high`
-                  : `[{"id": "REQ-001", "title": "Login", "description": "...", "priority": "high"}]
-or
-REQ-001: Login: User authentication: high`}
-                value={requirementsText}
-                onChange={(e) => setRequirementsText(e.target.value)}
+        <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+          <Grid 
+            container 
+            spacing={{ xs: 2, sm: 3, md: 4 }}
+            sx={{ 
+              justifyContent: 'center',
+              alignItems: 'stretch'
+            }}
+          >
+            {/* Requirements Card */}
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Paper
+                elevation={0}
                 sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: isDarkMode ? '#0f1419' : '#f8f9fa',
-                    color: isDarkMode ? '#d1d5db' : '#1e293b',
-                    fontFamily: 'monospace',
-                    fontSize: '0.85rem'
+                  p: 3,
+                  height: '100%',
+                  borderRadius: 3,
+                  border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}`,
+                  backgroundColor: isDarkMode ? 'rgba(15, 20, 25, 0.6)' : '#fafbfc',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    borderColor: isDarkMode ? 'rgba(59, 130, 246, 0.5)' : '#3b82f6',
+                    boxShadow: isDarkMode 
+                      ? '0 4px 20px rgba(59, 130, 246, 0.15)' 
+                      : '0 4px 20px rgba(59, 130, 246, 0.1)'
                   }
                 }}
-              />
-              <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
-                <Button
-                  component="label"
-                  size="small"
-                  startIcon={<UploadFileIcon />}
-                  variant="outlined"
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                  <Box 
+                    sx={{ 
+                      width: 40, 
+                      height: 40, 
+                      borderRadius: 2, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      color: 'white',
+                      fontWeight: 700,
+                      fontSize: '1.1rem'
+                    }}
+                  >
+                    1
+                  </Box>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      color: isDarkMode ? '#f3f4f6' : '#1e293b',
+                      letterSpacing: '-0.01em'
+                    }}
+                  >
+                    {isPortuguese ? 'Requisitos' : 'Requirements'}
+                  </Typography>
+                </Box>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: isDarkMode ? '#9ca3af' : '#64748b', 
+                    mb: 2,
+                    lineHeight: 1.6
+                  }}
                 >
-                  {isPortuguese ? 'Upload JSON' : 'Upload JSON'}
-                  <input
-                    type="file"
-                    hidden
-                    accept=".json,.txt"
-                    onChange={(e) => handleFileUpload(e, 'requirements')}
-                  />
-                </Button>
-              </Box>
+                  {isPortuguese 
+                    ? 'Cole seus requisitos em formato JSON ou liste um por linha no formato: ID: Título: Descrição: Prioridade'
+                    : 'Paste your requirements as JSON or list one per line in format: ID: Title: Description: Priority'}
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={12}
+                  maxRows={20}
+                  placeholder={isPortuguese 
+                    ? `Formato JSON:
+[
+  {
+    "id": "REQ-001",
+    "title": "Login de usuário",
+    "description": "Sistema de autenticação",
+    "priority": "high"
+  }
+]
+
+Ou formato simples (um por linha):
+REQ-001: Login: Autenticação de usuário: high
+REQ-002: Dashboard: Painel principal: medium`
+                    : `JSON format:
+[
+  {
+    "id": "REQ-001",
+    "title": "User login",
+    "description": "Authentication system",
+    "priority": "high"
+  }
+]
+
+Or simple format (one per line):
+REQ-001: Login: User authentication: high
+REQ-002: Dashboard: Main panel: medium`}
+                  value={requirementsText}
+                  onChange={(e) => setRequirementsText(e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: isDarkMode ? '#0a0f14' : '#ffffff',
+                      color: isDarkMode ? '#e5e7eb' : '#1e293b',
+                      fontFamily: '"JetBrains Mono", "Fira Code", "Consolas", monospace',
+                      fontSize: '0.875rem',
+                      lineHeight: 1.7,
+                      borderRadius: 2,
+                      border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : '#e2e8f0'}`,
+                      '&:hover': {
+                        borderColor: isDarkMode ? 'rgba(59, 130, 246, 0.5)' : '#3b82f6'
+                      },
+                      '&.Mui-focused': {
+                        borderColor: '#3b82f6',
+                        boxShadow: `0 0 0 3px ${isDarkMode ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.15)'}`
+                      }
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none'
+                    }
+                  }}
+                />
+                <Box sx={{ mt: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                  <Button
+                    component="label"
+                    size="medium"
+                    startIcon={<UploadFileIcon />}
+                    variant="outlined"
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : '#cbd5e1',
+                      color: isDarkMode ? '#d1d5db' : '#475569',
+                      '&:hover': {
+                        borderColor: '#3b82f6',
+                        backgroundColor: isDarkMode ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)'
+                      }
+                    }}
+                  >
+                    {isPortuguese ? 'Importar JSON' : 'Import JSON'}
+                    <input
+                      type="file"
+                      hidden
+                      accept=".json,.txt"
+                      onChange={(e) => handleFileUpload(e, 'requirements')}
+                    />
+                  </Button>
+                </Box>
+              </Paper>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1, color: isDarkMode ? '#d1d5db' : '#1e293b' }}>
-                {isPortuguese ? 'Casos de Teste (JSON ou lista)' : 'Test Cases (JSON or list)'}
-              </Typography>
-              <TextField
-                fullWidth
-                multiline
-                rows={8}
-                placeholder={isPortuguese 
-                  ? `[{"id": "TC-001", "title": "Login válido", "requirement": "REQ-001", "status": "passed"}]
-ou
-TC-001: Login válido: REQ-001: passed`
-                  : `[{"id": "TC-001", "title": "Valid login", "requirement": "REQ-001", "status": "passed"}]
-or
-TC-001: Valid login: REQ-001: passed`}
-                value={testCasesText}
-                onChange={(e) => setTestCasesText(e.target.value)}
+            {/* Test Cases Card */}
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Paper
+                elevation={0}
                 sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: isDarkMode ? '#0f1419' : '#f8f9fa',
-                    color: isDarkMode ? '#d1d5db' : '#1e293b',
-                    fontFamily: 'monospace',
-                    fontSize: '0.85rem'
+                  p: 3,
+                  height: '100%',
+                  borderRadius: 3,
+                  border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}`,
+                  backgroundColor: isDarkMode ? 'rgba(15, 20, 25, 0.6)' : '#fafbfc',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    borderColor: isDarkMode ? 'rgba(74, 222, 128, 0.5)' : '#4ade80',
+                    boxShadow: isDarkMode 
+                      ? '0 4px 20px rgba(74, 222, 128, 0.15)' 
+                      : '0 4px 20px rgba(74, 222, 128, 0.1)'
                   }
                 }}
-              />
-              <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
-                <Button
-                  component="label"
-                  size="small"
-                  startIcon={<UploadFileIcon />}
-                  variant="outlined"
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                  <Box 
+                    sx={{ 
+                      width: 40, 
+                      height: 40, 
+                      borderRadius: 2, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)',
+                      color: 'white',
+                      fontWeight: 700,
+                      fontSize: '1.1rem'
+                    }}
+                  >
+                    2
+                  </Box>
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      color: isDarkMode ? '#f3f4f6' : '#1e293b',
+                      letterSpacing: '-0.01em'
+                    }}
+                  >
+                    {isPortuguese ? 'Casos de Teste' : 'Test Cases'}
+                  </Typography>
+                </Box>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: isDarkMode ? '#9ca3af' : '#64748b', 
+                    mb: 2,
+                    lineHeight: 1.6
+                  }}
                 >
-                  {isPortuguese ? 'Upload JSON' : 'Upload JSON'}
-                  <input
-                    type="file"
-                    hidden
-                    accept=".json,.txt"
-                    onChange={(e) => handleFileUpload(e, 'testCases')}
-                  />
-                </Button>
-              </Box>
+                  {isPortuguese 
+                    ? 'Cole seus casos de teste em formato JSON ou liste um por linha no formato: ID: Título: Requisito: Status'
+                    : 'Paste your test cases as JSON or list one per line in format: ID: Title: Requirement: Status'}
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={12}
+                  maxRows={20}
+                  placeholder={isPortuguese 
+                    ? `Formato JSON:
+[
+  {
+    "id": "TC-001",
+    "title": "Login com credenciais válidas",
+    "requirement": "REQ-001",
+    "status": "passed"
+  }
+]
+
+Ou formato simples (um por linha):
+TC-001: Login válido: REQ-001: passed
+TC-002: Login inválido: REQ-001: failed`
+                    : `JSON format:
+[
+  {
+    "id": "TC-001",
+    "title": "Login with valid credentials",
+    "requirement": "REQ-001",
+    "status": "passed"
+  }
+]
+
+Or simple format (one per line):
+TC-001: Valid login: REQ-001: passed
+TC-002: Invalid login: REQ-001: failed`}
+                  value={testCasesText}
+                  onChange={(e) => setTestCasesText(e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: isDarkMode ? '#0a0f14' : '#ffffff',
+                      color: isDarkMode ? '#e5e7eb' : '#1e293b',
+                      fontFamily: '"JetBrains Mono", "Fira Code", "Consolas", monospace',
+                      fontSize: '0.875rem',
+                      lineHeight: 1.7,
+                      borderRadius: 2,
+                      border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : '#e2e8f0'}`,
+                      '&:hover': {
+                        borderColor: isDarkMode ? 'rgba(74, 222, 128, 0.5)' : '#4ade80'
+                      },
+                      '&.Mui-focused': {
+                        borderColor: '#4ade80',
+                        boxShadow: `0 0 0 3px ${isDarkMode ? 'rgba(74, 222, 128, 0.2)' : 'rgba(74, 222, 128, 0.15)'}`
+                      }
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none'
+                    }
+                  }}
+                />
+                <Box sx={{ mt: 2, display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                  <Button
+                    component="label"
+                    size="medium"
+                    startIcon={<UploadFileIcon />}
+                    variant="outlined"
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : '#cbd5e1',
+                      color: isDarkMode ? '#d1d5db' : '#475569',
+                      '&:hover': {
+                        borderColor: '#4ade80',
+                        backgroundColor: isDarkMode ? 'rgba(74, 222, 128, 0.1)' : 'rgba(74, 222, 128, 0.05)'
+                      }
+                    }}
+                  >
+                    {isPortuguese ? 'Importar JSON' : 'Import JSON'}
+                    <input
+                      type="file"
+                      hidden
+                      accept=".json,.txt"
+                      onChange={(e) => handleFileUpload(e, 'testCases')}
+                    />
+                  </Button>
+                </Box>
+              </Paper>
             </Grid>
           </Grid>
 
-          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center', gap: 2 }}>
+          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center', gap: 2 }}>
             <Button
               variant="contained"
               size="large"
-              startIcon={analyzing ? <CircularProgress size={20} color="inherit" /> : <SmartToyIcon />}
+              startIcon={analyzing ? <CircularProgress size={22} color="inherit" /> : <SmartToyIcon />}
               onClick={handleAnalyze}
               disabled={analyzing || (!requirementsText.trim() && !testCasesText.trim())}
               sx={{
                 background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                px: 4,
-                py: 1.5,
-                borderRadius: 2,
-                fontWeight: 600
+                px: 6,
+                py: 2,
+                borderRadius: 3,
+                fontWeight: 700,
+                fontSize: '1rem',
+                textTransform: 'none',
+                boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  boxShadow: '0 6px 20px rgba(59, 130, 246, 0.5)',
+                  transform: 'translateY(-2px)'
+                },
+                '&:disabled': {
+                  background: isDarkMode ? '#374151' : '#cbd5e1',
+                  boxShadow: 'none'
+                }
               }}
             >
               {analyzing 
-                ? (isPortuguese ? 'Analisando...' : 'Analyzing...') 
-                : (isPortuguese ? 'Analisar Cobertura' : 'Analyze Coverage')}
+                ? (isPortuguese ? 'Analisando com IA...' : 'Analyzing with AI...') 
+                : (isPortuguese ? '🚀 Analisar Cobertura com IA' : '🚀 Analyze Coverage with AI')}
             </Button>
           </Box>
         </Box>
@@ -751,14 +1113,12 @@ TC-001: Valid login: REQ-001: passed`}
               ? 'Matriz de rastreabilidade, heatmap de cobertura e recomendações automáticas com IA'
               : 'Traceability matrix, coverage heatmap and AI-powered recommendations'}
           </Typography>
-          {aiAnalysisEnabled && (
-            <Chip 
-              icon={<SmartToyIcon sx={{ color: 'white !important' }} />}
-              label={`${isPortuguese ? 'Modelo' : 'Model'}: ${selectedModel}`}
-              sx={{ mt: 2, color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
-              variant="outlined"
-            />
-          )}
+          <Chip 
+            icon={<SmartToyIcon sx={{ color: 'white !important' }} />}
+            label={`${isPortuguese ? 'Modelo' : 'Model'}: ${localSelectedModel?.label || localSelectedModel?.version || selectedModel}`}
+            sx={{ mt: 2, color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
+            variant="outlined"
+          />
         </Paper>
 
         {/* Input Form - Show when no analysis yet or when user wants to re-analyze */}
@@ -789,35 +1149,49 @@ TC-001: Valid login: REQ-001: passed`}
         {/* Stats Cards - Only show after analysis */}
         {hasAnalyzed && (
           <Grid container spacing={3} sx={{ mb: 5 }}>
-          <Grid item xs={12} sm={6} md={3}>
+          {/* Cobertura - considerando testes sugeridos */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card elevation={0} sx={{ borderRadius: 2.5, border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={2}>
-                  <Box sx={{ p: 1.5, borderRadius: 2, backgroundColor: '#3b82f6' }}>
-                    <CheckCircleIcon sx={{ color: 'white', fontSize: 28 }} />
+                  <Box sx={{ p: 1.5, borderRadius: 2, backgroundColor: coverageStats.coveragePercentage >= 80 ? '#4ade80' : coverageStats.coveragePercentage >= 50 ? '#fbbf24' : '#ef4444' }}>
+                    <TrendingUpIcon sx={{ color: 'white', fontSize: 28 }} />
                   </Box>
-                  <Box>
-                    <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#64748b' }}>{isPortuguese ? 'Cobertura' : 'Coverage'}</Typography>
+                  <Box flex={1}>
+                    <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#64748b' }}>
+                      {isPortuguese ? 'Cobertura de Testes' : 'Test Coverage'}
+                    </Typography>
                     <Typography variant="h5" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1e293b' }}>
                       {coverageStats.coveragePercentage || 0}%
                     </Typography>
+                    {coverageStats.suggestedTestsCount > 0 && (
+                      <Typography variant="caption" sx={{ color: '#f97316', display: 'block' }}>
+                        +{coverageStats.suggestedTestsCount} {isPortuguese ? 'sugeridos' : 'suggested'}
+                      </Typography>
+                    )}
                   </Box>
                 </Box>
               </CardContent>
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          {/* Testes Passando */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card elevation={0} sx={{ borderRadius: 2.5, border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={2}>
                   <Box sx={{ p: 1.5, borderRadius: 2, backgroundColor: '#4ade80' }}>
                     <CheckCircleIcon sx={{ color: 'white', fontSize: 28 }} />
                   </Box>
-                  <Box>
-                    <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#64748b' }}>{isPortuguese ? 'Testes Passando' : 'Passing Tests'}</Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1e293b' }}>
-                      {coverageStats.passedTests || 0}/{coverageStats.totalTests || 0}
+                  <Box flex={1}>
+                    <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#64748b' }}>
+                      {isPortuguese ? 'Testes Passando' : 'Passing Tests'}
+                    </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: '#4ade80' }}>
+                      {coverageStats.passedTests ?? 0}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: isDarkMode ? '#6b7280' : '#94a3b8' }}>
+                      {isPortuguese ? 'de' : 'of'} {coverageStats.totalTests || 0} {isPortuguese ? 'total' : 'total'}
                     </Typography>
                   </Box>
                 </Box>
@@ -825,36 +1199,52 @@ TC-001: Valid login: REQ-001: passed`}
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          {/* Testes Falhando */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card elevation={0} sx={{ borderRadius: 2.5, border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={2}>
-                  <Box sx={{ p: 1.5, borderRadius: 2, backgroundColor: '#f97316' }}>
-                    <WarningIcon sx={{ color: 'white', fontSize: 28 }} />
+                  <Box sx={{ p: 1.5, borderRadius: 2, backgroundColor: coverageStats.failedTests > 0 ? '#ef4444' : '#64748b' }}>
+                    <ErrorIcon sx={{ color: 'white', fontSize: 28 }} />
                   </Box>
-                  <Box>
-                    <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#64748b' }}>{isPortuguese ? 'Falhando' : 'Failing'}</Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1e293b' }}>
-                      {coverageStats.failedTests || 0}
+                  <Box flex={1}>
+                    <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#64748b' }}>
+                      {isPortuguese ? 'Testes Falhando' : 'Failing Tests'}
                     </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: coverageStats.failedTests > 0 ? '#ef4444' : (isDarkMode ? '#f3f4f6' : '#1e293b') }}>
+                      {coverageStats.failedTests ?? 0}
+                    </Typography>
+                    {coverageStats.failedTests > 0 && (
+                      <Typography variant="caption" sx={{ color: '#ef4444' }}>
+                        {isPortuguese ? '⚠️ Investigar' : '⚠️ Investigate'}
+                      </Typography>
+                    )}
                   </Box>
                 </Box>
               </CardContent>
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          {/* Testes Pendentes */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card elevation={0} sx={{ borderRadius: 2.5, border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={2}>
                   <Box sx={{ p: 1.5, borderRadius: 2, backgroundColor: '#fbbf24' }}>
                     <WarningIcon sx={{ color: 'white', fontSize: 28 }} />
                   </Box>
-                  <Box>
-                    <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#64748b' }}>{isPortuguese ? 'Pendentes' : 'Pending'}</Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1e293b' }}>
-                      {coverageStats.pendingTests || 0}
+                  <Box flex={1}>
+                    <Typography variant="caption" sx={{ color: isDarkMode ? '#9ca3af' : '#64748b' }}>
+                      {isPortuguese ? 'Pendentes/Não Executados' : 'Pending/Not Run'}
                     </Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 700, color: coverageStats.pendingTests > 0 ? '#fbbf24' : (isDarkMode ? '#f3f4f6' : '#1e293b') }}>
+                      {coverageStats.pendingTests ?? 0}
+                    </Typography>
+                    {coverageStats.pendingTests > 0 && (
+                      <Typography variant="caption" sx={{ color: isDarkMode ? '#6b7280' : '#94a3b8' }}>
+                        {isPortuguese ? 'Aguardando execução' : 'Awaiting execution'}
+                      </Typography>
+                    )}
                   </Box>
                 </Box>
               </CardContent>

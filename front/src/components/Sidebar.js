@@ -84,7 +84,7 @@ const Sidebar = ({ open, onToggle, isMobile, onNavigate }) => {
           }}
         >
           {open && (
-            <span className="sidebar-title" style={{ color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>Task & Test Generator</span>
+            <span className="sidebar-title" style={{ color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>AITest Hub</span>
           )}
           <div className="sidebar-logo">⚡</div>
         </Box>

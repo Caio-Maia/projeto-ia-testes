@@ -157,7 +157,7 @@ function HomePage() {
                       fontWeight: 600
                     }}
                   >
-                    IA-Powered QA Automation
+                    AITest Hub
                   </Typography>
                 </Box>
                 <Typography 
