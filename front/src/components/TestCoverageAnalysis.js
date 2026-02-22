@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Box, Typography, Paper, CircularProgress, Alert, Card, CardContent,
@@ -104,6 +104,92 @@ function TestCoverageAnalysis({
       return 'pending';
     }
     return 'pending';
+  };
+
+  // Normalize identifiers for robust matching (REQ/TC ids, etc.)
+  const normalizeIdentifier = (value) => String(value || '').toLowerCase().trim();
+
+  // Build lookup map for test cases by id-like fields
+  const buildTestCasesIndex = (tests = []) => {
+    const index = new Map();
+    tests.forEach((tc, idx) => {
+      const keys = [tc?.id, tc?.testCaseId, tc?.code].filter(Boolean);
+      keys.forEach((k) => {
+        const nk = normalizeIdentifier(k);
+        if (nk && !index.has(nk)) index.set(nk, tc);
+      });
+      // Fallback key to keep reference even when id is missing
+      if (!keys.length) index.set(`__idx_${idx}`, tc);
+    });
+    return index;
+  };
+
+  // Enrich AI-returned test items with local test data (title/status), and normalize output shape
+  const mapAndEnrichAssociatedTests = (rawTests = [], testsIndex = new Map()) => {
+    const mapped = rawTests.map((raw, idx) => {
+      if (typeof raw === 'string') {
+        const local = testsIndex.get(normalizeIdentifier(raw));
+        return {
+          ...(local || {}),
+          id: raw,
+          title: local?.title || local?.name || local?.description || '',
+          status: normalizeStatus(local?.status)
+        };
+      }
+
+      const candidateId = raw?.id || raw?.testCaseId || raw?.code || `TC-${String(idx + 1).padStart(3, '0')}`;
+      const local = testsIndex.get(normalizeIdentifier(candidateId));
+      const merged = { ...(local || {}), ...(raw || {}) };
+
+      return {
+        ...merged,
+        id: candidateId,
+        title: merged?.title || merged?.name || merged?.description || local?.title || local?.name || '',
+        status: normalizeStatus(merged?.status || local?.status)
+      };
+    });
+
+    // Keep duplicates when user data has repeated IDs; only add display disambiguation.
+    const occurrence = new Map();
+    return mapped.map((tc, idx) => {
+      const baseId = tc?.id || `TC-${String(idx + 1).padStart(3, '0')}`;
+      const key = normalizeIdentifier(baseId) || `__idx_${idx}`;
+      const count = (occurrence.get(key) || 0) + 1;
+      occurrence.set(key, count);
+
+      return {
+        ...tc,
+        id: baseId,
+        displayId: count > 1 ? `${baseId} (${count})` : baseId
+      };
+    });
+  };
+
+  const generateFailureInvestigationSuggestions = (failingTests = []) => {
+    const isPortuguese = language === 'pt-BR';
+    const ids = failingTests
+      .map(t => t?.id)
+      .filter(Boolean)
+      .slice(0, 3)
+      .join(', ');
+
+    if (isPortuguese) {
+      return [
+        `Reproduza a falha localmente${ids ? ` para ${ids}` : ''} e capture logs completos do cenário.`,
+        'Compare resultado esperado vs. obtido e valide dados de entrada/fixtures.',
+        'Verifique dependências externas (API, banco, filas), timeouts e intermitência.',
+        'Analise mudanças recentes relacionadas ao requisito e execute testes impactados.',
+        'Adicione logs/assertivas temporárias para isolar o ponto exato da falha.'
+      ];
+    }
+
+    return [
+      `Reproduce the failure locally${ids ? ` for ${ids}` : ''} and collect full logs.`,
+      'Compare expected vs actual results and validate input data/fixtures.',
+      'Check external dependencies (API, database, queues), timeouts, and flakiness.',
+      'Review recent changes around the requirement and run impacted tests.',
+      'Add temporary logs/assertions to isolate the exact failure point.'
+    ];
   };
 
   // Parse text input to JSON
@@ -245,21 +331,32 @@ function TestCoverageAnalysis({
         }
 
         if (analysis.traceabilityMatrix) {
+          const testCasesIndex = buildTestCasesIndex(testCasesData);
           // Map AI response format to component expected format
-          const mappedMatrix = analysis.traceabilityMatrix.map(item => ({
-            requirement: {
+          const mappedMatrix = analysis.traceabilityMatrix.map(item => {
+            const enrichedTests = mapAndEnrichAssociatedTests(
+              (Array.isArray(item.tests) && item.tests.length > 0)
+                ? item.tests
+                : (item.associatedTestCases || []),
+              testCasesIndex
+            );
+
+            return {
+              ...(item || {}),
+              tests: enrichedTests,
+              requirement: {
               id: item.requirementId || item.requirement?.id,
               title: item.requirementTitle || item.requirement?.title,
               description: item.requirementDescription || item.requirement?.description,
               priority: item.priority || item.requirement?.priority || 'medium'
             },
             requirementId: item.requirementId || item.requirement?.id,
-            testCount: item.testCount || item.associatedTestCases?.length || 0,
+            testCount: enrichedTests.length || item.testCount || item.associatedTestCases?.length || item.tests?.length || 0,
             passedCount: item.passedCount || 0,
             coverage: item.coveragePercentage || item.coverage || 0,
-            tests: item.tests || item.associatedTestCases?.map(tcId => ({ id: tcId, status: 'pending' })) || [],
             status: item.coverage_status || (item.coveragePercentage >= 80 ? 'covered' : item.coveragePercentage > 0 ? 'partial' : 'uncovered')
-          }));
+            };
+          });
           setTraceabilityMatrix(mappedMatrix);
         } else {
           // Fallback to local calculation if AI didn't provide matrix
@@ -275,7 +372,12 @@ function TestCoverageAnalysis({
             severity: rec.severity || rec.priority || 'medium',
             requirement: rec.requirement_id || rec.requirementId,
             message: rec.message || rec.description,
-            suggestedTests: rec.suggested_tests || rec.suggestedTests
+            tests: rec.tests || [],
+            suggestedTests: (rec.suggested_tests || rec.suggestedTests) || (
+              (rec.type === 'failing-tests' || rec.type === 'failing_test' || /falh|fail/i.test(rec.message || rec.description || ''))
+                ? generateFailureInvestigationSuggestions(rec.tests || [])
+                : undefined
+            )
           }));
           setRecommendations(mappedRecs);
           
@@ -538,7 +640,8 @@ function TestCoverageAnalysis({
         message: language === 'pt-BR'
           ? `${failingTests.length} teste(s) falhando - Investigação necessária`
           : `${failingTests.length} test(s) failing - Investigation required`,
-        tests: failingTests
+        tests: failingTests,
+        suggestedTests: generateFailureInvestigationSuggestions(failingTests)
       });
     }
 
@@ -1121,6 +1224,30 @@ TC-002: Invalid login: REQ-001: failed`}
           />
         </Paper>
 
+        {/* Re-analyzing visual feedback */}
+        {analyzing && hasAnalyzed && (
+          <Paper
+            elevation={0}
+            sx={{
+              mb: 3,
+              borderRadius: 2,
+              border: `1px solid ${isDarkMode ? '#374151' : '#dbeafe'}`,
+              backgroundColor: isDarkMode ? '#1a202c' : '#f8fbff',
+              overflow: 'hidden'
+            }}
+          >
+            <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <CircularProgress size={18} />
+              <Typography variant="body2" sx={{ fontWeight: 600, color: isDarkMode ? '#e5e7eb' : '#1e293b' }}>
+                {isPortuguese
+                  ? 'Reanalisando cobertura com IA... aguarde.'
+                  : 'Re-analyzing coverage with AI... please wait.'}
+              </Typography>
+            </Box>
+            <LinearProgress />
+          </Paper>
+        )}
+
         {/* Input Form - Show when no analysis yet or when user wants to re-analyze */}
         {!hasAnalyzed && !initialRequirements && renderInputForm()}
 
@@ -1130,6 +1257,7 @@ TC-002: Invalid login: REQ-001: failed`}
             <Button
               startIcon={<RefreshIcon />}
               onClick={() => setHasAnalyzed(false)}
+              disabled={analyzing}
               variant="outlined"
             >
               {isPortuguese ? 'Nova Análise' : 'New Analysis'}
@@ -1141,7 +1269,9 @@ TC-002: Invalid login: REQ-001: failed`}
               variant="contained"
               sx={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
             >
-              {isPortuguese ? 'Reanalisar com IA' : 'Re-analyze with AI'}
+              {analyzing
+                ? (isPortuguese ? 'Reanalisando...' : 'Re-analyzing...')
+                : (isPortuguese ? 'Reanalisar com IA' : 'Re-analyze with AI')}
             </Button>
           </Box>
         )}
@@ -1271,21 +1401,12 @@ TC-002: Invalid login: REQ-001: failed`}
               p: 3,
               borderBottom: `2px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center'
             }}
           >
             <Typography variant="h6" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1e293b' }}>
               {isPortuguese ? 'Matriz de Rastreabilidade' : 'Traceability Matrix'}
             </Typography>
-            <Button
-              startIcon={<RefreshIcon />}
-              onClick={() => analyzeWithAI()}
-              disabled={analyzing}
-              size="small"
-            >
-              {isPortuguese ? 'Atualizar' : 'Refresh'}
-            </Button>
           </Box>
 
           <TableContainer>
@@ -1508,7 +1629,7 @@ TC-002: Invalid login: REQ-001: failed`}
                         <Box display="flex" justifyContent="space-between" alignItems="center">
                           <Box>
                             <Typography variant="caption" sx={{ fontWeight: 600, color: isDarkMode ? '#d1d5db' : '#1e293b' }}>
-                              {test.id || `TC-${idx + 1}`}
+                              {test.displayId || test.id || `TC-${idx + 1}`}
                             </Typography>
                             <Typography variant="caption" sx={{ display: 'block', color: isDarkMode ? '#9ca3af' : '#64748b' }}>
                               {test.title || test.name}
