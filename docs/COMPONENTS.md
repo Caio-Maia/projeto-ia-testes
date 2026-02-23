@@ -242,7 +242,7 @@ Dashboard de análise de feedback com armazenamento configurável.
 - Gráficos de tendências
 - **Armazenamento configurável**: local (privado) ou backend (compartilhado)
 - Indicador visual do modo de armazenamento
-- Toggle para alternar entre modos (no modo híbrido)
+- Toggle para alternar entre modos (no modo de escolha do usuário)
 
 **Configuração de Armazenamento**:
 
@@ -252,11 +252,11 @@ A variável de ambiente `REACT_APP_FEEDBACK_STORAGE` define o modo:
 |------|-----------|
 | `local` | Dados salvos no localStorage do navegador (privado) |
 | `backend` | Dados salvos no banco de dados via API (compartilhado) |
-| `hybrid` | Usuário pode alternar entre local e backend |
+| `user-choice` | Usuário pode alternar entre local e backend |
 
 **Exemplo de configuração (.env)**:
 ```env
-REACT_APP_FEEDBACK_STORAGE=hybrid
+REACT_APP_FEEDBACK_STORAGE=user-choice
 ```
 
 **Serviço de Armazenamento**:
@@ -289,16 +289,16 @@ Dropdown para selecionar modelo de IA.
 **Props**:
 ```javascript
 <ModelSelector 
-  value={string}           // Modelo selecionado (ex: "gpt-3.5-turbo")
+  value={string|object}    // Modelo selecionado (ex: "gpt-5-nano" ou objeto do selector)
   onChange={function}      // Callback onChange
   educationMode={boolean}  // Modo educacional (opcional)
 />
 ```
 
 **Modelos Disponíveis**:
-- `gpt-3.5-turbo` - ChatGPT 3.5
-- `gpt-4` - ChatGPT 4
-- `gemini-pro` - Google Gemini Pro
+- `gpt-5-nano` - ChatGPT 5 Nano (default)
+- `gpt-5` - ChatGPT 5
+- `gemini-2.5-flash` - Google Gemini 2.5 Flash
 
 **Exemplo**:
 ```jsx
@@ -306,7 +306,7 @@ import ModelSelector from './components/ModelSelector';
 import { useState } from 'react';
 
 function MyForm() {
-  const [model, setModel] = useState('gpt-3.5-turbo');
+  const [model, setModel] = useState('gpt-5-nano');
   
   return (
     <ModelSelector 
@@ -424,7 +424,7 @@ Componente para enviar feedback sobre uma geração. Utiliza armazenamento confi
 ```javascript
 <FeedbackComponent 
   featureType={string}  // Tipo de feature (ex: "improve-task")
-  model={string}        // Modelo usado (ex: "gpt-3.5-turbo")
+  model={string}        // Modelo usado (ex: "gpt-5-nano")
   onSubmit={function}   // Callback ao enviar (opcional)
 />
 ```
@@ -441,7 +441,7 @@ Componente para enviar feedback sobre uma geração. Utiliza armazenamento confi
 O feedback é salvo de acordo com a variável `REACT_APP_FEEDBACK_STORAGE`:
 - `local`: Salva no localStorage (privado)
 - `backend`: Envia para API (compartilhado)
-- `hybrid`: Segue preferência do usuário
+- `user-choice`: Segue preferência do usuário
 
 **Exemplo**:
 ```jsx
@@ -451,7 +451,7 @@ function ResultsPage() {
   return (
     <FeedbackComponent 
       featureType="improve-task"
-      model="gpt-3.5-turbo"
+      model="gpt-5-nano"
       onSubmit={() => alert('Feedback enviado!')}
     />
   );
@@ -697,7 +697,7 @@ export default function MyFeaturePage() {
   const { prompt, setPrompt, generatePrompt, loading } = usePrompt('feature-name');
   
   // State
-  const [model, setModel] = useState('gpt-3.5-turbo');
+  const [model, setModel] = useState('gpt-5-nano');
   const [results, setResults] = useState(null);
   
   // Handlers

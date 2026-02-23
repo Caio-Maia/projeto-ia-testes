@@ -1,101 +1,124 @@
-# Backend API - Gerador de Testes com IA
+# Backend API (AITest Hub)
 
-API para interação com modelos de IA (ChatGPT e Gemini) para melhoria de tarefas, geração de casos de teste e análise de riscos.
+Backend em Node.js + Express responsável por orquestrar chamadas de IA, validação de payloads, streaming, feedback, integração JIRA e análise de cobertura.
 
-## Estrutura
+## Stack
 
-```
-backend/
-├── api/
-│   ├── index.js              # Entry point com middlewares
-│   └── routes.js             # Definição de rotas
-├── controllers/
-│   ├── chatgptController.js  # Endpoints ChatGPT
-│   ├── geminiController.js   # Endpoints Gemini
-│   ├── codeGenerationController.js  # Geração de código
-│   ├── coverageController.js # Análise de cobertura
-│   ├── feedbackController.js # Sistema de feedback
-│   ├── fileController.js     # Gerenciamento de arquivos
-│   ├── jiraController.js     # Integração JIRA
-│   └── chatgptConversationController.js  # Conversations API
-├── middlewares/
-│   ├── errorHandler.js       # Error handling centralizado
-│   └── validate.js           # Middleware de validação Joi
-├── validations/
-│   └── schemas.js            # Schemas Joi para todas as rotas
-├── utils/
-│   └── logger.js             # Logging estruturado com Pino
-├── models/
-│   ├── feedbackModel.js      # Modelo de feedback (SQLite)
-│   └── *.md                  # Templates de prompts
-├── config/
-│   ├── aiModels.js           # Configuração de modelos IA
-│   └── database.js           # Configuração SQLite
-└── data/                     # Dados SQLite
-```
-
-## Instalação
-
-```bash
-cd backend
-npm install
-```
-
-## Configuração
-
-Crie um arquivo `.env` baseado em `.env.example`:
-
-```env
-PORT=5000
-FRONTEND_URL=http://localhost:3000
-CHATGPT_API_KEY=sua-chave-openai
-LOG_LEVEL=info  # debug, info, warn, error
-```
+- Express 5
+- Joi (validação)
+- Sequelize + SQLite
+- Pino (logs)
+- BullMQ + Redis (opcional)
+- ioredis (cache opcional)
 
 ## Execução
 
 ```bash
+npm install
 npm start
 ```
 
-## Endpoints
+Servidor padrão: `http://localhost:5000`
 
-### ChatGPT
-- `POST /api/chatgpt/improve-task` - Melhorar descrição de tarefa
-- `POST /api/chatgpt/generate-tests` - Gerar casos de teste
-- `POST /api/chatgpt/generate-test-code` - Gerar código de teste
+## Variáveis de Ambiente
 
-### Gemini
-- `POST /api/gemini/improve-task?token=KEY` - Melhorar tarefa
-- `POST /api/gemini/generate-tests?token=KEY` - Gerar testes
-- `POST /api/gemini/generate-test-code?token=KEY` - Gerar código
+```env
+PORT=5000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
 
-### Análise
-- `POST /api/analyze-risks` - Análise de riscos
-- `POST /api/analyze-coverage` - Análise de cobertura
+CHATGPT_API_KEY=
+GEMINI_API_KEY=
 
-### JIRA
-- `POST /api/jira-task` - Buscar tarefa do JIRA
-- `POST /api/jira-task/update` - Atualizar tarefa
+# Redis opcional (filas/cache)
+REDIS_ENABLED=false
+# REDIS_HOST=localhost
+# REDIS_PORT=6379
+# REDIS_PASSWORD=
+
+# Ajustes opcionais
+COMPRESSION_LEVEL=6
+LOG_LEVEL=info
+```
+
+## Estrutura
+
+```text
+backend/
+├── api/
+│   ├── index.js      # bootstrap (security, middleware, /health)
+│   └── routes.js     # mapa de rotas /api
+├── controllers/
+├── validations/
+├── services/
+├── models/
+├── config/
+└── data/
+```
+
+## Endpoints principais
+
+### Infra
+- `GET /health`
+- `GET /api/csrf-token`
+- `GET /api/rate-limit-status`
+- `POST /api/csp-report`
+
+### IA (sync)
+- `POST /api/chatgpt/improve-task`
+- `POST /api/chatgpt/generate-tests`
+- `POST /api/chatgpt/generate-test-code`
+- `POST /api/gemini/improve-task`
+- `POST /api/gemini/generate-tests`
+- `POST /api/gemini/generate-test-code`
+- `POST /api/analyze-risks`
+
+### IA (stream)
+- `POST /api/stream/chatgpt`
+- `POST /api/stream/gemini`
+- `POST /api/stream/:provider`
+
+### Cobertura
+- `POST /api/analyze-coverage`
+- `POST /api/analyze-coverage/async`
+- `POST /api/chatgpt/analyze-coverage`
+- `POST /api/chatgpt/analyze-coverage/async`
+- `POST /api/gemini/analyze-coverage`
+- `POST /api/gemini/analyze-coverage/async`
+- `POST /api/extract-requirements`
+- `POST /api/parse-test-cases`
 
 ### Feedback
-- `POST /api/feedback` - Enviar feedback
-- `GET /api/feedback/stats` - Estatísticas
-- `GET /api/feedback/recent` - Feedbacks recentes
+- `POST /api/feedback`
+- `POST /api/feedback/regenerate`
+- `GET /api/feedback/stats`
+- `GET /api/feedback/recent`
 
-### Arquivos
-- `GET /api/files/:filename` - Ler arquivo de prompt
-- `PUT /api/files/:filename` - Atualizar arquivo
+### Conversas
+- `POST /api/chatgpt-conversation`
+- `POST /api/chatgpt-conversation/message`
+- `POST /api/chatgpt-conversation/regenerate`
+- `GET /api/chatgpt-conversation/:conversationId`
 
-## Segurança
+### JIRA / Arquivos
+- `POST /api/jira-task`
+- `POST /api/jira-task/update`
+- `GET /api/files/:filename`
+- `PUT /api/files/:filename`
 
-O backend inclui:
-- **CORS** - Controle de origem
-- **Helmet** - Headers de segurança
-- **Rate Limiting** - 100 req/15min por IP
-- **CSRF** - Proteção contra CSRF
-- **Compression** - Respostas comprimidas
+### Jobs, Audit e Cache
+- `GET /api/jobs/*`
+- `DELETE /api/jobs/:jobId`
+- `GET /api/audit/*`
+- `DELETE /api/audit/logs`
+- `GET /api/cache/health`
+- `GET /api/cache/stats`
+- `DELETE /api/cache`
+- `DELETE /api/cache/invalidate`
 
-## Banco de Dados
+## Notas importantes
 
-SQLite local em `data/database.sqlite` para armazenar feedbacks.
+- A validação de payload acontece em `validations/schemas.js`.
+- Em produção, CSRF é aplicado (exceto rotas SSE).
+- Filas e cache só são ativados quando Redis está configurado/disponível.
+- O catálogo de modelos suportados vem de `config/aiModels.js`.

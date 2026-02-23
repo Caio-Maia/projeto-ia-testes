@@ -67,7 +67,7 @@ import ExportButton from './components/ExportButton';
   data={{
     description: 'Minha Geração',
     type: 'Casos de Teste',
-    model: 'GPT-4',
+    model: 'gpt-5',
     generation: 'Conteúdo...'
   }}
   onExportSuccess={(msg) => console.log(msg)}
@@ -97,7 +97,7 @@ Integração de exportação no diálogo de histórico
 
 ### Dependências Instaladas
 - **jspdf** ^3.x - Geração de PDFs
-- **docx** ^8.x - Geração de Word
+- **docx** ^9.x - Geração de Word
 - **papaparse** ^5.x - Parsing CSV
 
 ### Nomes de Arquivo
@@ -125,7 +125,7 @@ Quando exportado como JSON, inclui:
 const result = exportGeneration({
   description: 'Teste de Login',
   type: 'Test Cases',
-  model: 'GPT-4',
+  model: 'gpt-5',
   generation: 'Casos de teste para validação de login...'
 }, 'pdf');
 ```
@@ -167,7 +167,7 @@ Os resultados de análise de cobertura também podem ser exportados:
   data={{
     description: 'Análise de Cobertura de Testes - Projeto X',
     type: 'Coverage Analysis',
-    model: 'GPT-4',
+    model: 'gpt-5',
     generation: JSON.stringify({
       overallCoverage: 72.5,
       gapAnalysis: [...],

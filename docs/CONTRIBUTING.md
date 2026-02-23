@@ -314,7 +314,7 @@ if (condition) {
 
 ```javascript
 // ✅ Controllers lidam com lógica de request/response
-app.post('/api/improve-task', async (req, res) => {
+app.post('/api/chatgpt/improve-task', async (req, res) => {
   const { task, model } = req.body;
   const result = await improveTaskService.improve(task, model);
   res.json(result);
@@ -439,7 +439,7 @@ const { mockAI } = require('./mocks');
 describe('Task Controller', () => {
   it('should improve a user story', async () => {
     const input = 'Como usuário, quero...';
-    const model = 'gpt-3.5-turbo';
+    const model = 'gpt-5-nano';
     
     const result = await improveTask(input, model, mockAI);
     
@@ -449,7 +449,7 @@ describe('Task Controller', () => {
   });
   
   it('should throw error with invalid input', async () => {
-    expect(() => improveTask('', 'gpt-3.5-turbo')).rejects.toThrow();
+    expect(() => improveTask('', 'gpt-5-nano')).rejects.toThrow();
   });
 });
 ```
@@ -513,7 +513,7 @@ Se sua mudança afeta funcionalidade geral:
  * Melhora uma história de usuário usando IA
  * 
  * @param {string} task - Descrição da história de usuário
- * @param {string} model - Modelo de IA a usar (gpt-3.5-turbo, gpt-4, gemini-pro)
+ * @param {string} model - Modelo de IA a usar (gpt-5-nano, gpt-5, gemini-2.5-flash)
  * @param {Object} options - Opções adicionais
  * @param {boolean} options.educationMode - Ativa modo educacional
  * 
@@ -521,7 +521,7 @@ Se sua mudança afeta funcionalidade geral:
  * @throws {Error} Se task vazia ou modelo inválido
  * 
  * @example
- * const result = await improveTask('Como usuário...', 'gpt-3.5-turbo', {
+ * const result = await improveTask('Como usuário...', 'gpt-5-nano', {
  *   educationMode: true
  * });
  */

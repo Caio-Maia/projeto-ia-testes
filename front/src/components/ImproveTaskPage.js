@@ -9,7 +9,7 @@ import remarkGfm from 'remark-gfm';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import StopIcon from '@mui/icons-material/Stop';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import { FaTasks } from 'react-icons/fa';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
 import { useLanguage, useDarkMode } from '../stores/hooks';
@@ -244,7 +244,7 @@ Aqui está uma história de usuário:
                     }}
                 >
                     <Box display="flex" alignItems="center" justifyContent="center" gap={1.2} mb={1}>
-                        <AutoFixHighIcon sx={{ fontSize: isMobile ? 28 : 34 }} />
+                        <FaTasks size={isMobile ? 28 : 34} />
                         <Typography 
                             variant={isMobile ? "h5" : "h4"} 
                             component="h1"

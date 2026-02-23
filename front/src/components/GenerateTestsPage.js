@@ -7,7 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import StopIcon from '@mui/icons-material/Stop';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import { FaClipboardList } from 'react-icons/fa';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
 import Dialog from '@mui/material/Dialog';
@@ -188,7 +188,7 @@ function GenerateTestsPage() {
           }}
         >
           <Box display="flex" alignItems="center" justifyContent="center" gap={1.2} mb={1}>
-            <AutoFixHighIcon sx={{ fontSize: isMobile ? 28 : 34 }} />
+            <FaClipboardList size={isMobile ? 28 : 34} />
             <Typography variant={isMobile ? 'h5' : 'h4'} sx={{ fontWeight: 800 }}>
               {t('generateTests.title')}
             </Typography>
