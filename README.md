@@ -1,360 +1,131 @@
-# 🚀 Projeto IA Testes - AITest Hub
+# AITest Hub
 
-Uma aplicação web moderna que utiliza Inteligência Artificial (ChatGPT e Gemini) para gerar e melhorar histórias de usuário, casos de teste, código de teste e análise de riscos. Integração completa com JIRA para facilitar o fluxo de trabalho.
+Plataforma full-stack para apoiar times de QA com IA: melhora de tarefas, geração de casos de teste, geração de código de teste, análise de riscos, análise de cobertura, feedback e integração com JIRA.
 
-## 📋 Sumário
+## Visão Geral
 
-- [Visão Geral](#visão-geral)
-- [Recursos Principais](#recursos-principais)
-- [Stack Tecnológico](#stack-tecnológico)
-- [Arquitetura](#arquitetura)
-- [Instalação](#instalação)
-- [Configuração](#configuração)
-- [Como Usar](#como-usar)
-- [Documentação](#documentação)
-- [Contribuindo](#contribuindo)
+- Frontend em React (`front/`) com páginas especializadas por fluxo.
+- Backend em Express (`backend/`) com validação Joi, logging estruturado, SQLite, filas/cache opcionais com Redis e suporte a streaming (SSE).
+- Suporte multi-modelo para ChatGPT e Gemini (modelos configuráveis em `backend/config/aiModels.js`).
+- Histórico local de gerações e dashboard de feedback.
 
-## 🎯 Visão Geral
+## Funcionalidades
 
-O **Projeto IA Testes** é uma plataforma inteligente para automação de testes QA que integra modelos de IA avançados com fluxos de trabalho reais em JIRA. A aplicação oferece um ambiente educacional completo para aprender sobre testes de software enquanto gera artefatos de qualidade automaticamente.
+- Improve Task
+- Generate Test Cases
+- Generate Code
+- Risk Analysis
+- Test Coverage Analysis (sync e async)
+- Feedback (envio, estatísticas, regeneração de conteúdo)
+- ChatGPT Conversation API
+- Integração com JIRA
+- Exportação de resultados
 
-**URL Base**: `http://localhost:3000` (Frontend) e `http://localhost:5000` (Backend)
+## Arquitetura (resumo)
 
-## ✨ Recursos Principais
-
-### 1. **Melhorar Tarefas (Improve Task)**
-   - Refina histórias de usuário usando IA
-   - Gera critérios de aceitação detalhados
-   - Integração com JIRA para atualizar cartões
-   - Modo educacional com dicas de QA
-
-### 2. **Gerar Casos de Teste (Generate Tests)**
-   - Cria casos de teste estruturados a partir de histórias
-   - Suporta múltiplos modelos de IA
-   - Versionamento de gerações anteriores
-   - Sistema de feedback interativo
-
-### 3. **Gerar Código de Teste (Generate Code)**
-   - Gera código de teste automático
-   - Suporta múltiplos frameworks (Jest, Mocha, Cypress, etc.)
-   - Múltiplas linguagens (JavaScript, TypeScript, Python, Java, C#)
-   - Regeneração com feedback
-
-### 4. **Análise de Riscos (Risk Analysis)**
-   - Identifica riscos potenciais em features
-   - Recomendações de testes específicos
-   - Relatórios estruturados
-   - Integração com histórias de usuário
-
-### 5. **Análise de Cobertura de Testes (NEW - v1.2.0)**
-   - Identifica gaps de cobertura de testes
-   - Recomendações de casos de teste faltantes
-   - Análise por feature
-   - Matriz de rastreabilidade (requirements → testes)
-
-### 6. **Dashboard de Feedback**
-   - Visualiza feedback de gerações
-   - Estatísticas de uso
-   - Histórico de melhorias
-   - Análise de modelos mais eficientes
-   - **Armazenamento configurável**: local (privado) ou backend (compartilhado)
-   - Toggle para alternar entre modos de armazenamento
-
-### 7. **Modo Educacional**
-   - Explicações detalhadas de conceitos de QA
-   - Dicas de particionamento de equivalência
-   - Valores-limite e critérios de aceitação
-   - Diferenciação entre testes positivos e negativos
-
-## 🛠 Stack Tecnológico
-
-### Frontend
-- **React 18** - UI library
-- **Material-UI (MUI)** - Component library
-- **React Router** - Navigation
-- **Axios** - HTTP client
-- **React Markdown** - Markdown rendering
-- **React Icons** - Icon library
-
-### Backend
-- **Node.js / Express** - Web framework
-- **SQLite + Sequelize** - Database & ORM
-- **Axios** - HTTP requests
-- **CORS** - Cross-origin requests
-- **Morgan** - HTTP logging
-- **dotenv** - Environment variables
-
-### APIs Externas
-- **OpenAI ChatGPT** - Modelos GPT-3.5 e GPT-4
-- **Google Gemini** - Modelos Gemini Pro
-- **Atlassian JIRA** - Integração com gerenciamento de tarefas
-
-## 🏗 Arquitetura
-
-```
+```text
 projeto-ia-testes/
-├── backend/                    # Servidor Node.js
-│   ├── api/
-│   │   ├── index.js           # Ponto de entrada
-│   │   └── routes.js          # Rotas
-│   ├── config/
-│   │   ├── database.js        # Configuração SQLite
-│   │   └── aiModels.js        # Modelos de IA
-│   ├── controllers/           # Lógica de negócio
-│   ├── models/                # Modelos de banco
-│   ├── services/              # Serviços auxiliares
-│   ├── utils/                 # Utilitários
-│   └── package.json
-│
-├── front/                      # Aplicação React
-│   ├── public/
-│   ├── src/
-│   │   ├── components/        # Componentes React
-│   │   ├── contexts/          # Context API
-│   │   ├── hooks/             # Custom hooks
-│   │   ├── utils/             # Funções auxiliares
-│   │   ├── locales/           # Internacionalização
-│   │   ├── styles/            # Estilos globais
-│   │   ├── App.js             # Componente raiz
-│   │   └── App.css            # Estilos globais
-│   └── package.json
-│
-└── docs/                       # Documentação
-    ├── SETUP.md               # Guia de instalação
-    ├── API.md                 # Documentação de API
-    ├── COMPONENTS.md          # Referência de componentes
-    ├── DESIGN_SYSTEM.md       # Sistema de design
-    └── CONTRIBUTING.md        # Guia de contribuição
+├── backend/
+│   ├── api/                # bootstrap da API e rotas
+│   ├── controllers/        # handlers HTTP
+│   ├── validations/        # schemas Joi
+│   ├── services/           # filas, cache e serviços auxiliares
+│   ├── models/             # modelos Sequelize + templates .md
+│   └── config/             # DB, Redis, catálogo de modelos
+├── front/
+│   ├── src/components/     # páginas e UI
+│   ├── src/hooks/          # hooks de fluxo e streaming
+│   ├── src/services/       # chamadas HTTP e persistência local
+│   ├── src/locales/        # i18n
+│   └── src/stores/         # estado global
+└── docs/
+    ├── API.md
+    ├── SETUP.md
+    ├── CHANGELOG.md
+    ├── COMPONENTS.md
+    ├── DESIGN_SYSTEM.md
+    ├── CONTRIBUTING.md
+    └── IMPROVEMENTS.md
 ```
 
-## 🚀 Instalação
+## Requisitos
 
-### Pré-requisitos
-- Node.js 14+ instalado
-- npm ou yarn
-- Tokens de API (OpenAI e Google Gemini)
-- Credenciais JIRA (opcional)
+- Node.js 20+
+- npm 10+
+- Chave de API OpenAI e/ou Gemini
+- Redis opcional (apenas para filas/cache)
 
-### Passo 1: Clonar o repositório
-```bash
-git clone https://github.com/Caio-Maia/projeto-ia-testes.git
-cd projeto-ia-testes
-```
+## Quick Start
 
-### Passo 2: Instalar dependências do Backend
+### 1) Instalar dependências
+
 ```bash
 cd backend
 npm install
-```
 
-### Passo 3: Instalar dependências do Frontend
-```bash
 cd ../front
 npm install
 ```
 
-### Passo 4: Configurar variáveis de ambiente
-```bash
-# Backend - criar .env na pasta backend
-OPENAI_API_KEY=sua_chave_aqui
-GEMINI_API_KEY=sua_chave_aqui
+### 2) Configurar ambiente
+
+Backend (`backend/.env`):
+
+```env
 PORT=5000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
+
+CHATGPT_API_KEY=...
+GEMINI_API_KEY=...
+
+# Opcional (filas e cache)
+REDIS_ENABLED=false
+# REDIS_HOST=localhost
+# REDIS_PORT=6379
+# REDIS_PASSWORD=
 ```
 
-```bash
-# Frontend - criar .env na pasta front
+Frontend (`front/.env`):
+
+```env
 REACT_APP_BACKEND_URL=http://localhost:5000
+# local | backend | user-choice
+REACT_APP_FEEDBACK_STORAGE=user-choice
 ```
 
-## ⚙️ Configuração
+### 3) Subir aplicação
 
-### Configurar Tokens de API
-
-1. **OpenAI (ChatGPT)**
-   - Acesse [openai.com/api-keys](https://openai.com/api-keys)
-   - Crie uma nova chave
-   - Na aplicação, acesse Configurar Tokens e insira
-
-2. **Google Gemini**
-   - Acesse [aistudio.google.com](https://aistudio.google.com)
-   - Gere uma nova chave de API
-   - Na aplicação, acesse Configurar Tokens e insira
-
-3. **JIRA (Opcional)**
-   - Base URL: `https://sua-empresa.atlassian.net`
-   - Email: seu email da conta JIRA
-   - Token: Gere em [id.atlassian.com/manage-profile/security](https://id.atlassian.com/manage-profile/security)
-
-## 🎮 Como Usar
-
-### 1. Iniciar Servidores
-
-**Backend** (terminal 1):
 ```bash
+# terminal 1
 cd backend
 npm start
-# Servidor rodando em http://localhost:5000
-```
 
-**Frontend** (terminal 2):
-```bash
+# terminal 2
 cd front
 npm start
-# Aplicação aberta em http://localhost:3000
 ```
 
-### 2. Workflow Básico
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:5000`
+- Health check: `GET /health`
 
-#### Melhorar uma História de Usuário
-1. Acesse "Melhorar Tarefa" no menu
-2. Cole a história de usuário (ou importe do JIRA)
-3. Selecione o modelo de IA (ChatGPT/Gemini)
-4. Clique em "Gerar"
-5. Revise e clique em "Atualizar JIRA" se desejar sincronizar
+## Segurança e Operação
 
-#### Gerar Casos de Teste
-1. Acesse "Gerar Casos de Teste"
-2. Cole a história ou tarefa
-3. Selecione o modelo
-4. Clique em "Gerar"
-5. Revise os casos e deixe feedback para refinamento
+- CORS, Helmet, rate limiting e tratamento centralizado de erros.
+- CSRF habilitado em produção; em desenvolvimento o endpoint `/api/csrf-token` retorna token de modo dev.
+- SSE (`/api/stream/*`) para respostas incrementais em tempo real.
+- Logging estruturado com Pino.
 
-#### Gerar Código de Teste
-1. Acesse "Gerar Código"
-2. Cole os casos de teste
-3. Escolha framework e linguagem
-4. Selecione modelo de IA
-5. Clique em "Gerar"
-6. Copie o código gerado para seu projeto
+## Documentação
 
-### 3. Modo Educacional
+- Setup detalhado: [docs/SETUP.md](docs/SETUP.md)
+- Endpoints e contratos: [docs/API.md](docs/API.md)
+- Histórico de mudanças: [docs/CHANGELOG.md](docs/CHANGELOG.md)
+- Frontend (visão específica): [front/README.md](front/README.md)
+- Backend (visão específica): [backend/README.md](backend/README.md)
 
-Ative o modo educacional para:
-- Receber explicações detalhadas da IA
-- Aprender conceitos de QA enquanto gera artefatos
-- Dicas sobre particionamento de equivalência
-- Exemplos de testes positivos vs negativos
+## Observações
 
-## 📚 Documentação
-
-Consulte os arquivos específicos na pasta `/docs`:
-
-- **[SETUP.md](./docs/SETUP.md)** - Guia detalhado de instalação e configuração
-- **[API.md](./docs/API.md)** - Documentação completa de endpoints
-- **[COMPONENTS.md](./docs/COMPONENTS.md)** - Referência de componentes React
-- **[DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md)** - Paleta de cores e componentes UI
-- **[CONTRIBUTING.md](./docs/CONTRIBUTING.md)** - Guia para contribuir com código
-
-## 🎨 Design System
-
-### Cores Principais
-- **Primária**: `#3b82f6` (Azul)
-- **Secundária**: `#2563eb` (Azul escuro)
-- **Sucesso**: `#22c55e` (Verde)
-- **Perigo**: `#ef4444` (Vermelho)
-- **Texto**: `#1f2937` (Cinza escuro)
-
-### Componentes
-- Buttons (Primary, Secondary, Danger, Outline)
-- Cards com shadows consistentes
-- Sidebar responsivo
-- Modals e Dialogs
-- Forms com validação
-
-Para mais detalhes, veja [DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md)
-
-## 🌍 Internacionalização
-
-A aplicação suporta:
-- 🇧🇷 Português (Brasil)
-- 🇺🇸 English (USA)
-
-Selecione o idioma usando o seletor de idioma no header.
-
-## 🔐 Segurança
-
-- Tokens de API armazenados em `localStorage` (segurança cliente)
-- Variáveis de ambiente no backend para chaves sensíveis
-- CORS configurado para aceitar requests locais
-- Validação de entrada em formulários
-
-## 📊 Endpoints Principais
-
-### Backend API
-
-```
-POST   /api/improve-task          - Melhorar história de usuário
-POST   /api/generate-tests        - Gerar casos de teste
-POST   /api/generate-test-code    - Gerar código de teste
-POST   /api/analyze-risks         - Analisar riscos
-POST   /api/jira-task             - Buscar tarefa JIRA
-POST   /api/jira-task/update      - Atualizar tarefa JIRA
-GET    /api/feedback              - Listar feedback
-POST   /api/feedback              - Criar feedback
-```
-
-Veja [API.md](./docs/API.md) para detalhes completos.
-
-## 🐛 Troubleshooting
-
-### "Failed to fetch" ao enviar requisição
-- Verifique se o backend está rodando em `http://localhost:5000`
-- Verifique CORS nas headers da resposta
-
-### Token inválido para IA
-- Confirme que a chave está ativa na plataforma (OpenAI/Gemini)
-- Verifique se tem saldo/créditos disponíveis
-
-### JIRA não sincroniza
-- Confirme que as credenciais JIRA estão corretas
-- Verifique se o cartão JIRA existe
-- Certifique-se de ter permissões para editar o cartão
-
-## 📝 Licença
-
-Este projeto está sob a licença ISC. Veja o arquivo LICENSE para detalhes.
-
-## 📦 Mudanças Recentes (v1.2.0 - Dezembro 2024)
-
-### ✅ Novos Recursos
-- **Test Coverage Analysis** - Identifica gaps de cobertura de testes
-- **Sidebar Scroll** - Conteúdo responsivo em telas pequenas
-- **UI Improvements** - History button com melhor alinhamento
-
-### ✅ Remoções
-- ❌ Autenticação baseada em tokens (API acessível diretamente)
-- ❌ LoginPage (workflow simplificado)
-
-### ✅ Melhorias de Segurança
-- ✅ Rate Limiting (100 req/15min global, 10 req/min per-user)
-- ✅ CSRF Protection (tokens em POST/PUT/DELETE)
-- ✅ HTTPS Enforcement (com HSTS)
-- ✅ Content Security Policy (via Helmet)
-- ✅ Response Compression (96.85% em JSON)
-
-### 🎨 Mudanças UI/UX
-- Menu reorganizado (Test Coverage → Primary)
-- Sidebar com scroll automático
-- Dark/Light mode suportado em todos componentes
-- Suporte bilíngue (PT-BR + EN-US)
-
-**Para detalhes completos**: Veja [IMPROVEMENTS.md](./docs/IMPROVEMENTS.md)
-
-## 👨‍💻 Autor
-
-**Caio Maia** - [GitHub](https://github.com/Caio-Maia)
-
-## 🤝 Contribuindo
-
-Contribuições são bem-vindas! Veja [CONTRIBUTING.md](./docs/CONTRIBUTING.md) para detalhes.
-
-## 📞 Suporte
-
-Para dúvidas ou problemas:
-1. Abra uma [Issue](https://github.com/Caio-Maia/projeto-ia-testes/issues)
-2. Consulte a documentação em `/docs`
-3. Revise os exemplos de uso
-
----
-
-**Feito com ❤️ para melhorar a qualidade de software**
+- O projeto está em evolução ativa; os modelos suportados refletem o catálogo em `backend/config/aiModels.js`.
+- Alguns documentos de referência extensos (como `docs/IMPROVEMENTS.md`) são intencionalmente prospectivos e não representam estado implementado.

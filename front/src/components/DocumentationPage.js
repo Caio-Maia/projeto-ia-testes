@@ -86,8 +86,10 @@ npm install`}</code>
         </Typography>
         <Box component="pre" sx={{ backgroundColor: '#1e1e1e', color: '#d4d4d4', p: 2, borderRadius: 1, overflow: 'auto' }}>
           <code>{`OPENAI_API_KEY=sua_chave_aqui
+CHATGPT_API_KEY=sua_chave_aqui
 GEMINI_API_KEY=sua_chave_aqui
-PORT=5000`}</code>
+PORT=5000
+FRONTEND_URL=http://localhost:3000`}</code>
         </Box>
       </Paper>
 
@@ -154,8 +156,10 @@ npm install`}</code>
         </Typography>
         <Box component="pre" sx={{ backgroundColor: '#1e1e1e', color: '#d4d4d4', p: 2, borderRadius: 1, overflow: 'auto' }}>
           <code>{`OPENAI_API_KEY=your_key_here
+CHATGPT_API_KEY=your_key_here
 GEMINI_API_KEY=your_key_here
-PORT=5000`}</code>
+PORT=5000
+FRONTEND_URL=http://localhost:3000`}</code>
         </Box>
       </Paper>
 
@@ -377,7 +381,7 @@ npm start`}</code>
               <FaCode size={20} /> Frontend
             </Typography>
             <List>
-              {['React 18', 'Material-UI 7', 'React Router', 'Axios', 'React Markdown', 'React Icons'].map((tech, idx) => (
+              {['React 19', 'Material-UI 7', 'React Router', 'React Query', 'Axios', 'React Markdown', 'React Icons', 'Zustand'].map((tech, idx) => (
                 <ListItem key={idx}>
                   <ListItemIcon>
                     <FaArrowRight size={14} color="#3b82f6" />
@@ -395,7 +399,7 @@ npm start`}</code>
               <FaDatabase size={20} /> Backend
             </Typography>
             <List>
-              {['Node.js / Express', 'SQLite + Sequelize', 'Axios', 'CORS', 'Morgan', 'dotenv'].map((tech, idx) => (
+              {['Node.js / Express 5', 'SQLite + Sequelize', 'Joi', 'Pino', 'CORS + Helmet', 'dotenv'].map((tech, idx) => (
                 <ListItem key={idx}>
                   <ListItemIcon>
                     <FaArrowRight size={14} color="#3b82f6" />
@@ -414,8 +418,8 @@ npm start`}</code>
             </Typography>
             <List>
               {[
-                'OpenAI ChatGPT (GPT-3.5, GPT-4)',
-                'Google Gemini Pro',
+                'OpenAI ChatGPT (GPT-5 family)',
+                'Google Gemini (2.5 / 3.0 preview)',
                 'Atlassian JIRA API',
               ].map((tech, idx) => (
                 <ListItem key={idx}>
@@ -443,7 +447,7 @@ npm start`}</code>
               <FaCode size={20} /> Frontend
             </Typography>
             <List>
-              {['React 18', 'Material-UI 7', 'React Router', 'Axios', 'React Markdown', 'React Icons'].map((tech, idx) => (
+              {['React 19', 'Material-UI 7', 'React Router', 'React Query', 'Axios', 'React Markdown', 'React Icons', 'Zustand'].map((tech, idx) => (
                 <ListItem key={idx}>
                   <ListItemIcon>
                     <FaArrowRight size={14} color="#3b82f6" />
@@ -461,7 +465,7 @@ npm start`}</code>
               <FaDatabase size={20} /> Backend
             </Typography>
             <List>
-              {['Node.js / Express', 'SQLite + Sequelize', 'Axios', 'CORS', 'Morgan', 'dotenv'].map((tech, idx) => (
+              {['Node.js / Express 5', 'SQLite + Sequelize', 'Joi', 'Pino', 'CORS + Helmet', 'dotenv'].map((tech, idx) => (
                 <ListItem key={idx}>
                   <ListItemIcon>
                     <FaArrowRight size={14} color="#3b82f6" />
@@ -480,8 +484,8 @@ npm start`}</code>
             </Typography>
             <List>
               {[
-                'OpenAI ChatGPT (GPT-3.5, GPT-4)',
-                'Google Gemini Pro',
+                'OpenAI ChatGPT (GPT-5 family)',
+                'Google Gemini (2.5 / 3.0 preview)',
                 'Atlassian JIRA API',
               ].map((tech, idx) => (
                 <ListItem key={idx}>
@@ -509,7 +513,7 @@ npm start`}</code>
           Melhorar Tarefa
         </Typography>
         <Box sx={{ backgroundColor: isDarkMode ? '#0f1419' : '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
-          <code style={{ color: '#d32f2f' }}>POST /api/improve-task</code>
+          <code style={{ color: '#d32f2f' }}>POST /api/chatgpt/improve-task | /api/gemini/improve-task</code>
         </Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
           Melhora uma história de usuário com sugestões de IA
@@ -521,7 +525,7 @@ npm start`}</code>
           Gerar Casos de Teste
         </Typography>
         <Box sx={{ backgroundColor: isDarkMode ? '#0f1419' : '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
-          <code style={{ color: '#d32f2f' }}>POST /api/generate-tests</code>
+          <code style={{ color: '#d32f2f' }}>POST /api/chatgpt/generate-tests | /api/gemini/generate-tests</code>
         </Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
           Gera casos de teste estruturados a partir de uma tarefa
@@ -533,7 +537,7 @@ npm start`}</code>
           Gerar Código de Teste
         </Typography>
         <Box sx={{ backgroundColor: isDarkMode ? '#0f1419' : '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
-          <code style={{ color: '#d32f2f' }}>POST /api/generate-test-code</code>
+          <code style={{ color: '#d32f2f' }}>POST /api/chatgpt/generate-test-code | /api/gemini/generate-test-code</code>
         </Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
           Gera código de teste em múltiplas linguagens
@@ -549,6 +553,18 @@ npm start`}</code>
         </Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
           Analisa riscos potenciais em uma tarefa
+        </Typography>
+      </Paper>
+
+      <Paper sx={{ p: 3, mb: 3, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
+          Streaming (SSE)
+        </Typography>
+        <Box sx={{ backgroundColor: isDarkMode ? '#0f1419' : '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
+          <code style={{ color: '#d32f2f' }}>POST /api/stream/chatgpt | /api/stream/gemini | /api/stream/:provider</code>
+        </Box>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Respostas incrementais em tempo real para Improve Task, Generate Tests, Generate Code e Risk Analysis.
         </Typography>
       </Paper>
 
@@ -579,7 +595,7 @@ npm start`}</code>
           Improve Task
         </Typography>
         <Box sx={{ backgroundColor: '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
-          <code style={{ color: '#d32f2f' }}>POST /api/improve-task</code>
+          <code style={{ color: '#d32f2f' }}>POST /api/chatgpt/improve-task | /api/gemini/improve-task</code>
         </Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
           Improves a user story with AI suggestions
@@ -591,7 +607,7 @@ npm start`}</code>
           Generate Test Cases
         </Typography>
         <Box sx={{ backgroundColor: '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
-          <code style={{ color: '#d32f2f' }}>POST /api/generate-tests</code>
+          <code style={{ color: '#d32f2f' }}>POST /api/chatgpt/generate-tests | /api/gemini/generate-tests</code>
         </Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
           Generates structured test cases from a task
@@ -603,7 +619,7 @@ npm start`}</code>
           Generate Test Code
         </Typography>
         <Box sx={{ backgroundColor: '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
-          <code style={{ color: '#d32f2f' }}>POST /api/generate-test-code</code>
+          <code style={{ color: '#d32f2f' }}>POST /api/chatgpt/generate-test-code | /api/gemini/generate-test-code</code>
         </Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
           Generates test code in multiple languages
@@ -619,6 +635,18 @@ npm start`}</code>
         </Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
           Analyzes potential risks in a task
+        </Typography>
+      </Paper>
+
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+          Streaming (SSE)
+        </Typography>
+        <Box sx={{ backgroundColor: '#f5f5f5', p: 2, borderRadius: 1, mb: 2 }}>
+          <code style={{ color: '#d32f2f' }}>POST /api/stream/chatgpt | /api/stream/gemini | /api/stream/:provider</code>
+        </Box>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Real-time incremental responses for Improve Task, Generate Tests, Generate Code and Risk Analysis.
         </Typography>
       </Paper>
 

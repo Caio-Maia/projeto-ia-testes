@@ -1027,7 +1027,7 @@ const AuditLog = sequelize.define('AuditLog', {
   action: { type: DataTypes.STRING }, // IMPROVE_TASK, GENERATE_TESTS, etc.
   resource: { type: DataTypes.STRING }, // ai, jira, feedback, job, stream, system
   method: { type: DataTypes.STRING },   // GET, POST, etc.
-  path: { type: DataTypes.STRING },     // /api/improve-task
+  path: { type: DataTypes.STRING },     // /api/chatgpt/improve-task
   statusCode: { type: DataTypes.INTEGER },
   details: { type: DataTypes.JSON },    // model, promptLength, etc.
   ip: { type: DataTypes.STRING },
@@ -1117,7 +1117,7 @@ describe('chatgptController', () => {
 **Ferramenta**: Playwright ou Cypress
 
 ```javascript
-test('should improve task with GPT-4', async ({ page }) => {
+test('should improve task with gpt-5', async ({ page }) => {
   await page.goto('/improve-task');
   await page.fill('[data-testid="task-input"]', 'Criar tela de login');
   await page.click('[data-testid="model-selector"]');
