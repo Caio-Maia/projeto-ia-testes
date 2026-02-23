@@ -1173,7 +1173,7 @@ TC-002: Invalid login: REQ-001: failed`}
   const isPortuguese = language === 'pt-BR';
 
   return (
-    <Box sx={{ minHeight: '100vh', background: isDarkMode ? '#0f1419' : 'linear-gradient(135deg, #f5f7fa 0%, #f0f3f7 100%)', py: 4 }}>
+    <Box sx={{ minHeight: '100vh', background: isDarkMode ? '#0f1419' : '#F9FAFB', py: 4 }}>
       <Box p={{xs: 2, sm: 3, md: 6}} maxWidth={1400} margin="0 auto">
         {/* Notifications */}
         <Snackbar 

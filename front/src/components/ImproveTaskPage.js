@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-    Box, Button, TextField, Typography, Grid,
+    Box, Button, TextField, Typography, Grid, Paper, Chip,
     Alert, Snackbar, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions,
     useMediaQuery, useTheme
 } from '@mui/material';
@@ -8,6 +8,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import StopIcon from '@mui/icons-material/Stop';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
 import { useLanguage, useDarkMode } from '../stores/hooks';
@@ -20,7 +22,7 @@ import {
 } from '../hooks';
 
 function ImproveTaskPage() {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { isDarkMode } = useDarkMode();
     const { prompt } = usePrompt('taskModel');
     const theme = useTheme();
@@ -209,14 +211,15 @@ Aqui está uma história de usuário:
     };
 
     return (
+        <Box sx={{ minHeight: '100vh', background: isDarkMode ? '#0f1419' : '#F9FAFB', py: { xs: 2, sm: 3, md: 5 } }}>
         <Grid
             container
             spacing={isMobile ? 2 : 3}
             direction="column"
             alignItems="center"
-            justifyContent="center"
+            justifyContent="flex-start"
             sx={{ 
-                padding: { xs: 2, sm: 4, md: 10 },
+                padding: { xs: 1.5, sm: 3, md: 6 },
                 minHeight: '81vh'
             }}
             className="responsive-container"
@@ -226,19 +229,49 @@ Aqui está uma história de usuário:
                 xs={12} 
                 sx={{ 
                     width: '100%',
-                    maxWidth: { xs: '100%', sm: '90%', md: '1000px' }
+                    maxWidth: { xs: '100%', sm: '92%', md: '1000px' }
                 }}
             >
-                <Box textAlign="center" mb={isMobile ? 2 : 3}>
-                    <Typography 
-                        variant={isMobile ? "h5" : "h4"} 
-                        component="h1"
-                        className="heading-responsive"
-                        sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}
-                    >
-                        {t('improveTask.title')}
-                    </Typography>
-                </Box>
+                <Paper
+                    elevation={0}
+                    sx={{
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                        p: { xs: 2.5, sm: 3, md: 4 },
+                        mb: 3,
+                        borderRadius: 3,
+                        color: '#ffffff',
+                        textAlign: 'center'
+                    }}
+                >
+                    <Box display="flex" alignItems="center" justifyContent="center" gap={1.2} mb={1}>
+                        <AutoFixHighIcon sx={{ fontSize: isMobile ? 28 : 34 }} />
+                        <Typography 
+                            variant={isMobile ? "h5" : "h4"} 
+                            component="h1"
+                            className="heading-responsive"
+                            sx={{ fontWeight: 800 }}
+                        >
+                            {t('improveTask.title')}
+                        </Typography>
+                    </Box>
+                    <Chip
+                        icon={<SmartToyIcon sx={{ color: 'white !important' }} />}
+                        label={`${language === 'pt-BR' ? 'Modelo' : 'Model'}: ${model?.version || '-'}`}
+                        variant="outlined"
+                        sx={{ mt: 2, color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
+                    />
+                </Paper>
+
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: { xs: 2, sm: 3, md: 4 },
+                        borderRadius: 3,
+                        border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
+                        backgroundColor: isDarkMode ? '#1a202c' : '#ffffff',
+                        mb: 2
+                    }}
+                >
                 {generationId && versions.length > 0 && (
                     <Box my={2} display="flex" justifyContent="center">
                         <Button 
@@ -266,7 +299,7 @@ Aqui está uma história de usuário:
                 <ModelSelector
                     value={model}
                     onChange={handleModelChange}
-                    label={t('common.selectModel')}
+                    label={language === 'pt-BR' ? 'Modelo' : 'Model'}
                     required
                 />
 
@@ -275,7 +308,7 @@ Aqui está uma história de usuário:
                     flexDirection={isMobile ? "column" : "row"}
                     gap={isMobile ? 1 : 2} 
                     alignItems={isMobile ? "stretch" : "center"} 
-                    sx={{ mb: 2 }}
+                    sx={{ mb: 2.2 }}
                 >
                     <TextField
                         label={t('improveTask.jiraCode')}
@@ -382,6 +415,7 @@ Aqui está uma história de usuário:
                         </Button>
                     )}
                 </Box>
+                </Paper>
             </Grid>
             <div hidden={!isLoading}>
                 <CircularProgress />
@@ -418,9 +452,9 @@ Aqui está uma história de usuário:
                         marginTop: { xs: 2, sm: 3, md: 4 },
                         backgroundColor: isDarkMode ? '#1a202c' : '#fff',
                         padding: { xs: '15px', sm: '20px' },
-                        borderRadius: '8px',
-                        border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
-                        boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
+                        borderRadius: '14px',
+                        border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
+                        boxShadow: isDarkMode ? '0 4px 16px rgba(0,0,0,0.25)' : '0 4px 12px rgba(50, 71, 101, 0.08)',
                         overflowX: 'auto',
                         '&:hover': {
                           boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
@@ -642,6 +676,7 @@ Aqui está uma história de usuário:
                 </DialogActions>
             </Dialog>
         </Grid>
+        </Box>
     );
 }
 

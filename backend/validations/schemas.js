@@ -30,7 +30,8 @@ const getDefaultModel = () => {
   return chatgptDefault?.id || 'gpt-5-nano';
 };
 
-const FEEDBACK_TYPES = ['positive', 'negative', 'neutral'];
+const FEEDBACK_TYPES = ['task', 'testcase', 'code', 'risk'];
+const FEEDBACK_RATINGS = ['positive', 'negative'];
 const FEATURES = ['improve-task', 'generate-tests', 'generate-code', 'risk-analysis', 'coverage'];
 
 // ============================================
@@ -132,6 +133,13 @@ const analyzeRisksSchema = Joi.object({
  * Schema para feedback
  */
 const feedbackSchema = Joi.object({
+  generationId: Joi.string()
+    .min(1)
+    .required()
+    .messages({
+      'any.required': 'O ID da geração é obrigatório',
+      'string.empty': 'O ID da geração é obrigatório',
+    }),
   type: Joi.string()
     .valid(...FEEDBACK_TYPES)
     .required()
@@ -139,36 +147,52 @@ const feedbackSchema = Joi.object({
       'any.only': `Tipo inválido. Tipos válidos: ${FEEDBACK_TYPES.join(', ')}`,
       'any.required': 'O tipo de feedback é obrigatório',
     }),
-  feature: Joi.string()
-    .valid(...FEATURES)
+  rating: Joi.string()
+    .valid(...FEEDBACK_RATINGS)
     .required()
     .messages({
-      'any.only': `Feature inválida. Features válidas: ${FEATURES.join(', ')}`,
-      'any.required': 'A feature é obrigatória',
+      'any.only': `Avaliação inválida. Avaliações válidas: ${FEEDBACK_RATINGS.join(', ')}`,
+      'any.required': 'A avaliação é obrigatória',
     }),
-  model: modelSchema,
   comment: Joi.string().max(2000).allow('').messages({
     'string.max': 'O comentário deve ter no máximo 2000 caracteres',
   }),
-  rating: Joi.number().min(1).max(5).messages({
-    'number.min': 'A avaliação deve ser no mínimo 1',
-    'number.max': 'A avaliação deve ser no máximo 5',
-  }),
   originalContent: Joi.string().max(100000),
-  generatedContent: Joi.string().max(100000),
+  conversationHistory: Joi.array()
+    .items(
+      Joi.object({
+        role: Joi.string().valid('user', 'assistant', 'system').required(),
+        content: Joi.string().required(),
+      })
+    )
+    .default([]),
 });
 
 /**
  * Schema para regenerar conteúdo
  */
 const regenerateContentSchema = Joi.object({
-  feature: Joi.string()
-    .valid(...FEATURES)
-    .required(),
-  model: modelSchema,
-  originalContent: Joi.string().min(10).max(100000).required(),
-  feedback: Joi.string().max(2000),
-  language: languageSchema,
+  feedbackId: Joi.alternatives()
+    .try(
+      Joi.number().integer().positive(),
+      Joi.string().min(1)
+    )
+    .required()
+    .messages({
+      'any.required': 'O ID do feedback é obrigatório',
+    }),
+  model: Joi.alternatives()
+    .try(
+      Joi.string().valid('chatgpt', 'gemini'),
+      Joi.object({
+        apiName: Joi.string().valid('chatgpt', 'gemini').required(),
+        version: modelSchema,
+      })
+    )
+    .required()
+    .messages({
+      'any.required': 'O modelo é obrigatório',
+    }),
 });
 
 /**
