@@ -57,17 +57,31 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
       'tarefas': 'task',
       'task': 'task',
       'tasks': 'task',
+      'improve-task': 'task',
+      'teste': 'testCase',
+      'test': 'testCase',
+      'tests': 'testCase',
       'caso de teste': 'testCase',
       'casos de teste': 'testCase',
       'test case': 'testCase',
       'test cases': 'testCase',
+      'generate-tests': 'testCase',
+      'codigo': 'testCode',
+      'código': 'testCode',
+      'code': 'testCode',
       'codigo de teste': 'testCode',
       'código de teste': 'testCode',
       'test code': 'testCode',
+      'generate-code': 'testCode',
+      'generate-test-code': 'testCode',
+      'risco': 'riskAnalysis',
+      'risk': 'riskAnalysis',
+      'risks': 'riskAnalysis',
       'analise de riscos': 'riskAnalysis',
       'análise de riscos': 'riskAnalysis',
       'analysis of risks': 'riskAnalysis',
       'risk analysis': 'riskAnalysis',
+      'analyze-risks': 'riskAnalysis',
     };
     
     return typeMap[normalized] || null;
@@ -173,10 +187,11 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
 
   const getStorageKeyByType = (type) => {
     const typeStr = String(type).toLowerCase();
-    if (typeStr.includes('tarefa') || typeStr.includes('task')) return 'taskGenerations';
-    if (typeStr.includes('teste') || typeStr.includes('test')) return 'testGenerations';
-    if (typeStr.includes('codigo') || typeStr.includes('code')) return 'codeGenerations';
-    if (typeStr.includes('risco') || typeStr.includes('risk')) return 'riskGenerations';
+    if (typeStr.includes('tarefa') || typeStr.includes('task') || typeStr.includes('improve-task')) return 'taskGenerations';
+    if (typeStr.includes('teste') || typeStr.includes('test') || typeStr.includes('generate-tests')) return 'testGenerations';
+    if (typeStr.includes('codigo') || typeStr.includes('code') || typeStr.includes('generate-code') || typeStr.includes('generate-test-code')) return 'codeGenerations';
+    if (typeStr.includes('risco') || typeStr.includes('risk') || typeStr.includes('analyze-risks') || typeStr.includes('risk-analysis')) return 'riskGenerations';
+    if (typeStr.includes('outro') || typeStr.includes('other')) return 'otherGenerations';
     return null;
   };
 
@@ -184,12 +199,13 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
   const testGenerations = JSON.parse(localStorage.getItem('testGenerations')) || [];
   const codeGenerations = JSON.parse(localStorage.getItem('codeGenerations')) || [];
   const riskGenerations = JSON.parse(localStorage.getItem('riskGenerations')) || [];
+  const otherGenerations = JSON.parse(localStorage.getItem('otherGenerations')) || [];
 
   // Get generations based on active tab
   const getActiveGenerations = () => {
     switch (activeTab) {
       case 0: // All
-        return [...taskGenerations, ...testGenerations, ...codeGenerations, ...riskGenerations];
+        return [...taskGenerations, ...testGenerations, ...codeGenerations, ...riskGenerations, ...otherGenerations];
       case 1: // Tasks
         return taskGenerations;
       case 2: // Test Cases
@@ -458,12 +474,14 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
                 sx={{
                   ml: 1,
                   borderRadius: '50%',
-                  background: '#f3f3f3',
+                  background: isDarkMode ? '#232b33' : '#f3f3f3',
+                  color: isDarkMode ? '#f3f4f6' : 'inherit',
+                  border: isDarkMode ? '1px solid #374151' : 'none',
                   boxShadow: '0 2px 6px #0002',
                   transition: '.18s',
                   '&:hover': {
-                    background: '#ffcdd2',
-                    color: '#b71c1c'
+                    background: isDarkMode ? '#3b1f24' : '#ffcdd2',
+                    color: isDarkMode ? '#fca5a5' : '#b71c1c'
                   },
                   width: 42,
                   height: 42

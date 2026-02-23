@@ -302,7 +302,19 @@ export const useGenerateTestsStream = () => {
 export const useGenerateTestCodeStream = () => {
   const streamHook = useAIStream();
 
-  const generateTestCode = useCallback(async (promptText, model, taskInfo = '', options = {}) => {
+  const generateTestCode = useCallback(async (testCasesText, model, taskInfo = '', options = {}) => {
+    const framework = options.framework || 'Jest';
+    const language = options.language || 'JavaScript';
+    const promptText = [
+      `Gere código de testes automatizados em ${language} usando o framework ${framework}.`,
+      'Retorne apenas código executável em blocos markdown.',
+      'Inclua imports, setup e mocks mínimos quando necessário.',
+      'Priorize testes independentes, legíveis e robustos.',
+      '',
+      'Casos de teste de entrada:',
+      testCasesText,
+    ].join('\n');
+
     return streamHook.stream({
       provider: model.apiName,
       promptText,
@@ -327,9 +339,25 @@ export const useAnalyzeRisksStream = () => {
   const streamHook = useAIStream();
 
   const analyzeRisks = useCallback(async (feature, model, taskInfo = '', options = {}) => {
+    const promptText = [
+      'Você é um especialista em Engenharia de Software, QA e Arquitetura.',
+      'Analise os riscos de implementação da funcionalidade abaixo.',
+      'Classifique por severidade (ALTO, MÉDIO, BAIXO), descreva impacto, probabilidade e mitigação.',
+      'Inclua riscos técnicos, de negócio, segurança, performance, dados, integração, testes e observabilidade.',
+      'No final, traga uma lista priorizada de ações práticas (quick wins e ações estruturais).',
+      '',
+      'Formato de saída (markdown):',
+      '1) Resumo executivo',
+      '2) Tabela de riscos (Risco | Severidade | Probabilidade | Impacto | Mitigação)',
+      '3) Plano de ação priorizado',
+      '',
+      'Descrição da funcionalidade:',
+      feature,
+    ].join('\n');
+
     return streamHook.stream({
       provider: model.apiName,
-      promptText: feature,
+      promptText,
       model,
       feature: 'analyze-risks',
       taskInfo,

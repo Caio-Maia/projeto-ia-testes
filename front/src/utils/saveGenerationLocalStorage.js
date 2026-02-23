@@ -1,32 +1,55 @@
-const saveGenerationToLocalStorage = (generation, type, model, description = '') => {
-    let storageKey;
-    let typeLabel;
-    
-    switch (type) {
-        case 'task':
-            storageKey = 'taskGenerations';
-            typeLabel = 'Tarefa';
-            break;
-        case 'testcase':
-            storageKey = 'testGenerations';
-            typeLabel = 'Caso de Teste';
-            break;
-        case 'code':
-            storageKey = 'codeGenerations';
-            typeLabel = 'Código de Teste';
-            break;
-        case 'risk':
-            storageKey = 'riskGenerations';
-            typeLabel = 'Análise de Riscos';
-            break;
-        default:
-            storageKey = 'otherGenerations';
-            typeLabel = 'Outro';
+const normalizeGenerationType = (type) => {
+    const typeStr = String(type || '').toLowerCase().trim();
+
+    if (
+        typeStr === 'task' ||
+        typeStr === 'tarefa' ||
+        typeStr === 'tasks' ||
+        typeStr === 'improve-task'
+    ) {
+        return { storageKey: 'taskGenerations', typeLabel: 'task', typePrefix: 'task' };
     }
+
+    if (
+        typeStr === 'test' ||
+        typeStr === 'teste' ||
+        typeStr === 'tests' ||
+        typeStr === 'testcase' ||
+        typeStr === 'test-case' ||
+        typeStr === 'generate-tests'
+    ) {
+        return { storageKey: 'testGenerations', typeLabel: 'test', typePrefix: 'test' };
+    }
+
+    if (
+        typeStr === 'code' ||
+        typeStr === 'codigo' ||
+        typeStr === 'código' ||
+        typeStr === 'generate-code' ||
+        typeStr === 'generate-test-code'
+    ) {
+        return { storageKey: 'codeGenerations', typeLabel: 'code', typePrefix: 'code' };
+    }
+
+    if (
+        typeStr === 'risk' ||
+        typeStr === 'risco' ||
+        typeStr === 'risks' ||
+        typeStr === 'risk-analysis' ||
+        typeStr === 'analyze-risks'
+    ) {
+        return { storageKey: 'riskGenerations', typeLabel: 'risk', typePrefix: 'risk' };
+    }
+
+    return { storageKey: 'otherGenerations', typeLabel: 'other', typePrefix: 'other' };
+};
+
+const saveGenerationToLocalStorage = (generation, type, model, description = '') => {
+    const { storageKey, typeLabel, typePrefix } = normalizeGenerationType(type);
     
     const existingGenerations = JSON.parse(localStorage.getItem(storageKey)) || [];
     
-    const generationId = `${type}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const generationId = `${typePrefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     
     const newGeneration = {
         id: existingGenerations.length + 1,

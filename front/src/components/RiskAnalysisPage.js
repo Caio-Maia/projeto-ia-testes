@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import {
   Box, Button, TextField, Typography, Grid,
-  Alert, Snackbar, CircularProgress, useMediaQuery, useTheme
+  Alert, Snackbar, CircularProgress, useMediaQuery, useTheme,
+  Paper, Chip
 } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import StopIcon from '@mui/icons-material/Stop';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import FeedbackComponent from './FeedbackComponent';
 import ModelSelector from './ModelSelector';
 import Dialog from '@mui/material/Dialog';
@@ -20,7 +23,7 @@ import {
 } from '../hooks';
 
 function RiskAnalysisPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { isDarkMode } = useDarkMode();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -142,21 +145,54 @@ function RiskAnalysisPage() {
   };
 
   return (
+    <Box sx={{ minHeight: '100vh', background: isDarkMode ? '#0f1419' : '#F9FAFB', py: { xs: 2, sm: 3, md: 5 } }}>
     <Grid
       container
-      spacing={3}
+      spacing={isMobile ? 2 : 3}
       direction="column"
       alignItems="center"
-      justifyContent="center"
-      padding={10}
-      style={{ minHeight: '81vh' }}
+      justifyContent="flex-start"
+      sx={{
+        padding: { xs: 1.5, sm: 3, md: 6 },
+        minHeight: '81vh'
+      }}
     >
-      <Grid size={{xs:10, md:6, lg:4}} style={{ minWidth: '1000px' }}>
-        <Box textAlign="center">
-          <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
-            {t('riskAnalysis.title')}
-          </Typography>
-        </Box>
+      <Grid item xs={12} sx={{ width: '100%', maxWidth: { xs: '100%', sm: '92%', md: '1000px' } }}>
+        <Paper
+          elevation={0}
+          sx={{
+            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            p: { xs: 2.5, sm: 3, md: 4 },
+            mb: 3,
+            borderRadius: 3,
+            color: '#ffffff',
+            textAlign: 'center'
+          }}
+        >
+          <Box display="flex" alignItems="center" justifyContent="center" gap={1.2} mb={1}>
+            <AutoFixHighIcon sx={{ fontSize: isMobile ? 28 : 34 }} />
+            <Typography variant={isMobile ? 'h5' : 'h4'} sx={{ fontWeight: 800 }}>
+              {t('riskAnalysis.title')}
+            </Typography>
+          </Box>
+          <Chip
+            icon={<SmartToyIcon sx={{ color: 'white !important' }} />}
+            label={`${language === 'pt-BR' ? 'Modelo' : 'Model'}: ${model?.version || '-'}`}
+            variant="outlined"
+            sx={{ mt: 1, color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
+          />
+        </Paper>
+
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 2, sm: 3, md: 4 },
+            borderRadius: 3,
+            border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
+            backgroundColor: isDarkMode ? '#1a202c' : '#ffffff',
+            mb: 2
+          }}
+        >
         {generationId && versions.length > 0 && (
           <Box my={2} display="flex" justifyContent="center">
               <Button 
@@ -184,7 +220,7 @@ function RiskAnalysisPage() {
         <ModelSelector
           value={model}
           onChange={handleModelChange}
-          label={t('common.selectModel')}
+          label={language === 'pt-BR' ? 'Modelo' : 'Model'}
           required
         />
 
@@ -299,6 +335,7 @@ function RiskAnalysisPage() {
             </Button>
           )}
         </Box>
+        </Paper>
       </Grid>
       
       <div hidden={!isLoading}>
@@ -310,7 +347,7 @@ function RiskAnalysisPage() {
           position: 'fixed',
           bottom: 20,
           left: '50%',
-          transform: 'translateX(-22%)',
+          transform: 'translateX(-50%)',
           width: '100%',
           maxWidth: 600,
           px: 2,
@@ -327,13 +364,13 @@ function RiskAnalysisPage() {
         <Box
           sx={{
             width: '100%',
-            maxWidth: '1000px',
+            maxWidth: { xs: '100%', sm: '92%', md: '1000px' },
             marginTop: 4,
             backgroundColor: isDarkMode ? '#1a202c' : '#fff',
-            padding: '20px',
-            borderRadius: '8px',
-            border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
-            boxShadow: '0 4px 12px rgba(50, 71, 101, 0.08)',
+            padding: { xs: '15px', sm: '20px' },
+            borderRadius: '14px',
+            border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
+            boxShadow: isDarkMode ? '0 4px 16px rgba(0,0,0,0.25)' : '0 4px 12px rgba(50, 71, 101, 0.08)',
             overflowX: 'auto',
             '&:hover': {
               boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
@@ -410,6 +447,7 @@ function RiskAnalysisPage() {
         </Box>
       )}
     </Grid>
+    </Box>
   );
 }
 

@@ -44,14 +44,36 @@ class GeminiModel extends AIModel {
 
   async generateTestCode(testCases, framework, language = 'JavaScript', options = {}) {
     const prompt = options.prompt || 
-      `Generate ${language} test code using the ${framework} framework for the following test cases:\n\n${testCases}\n\nPlease provide complete, runnable test code with proper setup and teardown if needed.`;
+      [
+        `Gere código de testes automatizados em ${language} usando o framework ${framework}.`,
+        'Retorne apenas código executável em blocos markdown.',
+        'Inclua imports, setup e mocks mínimos quando necessário.',
+        'Priorize testes independentes, legíveis e robustos.',
+        '',
+        'Casos de teste de entrada:',
+        testCases,
+      ].join('\n');
     
     return this._makeRequest(prompt);
   }
 
   async analyzeRisks(feature, options = {}) {
     const prompt = options.prompt || 
-      `Analyze the following feature and identify potential implementation risks, quality concerns, and possible bugs:\n\n${feature}\n\nProvide a detailed analysis with specific risks categorized by severity (High, Medium, Low) and include recommendations for mitigation.`;
+      [
+        'Você é um especialista em Engenharia de Software, QA e Arquitetura.',
+        'Analise os riscos de implementação da funcionalidade abaixo.',
+        'Classifique por severidade (ALTO, MÉDIO, BAIXO), descreva impacto, probabilidade e mitigação.',
+        'Inclua riscos técnicos, de negócio, segurança, performance, dados, integração, testes e observabilidade.',
+        'No final, traga uma lista priorizada de ações práticas (quick wins e ações estruturais).',
+        '',
+        'Formato de saída (markdown):',
+        '1) Resumo executivo',
+        '2) Tabela de riscos (Risco | Severidade | Probabilidade | Impacto | Mitigação)',
+        '3) Plano de ação priorizado',
+        '',
+        'Descrição da funcionalidade:',
+        feature,
+      ].join('\n');
     
     return this._makeRequest(prompt);
   }
