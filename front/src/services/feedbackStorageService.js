@@ -232,21 +232,15 @@ export const regenerateFeedback = async (feedbackId, model, token) => {
     let response;
     
     if (apiName === 'chatgpt') {
-      response = await axios.post(
-        `${BACKEND_URL}/api/chatgpt/improve-task`,
-        { 
-          task: conversationHistory.map(m => `${m.role}: ${m.content}`).join('\n'),
-          model: model.version || model 
-        }
-      );
+      response = await postWithCsrf('/api/chatgpt/improve-task', {
+        task: conversationHistory.map(m => `${m.role}: ${m.content}`).join('\n'),
+        model: model.version || model
+      });
     } else if (apiName === 'gemini') {
-      response = await axios.post(
-        `${BACKEND_URL}/api/gemini/improve-task?token=${token}`,
-        { 
-          data: conversationHistory.map(m => `${m.role}: ${m.content}`).join('\n'),
-          model: model.version || model 
-        }
-      );
+      response = await postWithCsrf(`/api/gemini/improve-task?token=${token}`, {
+        data: conversationHistory.map(m => `${m.role}: ${m.content}`).join('\n'),
+        model: model.version || model
+      });
     }
     
     const regeneratedContent = response.data.data || response.data;
