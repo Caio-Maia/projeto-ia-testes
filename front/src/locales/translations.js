@@ -318,7 +318,7 @@ const translations = {
     // Landing Page
     landing: {
       hero: {
-        title: 'Gere Testes de Qualidade com IA',
+        title: 'Assistente de QA com IA',
         subtitle: 'Automatize a criação de casos de teste, código de teste e análise de riscos usando inteligência artificial de ponta.',
         cta: 'Começar Agora',
         learnMore: 'Saiba Mais',
@@ -769,7 +769,7 @@ const translations = {
     // Landing Page
     landing: {
       hero: {
-        title: 'Generate Quality Tests with AI',
+        title: 'AI QA Assistant',
         subtitle: 'Automate test case creation, test code, and risk analysis using cutting-edge artificial intelligence.',
         cta: 'Get Started',
         learnMore: 'Learn More',

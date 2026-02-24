@@ -84,7 +84,21 @@ const Sidebar = ({ open, onToggle, isMobile, onNavigate }) => {
           }}
         >
           {open && (
-            <span className="sidebar-title" style={{ color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>AITest Hub</span>
+            <Box
+              component={Link}
+              to="/"
+              className="sidebar-title"
+              onClick={handleItemClick}
+              sx={{
+                color: isDarkMode ? '#f3f4f6' : '#1f2937',
+                textDecoration: 'none',
+                '&:hover': {
+                  color: '#3b82f6'
+                }
+              }}
+            >
+              AITest Hub
+            </Box>
           )}
           <div className="sidebar-logo">⚡</div>
         </Box>
