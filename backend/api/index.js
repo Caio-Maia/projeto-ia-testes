@@ -19,6 +19,10 @@ const AuditLog = require('../models/auditLogModel');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const frontendOrigins = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
 
 // Log security info
 logger.info({ 
@@ -27,7 +31,17 @@ logger.info({
   queueEnabled: isRedisEnabled()
 }, 'Server starting with security features');
 
-app.use(cors());
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || frontendOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 
 // Compression Middleware: Reduce response size with gzip/deflate
 // Compresses responses >1KB with gzip by default
@@ -257,7 +271,13 @@ app.use(enforceHTTPS);
 const isProduction = process.env.NODE_ENV === 'production';
 
 if (isProduction) {
-  const csrfProtection = csrf({ cookie: true });
+  const csrfProtection = csrf({
+    cookie: {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    },
+  });
 
   // Middleware condicional para CSRF - exclui rotas de streaming (SSE)
   // Rotas de streaming não podem usar CSRF tradicional devido à natureza da conexão
