@@ -1,21 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { FormControlLabel, Switch, Tooltip, Box, Typography } from '@mui/material';
 import { useLanguage } from '../stores/hooks';
+import { useSettingsStore } from '../stores/settingsStore';
 import SchoolIcon from '@mui/icons-material/School';
 
 function EducationModeToggle() {
   const { t } = useLanguage();
-  
-  // Initialize from localStorage or default to false
-  const [educationMode, setEducationMode] = useState(() => {
-    const savedMode = localStorage.getItem('educationMode');
-    return savedMode ? JSON.parse(savedMode) : false;
-  });
-
-  // Update localStorage when educationMode changes
-  useEffect(() => {
-    localStorage.setItem('educationMode', JSON.stringify(educationMode));
-  }, [educationMode]);
+  const educationMode = useSettingsStore((state) => state.educationMode);
+  const setEducationMode = useSettingsStore((state) => state.setEducationMode);
 
   const handleChange = (event) => {
     setEducationMode(event.target.checked);

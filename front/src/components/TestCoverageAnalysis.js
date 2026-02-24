@@ -37,7 +37,7 @@ import { parseError, logError } from '../utils/errorHandler';
 function TestCoverageAnalysis({ 
   initialRequirements = null, 
   initialTestCases = null,
-  selectedModel = 'gpt-4o-mini',
+  selectedModel = null,
   onAnalysisComplete = null
 }) {
   const { language, t } = useLanguage();
@@ -60,7 +60,20 @@ function TestCoverageAnalysis({
   const [testMetrics, setTestMetrics] = useState({});
   const [selectedReq, setSelectedReq] = useState(null);
   const [localSelectedModel, setLocalSelectedModel] = useState(() => {
-    return AI_MODELS.find(m => m.version === selectedModel) || AI_MODELS[0] || null;
+    if (selectedModel && typeof selectedModel === 'object' && selectedModel.apiName) {
+      return selectedModel;
+    }
+
+    if (typeof selectedModel === 'string' && selectedModel.includes('::')) {
+      const [apiName, version] = selectedModel.split('::');
+      return AI_MODELS.find(m => m.apiName === apiName && m.version === version) || null;
+    }
+
+    if (typeof selectedModel === 'string') {
+      return AI_MODELS.find(m => m.version === selectedModel) || null;
+    }
+
+    return null;
   });
   const [requirementsText, setRequirementsText] = useState('');
   const [testCasesText, setTestCasesText] = useState('');
@@ -77,7 +90,7 @@ function TestCoverageAnalysis({
       setTestCasesText(JSON.stringify(initialTestCases, null, 2));
     }
     // Auto-analyze if both props are provided
-    if (initialRequirements?.length > 0 && initialTestCases?.length > 0) {
+    if (initialRequirements?.length > 0 && initialTestCases?.length > 0 && localSelectedModel) {
       // Defer the analyze call to avoid the dependency issue
       const timer = setTimeout(() => {
         analyzeWithAI(initialRequirements, initialTestCases);
@@ -85,7 +98,7 @@ function TestCoverageAnalysis({
       return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialRequirements, initialTestCases]);
+  }, [initialRequirements, initialTestCases, localSelectedModel]);
 
   // Normalize status to standard values
   const normalizeStatus = (status) => {
@@ -240,7 +253,20 @@ function TestCoverageAnalysis({
       ? localSelectedModel
       : (typeof selectedModel === 'object' && selectedModel?.apiName)
         ? selectedModel
-        : AI_MODELS.find(m => m.version === (localSelectedModel?.version || selectedModel)) || AI_MODELS[0];
+        : (typeof selectedModel === 'string' && selectedModel.includes('::'))
+          ? (() => {
+              const [apiName, version] = selectedModel.split('::');
+              return AI_MODELS.find(m => m.apiName === apiName && m.version === version) || null;
+            })()
+          : AI_MODELS.find(m => m.version === (localSelectedModel?.version || selectedModel)) || null;
+
+    if (!modelObj || !modelObj.apiName) {
+      setError(language === 'pt-BR'
+        ? 'Selecione um modelo de IA para continuar.'
+        : 'Please select an AI model to continue.');
+      return;
+    }
+
     const modelToUse = modelObj.version || modelObj;
 
     if (!requirementsData.length || !testCasesData.length) {
@@ -1122,7 +1148,7 @@ TC-002: Invalid login: REQ-001: failed`}
               size="large"
               startIcon={analyzing ? <CircularProgress size={22} color="inherit" /> : <SmartToyIcon />}
               onClick={handleAnalyze}
-              disabled={analyzing || (!requirementsText.trim() && !testCasesText.trim())}
+              disabled={analyzing || !localSelectedModel || (!requirementsText.trim() && !testCasesText.trim())}
               sx={{
                 background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                 px: 6,
@@ -1218,7 +1244,7 @@ TC-002: Invalid login: REQ-001: failed`}
           </Typography>
           <Chip 
             icon={<SmartToyIcon sx={{ color: 'white !important' }} />}
-            label={`${isPortuguese ? 'Modelo' : 'Model'}: ${localSelectedModel?.label || localSelectedModel?.version || selectedModel}`}
+            label={`${isPortuguese ? 'Modelo' : 'Model'}: ${localSelectedModel?.label || localSelectedModel?.version || (isPortuguese ? 'não selecionado' : 'not selected')}`}
             sx={{ mt: 2, color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
             variant="outlined"
           />
@@ -1265,7 +1291,7 @@ TC-002: Invalid login: REQ-001: failed`}
             <Button
               startIcon={analyzing ? <CircularProgress size={16} /> : <SmartToyIcon />}
               onClick={() => analyzeWithAI()}
-              disabled={analyzing}
+              disabled={analyzing || !localSelectedModel}
               variant="contained"
               sx={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
             >

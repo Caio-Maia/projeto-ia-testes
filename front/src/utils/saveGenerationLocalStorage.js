@@ -18,7 +18,7 @@ const normalizeGenerationType = (type) => {
         typeStr === 'test-case' ||
         typeStr === 'generate-tests'
     ) {
-        return { storageKey: 'testGenerations', typeLabel: 'test', typePrefix: 'test' };
+        return { storageKey: 'testGenerations', typeLabel: 'testCase', typePrefix: 'test' };
     }
 
     if (
@@ -28,7 +28,7 @@ const normalizeGenerationType = (type) => {
         typeStr === 'generate-code' ||
         typeStr === 'generate-test-code'
     ) {
-        return { storageKey: 'codeGenerations', typeLabel: 'code', typePrefix: 'code' };
+        return { storageKey: 'codeGenerations', typeLabel: 'testCode', typePrefix: 'code' };
     }
 
     if (
@@ -38,7 +38,7 @@ const normalizeGenerationType = (type) => {
         typeStr === 'risk-analysis' ||
         typeStr === 'analyze-risks'
     ) {
-        return { storageKey: 'riskGenerations', typeLabel: 'risk', typePrefix: 'risk' };
+        return { storageKey: 'riskGenerations', typeLabel: 'riskAnalysis', typePrefix: 'risk' };
     }
 
     return { storageKey: 'otherGenerations', typeLabel: 'other', typePrefix: 'other' };
@@ -58,6 +58,7 @@ const saveGenerationToLocalStorage = (generation, type, model, description = '')
         model,
         generation,
         description,
+        createdAt: new Date().toISOString(),
         date: new Date().toLocaleString(),
     };
 

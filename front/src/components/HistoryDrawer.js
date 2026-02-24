@@ -51,6 +51,38 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
   const getCanonicalTypeKey = (typeString) => {
     if (!typeString) return null;
     const normalized = String(typeString).toLowerCase().trim();
+
+    if (
+      normalized.includes('risk') ||
+      normalized.includes('risco') ||
+      normalized.includes('analy')
+    ) {
+      return 'riskAnalysis';
+    }
+
+    if (
+      normalized.includes('code') ||
+      normalized.includes('código') ||
+      normalized.includes('codigo')
+    ) {
+      return 'testCode';
+    }
+
+    if (
+      normalized.includes('test') ||
+      normalized.includes('teste') ||
+      normalized.includes('caso')
+    ) {
+      return 'testCase';
+    }
+
+    if (
+      normalized.includes('task') ||
+      normalized.includes('tarefa') ||
+      normalized.includes('improve')
+    ) {
+      return 'task';
+    }
     
     const typeMap = {
       'tarefa': 'task',
@@ -201,26 +233,74 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
   const riskGenerations = JSON.parse(localStorage.getItem('riskGenerations')) || [];
   const otherGenerations = JSON.parse(localStorage.getItem('otherGenerations')) || [];
 
+  const allGenerations = [
+    ...taskGenerations.map((gen) => ({ ...gen, __storageType: 'task' })),
+    ...testGenerations.map((gen) => ({ ...gen, __storageType: 'testCase' })),
+    ...codeGenerations.map((gen) => ({ ...gen, __storageType: 'testCode' })),
+    ...riskGenerations.map((gen) => ({ ...gen, __storageType: 'riskAnalysis' })),
+    ...otherGenerations.map((gen) => ({ ...gen, __storageType: 'other' })),
+  ];
+
+  const getResolvedTypeKey = (gen) => {
+    const normalizedType = getCanonicalTypeKey(gen.type);
+    if (normalizedType) return normalizedType;
+
+    const generationId = String(gen?.generationId || '').toLowerCase();
+    if (generationId.startsWith('task-')) return 'task';
+    if (generationId.startsWith('test-')) return 'testCase';
+    if (generationId.startsWith('code-')) return 'testCode';
+    if (generationId.startsWith('risk-')) return 'riskAnalysis';
+
+    if (gen.__storageType === 'task') return 'task';
+    if (gen.__storageType === 'testCase') return 'testCase';
+    if (gen.__storageType === 'testCode') return 'testCode';
+    if (gen.__storageType === 'riskAnalysis') return 'riskAnalysis';
+    return null;
+  };
+
   // Get generations based on active tab
   const getActiveGenerations = () => {
     switch (activeTab) {
       case 0: // All
-        return [...taskGenerations, ...testGenerations, ...codeGenerations, ...riskGenerations, ...otherGenerations];
+        return allGenerations;
       case 1: // Tasks
-        return taskGenerations;
+        return allGenerations.filter((gen) => getResolvedTypeKey(gen) === 'task');
       case 2: // Test Cases
-        return testGenerations;
+        return allGenerations.filter((gen) => getResolvedTypeKey(gen) === 'testCase');
       case 3: // Test Code
-        return codeGenerations;
+        return allGenerations.filter((gen) => getResolvedTypeKey(gen) === 'testCode');
       case 4: // Risk Analysis
-        return riskGenerations;
+        return allGenerations.filter((gen) => getResolvedTypeKey(gen) === 'riskAnalysis');
       default:
         return [];
     }
   };
 
-  const generations = getActiveGenerations();
-  generations.sort((a, b) => new Date(b.date) - new Date(a.date));
+  const getGenerationTimestamp = (generation) => {
+    const createdAt = generation?.createdAt;
+    if (createdAt) {
+      const createdAtTs = new Date(createdAt).getTime();
+      if (!Number.isNaN(createdAtTs)) return createdAtTs;
+    }
+
+    const dateString = generation?.date;
+    if (dateString) {
+      const parsedDateTs = new Date(dateString).getTime();
+      if (!Number.isNaN(parsedDateTs)) return parsedDateTs;
+    }
+
+    const idWithTimestamp = String(generation?.generationId || '');
+    const match = idWithTimestamp.match(/-(\d{13})-/);
+    if (match) {
+      return Number(match[1]);
+    }
+
+    return 0;
+  };
+
+  const generations = [...getActiveGenerations()].sort(
+    (a, b) => getGenerationTimestamp(b) - getGenerationTimestamp(a)
+  );
 
   // Calculate pagination
   const totalPages = Math.ceil(generations.length / itemsPerPage);
@@ -357,7 +437,7 @@ const HistoryDrawer = ({ inSidebar = false, open = true, sidebarOpen = true }) =
         <List>
           {generations.length > 0 ? (paginatedGenerations.map((gen) => (
             <ListItem
-              key={gen.id}
+              key={gen.generationId || `${gen.type || 'gen'}-${gen.id || 'noid'}-${gen.date || ''}`}
               onClick={() => handleDialogOpen(gen)}
               sx={{
                 borderRadius: 2,
