@@ -14,6 +14,48 @@ import axios from 'axios';
 
 const STORAGE_KEY = 'feedbackStorageMode';
 const FEEDBACKS_KEY = 'localFeedbacks';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
+const apiClient = axios.create({
+  baseURL: BACKEND_URL,
+  withCredentials: true,
+});
+
+let csrfTokenCache = null;
+
+const getCsrfToken = async () => {
+  if (csrfTokenCache) {
+    return csrfTokenCache;
+  }
+
+  const response = await apiClient.get('/api/csrf-token');
+  csrfTokenCache = response.data?.csrfToken;
+  return csrfTokenCache;
+};
+
+const postWithCsrf = async (url, data) => {
+  try {
+    const csrfToken = await getCsrfToken();
+    return await apiClient.post(url, data, {
+      headers: {
+        'X-CSRF-Token': csrfToken,
+      },
+    });
+  } catch (error) {
+    const isCsrfError = error?.response?.status === 403 && error?.response?.data?.code === 'CSRF_ERROR';
+    if (!isCsrfError) {
+      throw error;
+    }
+
+    csrfTokenCache = null;
+    const refreshedToken = await getCsrfToken();
+    return apiClient.post(url, data, {
+      headers: {
+        'X-CSRF-Token': refreshedToken,
+      },
+    });
+  }
+};
 
 /**
  * Obtém o modo de armazenamento configurado
@@ -24,7 +66,7 @@ export const getStorageMode = () => {
   
   if (envMode === 'user-choice') {
     // Usuário pode escolher - verifica preferência salva
-    return localStorage.getItem(STORAGE_KEY) || 'backend';
+    return localStorage.getItem(STORAGE_KEY) || 'local';
   }
   
   return envMode; // 'local' ou 'backend' forçado por variável de ambiente
@@ -101,8 +143,7 @@ export const submitFeedback = async (feedbackData) => {
   }
   
   // Enviar para backend
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-  const response = await axios.post(`${backendUrl}/api/feedback`, feedbackData);
+  const response = await postWithCsrf('/api/feedback', feedbackData);
   return response.data;
 };
 
@@ -135,8 +176,7 @@ export const getFeedbackStats = async () => {
     return Object.values(stats);
   }
   
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-  const response = await axios.get(`${backendUrl}/api/feedback/stats`);
+  const response = await apiClient.get('/api/feedback/stats');
   return response.data;
 };
 
@@ -155,8 +195,7 @@ export const getRecentFeedback = async () => {
       .slice(0, 50);
   }
   
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-  const response = await axios.get(`${backendUrl}/api/feedback/recent`);
+  const response = await apiClient.get('/api/feedback/recent');
   return response.data;
 };
 
@@ -181,8 +220,6 @@ export const regenerateFeedback = async (feedbackId, model, token) => {
     }
     
     // Chama API de regeneração do backend (apenas para a IA, não salva feedback lá)
-    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-    
     // Monta o histórico de conversação
     const conversationHistory = feedback.conversationHistory || [];
     conversationHistory.push({
@@ -196,7 +233,7 @@ export const regenerateFeedback = async (feedbackId, model, token) => {
     
     if (apiName === 'chatgpt') {
       response = await axios.post(
-        `${backendUrl}/api/chatgpt/improve-task`,
+        `${BACKEND_URL}/api/chatgpt/improve-task`,
         { 
           task: conversationHistory.map(m => `${m.role}: ${m.content}`).join('\n'),
           model: model.version || model 
@@ -204,7 +241,7 @@ export const regenerateFeedback = async (feedbackId, model, token) => {
       );
     } else if (apiName === 'gemini') {
       response = await axios.post(
-        `${backendUrl}/api/gemini/improve-task?token=${token}`,
+        `${BACKEND_URL}/api/gemini/improve-task?token=${token}`,
         { 
           data: conversationHistory.map(m => `${m.role}: ${m.content}`).join('\n'),
           model: model.version || model 
@@ -225,9 +262,8 @@ export const regenerateFeedback = async (feedbackId, model, token) => {
   }
   
   // Usa backend para regeneração
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-  const response = await axios.post(
-    `${backendUrl}/api/feedback/regenerate?token=${token}`,
+  const response = await postWithCsrf(
+    `/api/feedback/regenerate?token=${token}`,
     { feedbackId, model }
   );
   return response.data;
