@@ -10,8 +10,13 @@ import {
     Typography,
     Paper,
     Grid,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
     InputAdornment,
-    IconButton
+    IconButton,
+    Divider
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import LockIcon from '@mui/icons-material/Lock';
@@ -21,45 +26,103 @@ import { useDarkMode } from '../stores/hooks';
 
 function TokenDialog({ open, onClose, permitClose, onSuccess }) {
     const { isDarkMode } = useDarkMode();
-    const [chatgptToken, setChatgptToken] = useState('');
-    const [geminiToken, setGeminiToken] = useState('');
-    const [jiraToken, setJiraToken] = useState('');
-    const [jiraEmail, setJiraEmail] = useState('');
-    const [jiraBaseUrl, setJiraBaseUrl] = useState('');
+    const [formValues, setFormValues] = useState({
+        chatgptToken: '',
+        geminiToken: '',
+        jiraToken: '',
+        jiraEmail: '',
+        jiraBaseUrl: '',
+    });
     const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
+    const [selectedManagementTool, setSelectedManagementTool] = useState('jira');
     const [showTokens, setShowTokens] = useState({
         chatgpt: false,
         gemini: false,
-        jira: false
+        jira: false,
+        trello: false,
     });
+
+    const aiProviders = [
+        {
+            key: 'chatgpt',
+            label: 'OpenAI ChatGPT',
+            storageKey: 'chatgptToken',
+            placeholder: 'sk-...',
+            helperText: 'Obtenha em openai.com/api-keys',
+            enabled: true,
+        },
+        {
+            key: 'gemini',
+            label: 'Google Gemini',
+            storageKey: 'geminiToken',
+            placeholder: 'AIza...',
+            helperText: 'Obtenha em aistudio.google.com',
+            enabled: true,
+        },
+    ];
+
+    const workToolsConfig = {
+        jira: [
+        {
+            key: 'jiraBaseUrl',
+            label: 'URL Base',
+            placeholder: 'https://suaempresa.atlassian.net',
+            helperText: 'Exemplo: https://suaempresa.atlassian.net',
+            enabled: true,
+        },
+        {
+            key: 'jiraEmail',
+            label: 'E-mail',
+            placeholder: 'seu.email@empresa.com',
+            helperText: 'E-mail da sua conta JIRA',
+            enabled: true,
+        },
+        {
+            key: 'jiraToken',
+            label: 'Token API',
+            placeholder: 'ATATT...',
+            helperText: 'Obtenha em id.atlassian.com/manage-profile/security',
+            secure: true,
+            visibilityKey: 'jira',
+            enabled: true,
+        },
+        ],
+    };
+
+    const managementTools = [
+        { value: 'jira', label: 'JIRA' },
+    ];
+
+    const workTools = workToolsConfig[selectedManagementTool] || [];
 
     useEffect(() => {
         if (open) {
-            setChatgptToken(localStorage.getItem('chatgptToken') || '');
-            setGeminiToken(localStorage.getItem('geminiToken') || '');
-            setJiraToken(localStorage.getItem('jiraToken') || '');
-            setJiraEmail(localStorage.getItem('jiraEmail') || '');
-            setJiraBaseUrl(localStorage.getItem('jiraBaseUrl') || '');
+            setFormValues({
+                chatgptToken: localStorage.getItem('chatgptToken') || '',
+                geminiToken: localStorage.getItem('geminiToken') || '',
+                jiraToken: localStorage.getItem('jiraToken') || '',
+                jiraEmail: localStorage.getItem('jiraEmail') || '',
+                jiraBaseUrl: localStorage.getItem('jiraBaseUrl') || '',
+            });
         }
     }, [open]);
 
     useEffect(() => {
-        // Habilita o botão se pelo menos um dos tokens estiver preenchido
-        setIsSubmitDisabled(
-            !chatgptToken && !geminiToken && !jiraToken && !jiraEmail && !jiraBaseUrl
-        );
-    }, [chatgptToken, geminiToken, jiraToken, jiraEmail, jiraBaseUrl]);
+        const hasAnyValue = Object.values(formValues).some((value) => Boolean(value));
+        setIsSubmitDisabled(!hasAnyValue);
+    }, [formValues]);
 
     const handleSubmit = () => {
-        if (chatgptToken) localStorage.setItem('chatgptToken', chatgptToken);
-        if (geminiToken) localStorage.setItem('geminiToken', geminiToken);
-        if (jiraToken) localStorage.setItem('jiraToken', jiraToken);
-        if (jiraEmail) localStorage.setItem('jiraEmail', jiraEmail);
-        if (jiraBaseUrl) localStorage.setItem('jiraBaseUrl', jiraBaseUrl);
+        Object.entries(formValues).forEach(([key, value]) => {
+            if (value) {
+                localStorage.setItem(key, value);
+            }
+        });
+
         onClose(false);
         
         // Call onSuccess callback if provided (used for redirect after token setup)
-        if (onSuccess && (chatgptToken || geminiToken)) {
+        if (onSuccess && (formValues.chatgptToken || formValues.geminiToken)) {
             onSuccess();
         }
     };
@@ -77,7 +140,7 @@ function TokenDialog({ open, onClose, permitClose, onSuccess }) {
         }));
     };
 
-    const tokenFieldProps = (tokenName, value) => ({
+    const tokenFieldProps = (tokenName) => ({
         type: showTokens[tokenName] ? 'text' : 'password',
         InputProps: {
             endAdornment: (
@@ -100,6 +163,35 @@ function TokenDialog({ open, onClose, permitClose, onSuccess }) {
             )
         }
     });
+
+    const updateField = (key, value) => {
+        setFormValues((prev) => ({
+            ...prev,
+            [key]: value,
+        }));
+    };
+
+    const inputBaseSx = {
+        '& .MuiOutlinedInput-root': {
+            backgroundColor: isDarkMode ? '#1a202c' : '#fff',
+            color: isDarkMode ? '#f3f4f6' : '#1f2937',
+            '& fieldset': {
+                borderColor: isDarkMode ? '#374151' : '#ccc',
+            },
+            '&:hover fieldset': {
+                borderColor: isDarkMode ? '#4b5563' : '#999',
+            },
+            '&.Mui-focused fieldset': {
+                borderColor: isDarkMode ? '#60a5fa' : '#1976d2',
+            },
+        },
+        '& .MuiInputLabel-root': {
+            color: isDarkMode ? '#d1d5db' : '#666',
+        },
+        '& .MuiFormHelperText-root': {
+            color: isDarkMode ? '#9ca3af' : '#666',
+        },
+    };
 
     return (
         <Dialog
@@ -136,7 +228,7 @@ function TokenDialog({ open, onClose, permitClose, onSuccess }) {
                             Configurar Tokens
                         </DialogTitle>
                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                            Adicione seus tokens de API
+                            IA e ferramentas de trabalho
                         </Typography>
                     </Box>
                 </Box>
@@ -171,82 +263,33 @@ function TokenDialog({ open, onClose, permitClose, onSuccess }) {
                 >
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                         <Box sx={{ fontSize: '1.5rem' }}>🤖</Box>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
-                            Tokens IA
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937', flex: 1 }}>
+                            Provedores de IA
                         </Typography>
                     </Box>
                     
                     <Grid container spacing={2}>
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Token ChatGPT"
-                                placeholder="sk-..."
-                                fullWidth
-                                value={chatgptToken}
-                                onChange={(e) => setChatgptToken(e.target.value)}
-                                variant="outlined"
-                                size="small"
-                                {...tokenFieldProps('chatgpt', chatgptToken)}
-                                helperText="Obtenha em openai.com/api-keys"
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        backgroundColor: isDarkMode ? '#1a202c' : '#fff',
-                                        color: isDarkMode ? '#f3f4f6' : '#1f2937',
-                                        '& fieldset': {
-                                            borderColor: isDarkMode ? '#374151' : '#ccc'
-                                        },
-                                        '&:hover fieldset': {
-                                            borderColor: isDarkMode ? '#4b5563' : '#999'
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: isDarkMode ? '#60a5fa' : '#1976d2'
-                                        }
-                                    },
-                                    '& .MuiInputLabel-root': {
-                                        color: isDarkMode ? '#d1d5db' : '#666'
-                                    },
-                                    '& .MuiFormHelperText-root': {
-                                        color: isDarkMode ? '#9ca3af' : '#666'
-                                    }
-                                }}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Token Gemini"
-                                placeholder="AIza..."
-                                fullWidth
-                                value={geminiToken}
-                                onChange={(e) => setGeminiToken(e.target.value)}
-                                variant="outlined"
-                                size="small"
-                                {...tokenFieldProps('gemini', geminiToken)}
-                                helperText="Obtenha em aistudio.google.com"
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        backgroundColor: isDarkMode ? '#1a202c' : '#fff',
-                                        color: isDarkMode ? '#f3f4f6' : '#1f2937',
-                                        '& fieldset': {
-                                            borderColor: isDarkMode ? '#374151' : '#ccc'
-                                        },
-                                        '&:hover fieldset': {
-                                            borderColor: isDarkMode ? '#4b5563' : '#999'
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: isDarkMode ? '#60a5fa' : '#1976d2'
-                                        }
-                                    },
-                                    '& .MuiInputLabel-root': {
-                                        color: isDarkMode ? '#d1d5db' : '#666'
-                                    },
-                                    '& .MuiFormHelperText-root': {
-                                        color: isDarkMode ? '#9ca3af' : '#666'
-                                    }
-                                }}
-                            />
-                        </Grid>
+                        {aiProviders.map((provider) => (
+                            <Grid size={12} key={provider.key}>
+                                <TextField
+                                    label={`Token ${provider.label}`}
+                                    placeholder={provider.placeholder}
+                                    fullWidth
+                                    value={provider.enabled ? (formValues[provider.storageKey] || '') : ''}
+                                    onChange={(e) => updateField(provider.storageKey, e.target.value)}
+                                    variant="outlined"
+                                    size="small"
+                                    disabled={!provider.enabled}
+                                    {...tokenFieldProps(provider.key)}
+                                    helperText={provider.helperText}
+                                    sx={inputBaseSx}
+                                />
+                            </Grid>
+                        ))}
                     </Grid>
                 </Paper>
+
+                <Divider sx={{ mx: 2, mt: 2, borderColor: isDarkMode ? '#374151' : '#e5e7eb' }} />
 
                 {/* JIRA Section */}
                 <Paper 
@@ -261,113 +304,56 @@ function TokenDialog({ open, onClose, permitClose, onSuccess }) {
                 >
                     <Box display="flex" alignItems="center" gap={1} mb={2}>
                         <Box sx={{ fontSize: '1.5rem' }}>📋</Box>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
-                            Credenciais JIRA
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937', flex: 1 }}>
+                            Ferramentas de Gestão
                         </Typography>
                     </Box>
-                    
+
+                    <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                        <InputLabel sx={{ color: isDarkMode ? '#d1d5db' : '#666' }}>Ferramenta</InputLabel>
+                        <Select
+                            value={selectedManagementTool}
+                            label="Ferramenta"
+                            onChange={(e) => setSelectedManagementTool(e.target.value)}
+                            sx={{
+                                backgroundColor: isDarkMode ? '#1a202c' : '#fff',
+                                color: isDarkMode ? '#f3f4f6' : '#1f2937',
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: isDarkMode ? '#374151' : '#ccc',
+                                },
+                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: isDarkMode ? '#4b5563' : '#999',
+                                },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: isDarkMode ? '#60a5fa' : '#1976d2',
+                                },
+                            }}
+                        >
+                            {managementTools.map((tool) => (
+                                <MenuItem key={tool.value} value={tool.value}>
+                                    {tool.label}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                     <Grid container spacing={2}>
-                        <Grid item xs={12}>
+                        {workTools.map((field) => (
+                        <Grid size={12} key={field.key}>
                             <TextField
-                                label="URL Base JIRA"
-                                placeholder="https://suaempresa.atlassian.net"
+                                label={`JIRA ${field.label}`}
+                                placeholder={field.placeholder}
                                 fullWidth
-                                value={jiraBaseUrl}
-                                onChange={(e) => setJiraBaseUrl(e.target.value)}
+                                value={formValues[field.key] || ''}
+                                onChange={(e) => updateField(field.key, e.target.value)}
                                 variant="outlined"
                                 size="small"
-                                helperText="Exemplo: https://suaempresa.atlassian.net"
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        backgroundColor: isDarkMode ? '#1a202c' : '#fff',
-                                        color: isDarkMode ? '#f3f4f6' : '#1f2937',
-                                        '& fieldset': {
-                                            borderColor: isDarkMode ? '#374151' : '#ccc'
-                                        },
-                                        '&:hover fieldset': {
-                                            borderColor: isDarkMode ? '#4b5563' : '#999'
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: isDarkMode ? '#60a5fa' : '#1976d2'
-                                        }
-                                    },
-                                    '& .MuiInputLabel-root': {
-                                        color: isDarkMode ? '#d1d5db' : '#666'
-                                    },
-                                    '& .MuiFormHelperText-root': {
-                                        color: isDarkMode ? '#9ca3af' : '#666'
-                                    }
-                                }}
+                                type={field.key === 'jiraEmail' ? 'email' : 'text'}
+                                helperText={field.helperText}
+                                {...(field.secure ? tokenFieldProps(field.visibilityKey) : {})}
+                                sx={inputBaseSx}
                             />
                         </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                label="E-mail JIRA"
-                                placeholder="seu.email@empresa.com"
-                                type="email"
-                                fullWidth
-                                value={jiraEmail}
-                                onChange={(e) => setJiraEmail(e.target.value)}
-                                variant="outlined"
-                                size="small"
-                                helperText="E-mail da sua conta JIRA"
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        backgroundColor: isDarkMode ? '#1a202c' : '#fff',
-                                        color: isDarkMode ? '#f3f4f6' : '#1f2937',
-                                        '& fieldset': {
-                                            borderColor: isDarkMode ? '#374151' : '#ccc'
-                                        },
-                                        '&:hover fieldset': {
-                                            borderColor: isDarkMode ? '#4b5563' : '#999'
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: isDarkMode ? '#60a5fa' : '#1976d2'
-                                        }
-                                    },
-                                    '& .MuiInputLabel-root': {
-                                        color: isDarkMode ? '#d1d5db' : '#666'
-                                    },
-                                    '& .MuiFormHelperText-root': {
-                                        color: isDarkMode ? '#9ca3af' : '#666'
-                                    }
-                                }}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Token JIRA (API Token)"
-                                placeholder="ATATT..."
-                                fullWidth
-                                value={jiraToken}
-                                onChange={(e) => setJiraToken(e.target.value)}
-                                variant="outlined"
-                                size="small"
-                                {...tokenFieldProps('jira', jiraToken)}
-                                helperText="Obtenha em id.atlassian.com/manage-profile/security"
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        backgroundColor: isDarkMode ? '#1a202c' : '#fff',
-                                        color: isDarkMode ? '#f3f4f6' : '#1f2937',
-                                        '& fieldset': {
-                                            borderColor: isDarkMode ? '#374151' : '#ccc'
-                                        },
-                                        '&:hover fieldset': {
-                                            borderColor: isDarkMode ? '#4b5563' : '#999'
-                                        },
-                                        '&.Mui-focused fieldset': {
-                                            borderColor: isDarkMode ? '#60a5fa' : '#1976d2'
-                                        }
-                                    },
-                                    '& .MuiInputLabel-root': {
-                                        color: isDarkMode ? '#d1d5db' : '#666'
-                                    },
-                                    '& .MuiFormHelperText-root': {
-                                        color: isDarkMode ? '#9ca3af' : '#666'
-                                    }
-                                }}
-                            />
-                        </Grid>
+                        ))}
                     </Grid>
                 </Paper>
             </DialogContent>

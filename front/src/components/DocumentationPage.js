@@ -233,7 +233,7 @@ npm start`}</code>
             color: '#f57c00'
           },
         ].map((feature, idx) => (
-          <Grid item xs={12} sm={6} md={4} key={idx} sx={{ display: 'flex' }}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx} sx={{ display: 'flex' }}>
             <Card
               sx={{
                 width: '100%',
@@ -319,7 +319,7 @@ npm start`}</code>
             color: '#f57c00'
           },
         ].map((feature, idx) => (
-          <Grid item xs={12} sm={6} md={4} key={idx} sx={{ display: 'flex' }}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx} sx={{ display: 'flex' }}>
             <Card
               sx={{
                 width: '100%',
@@ -379,7 +379,7 @@ npm start`}</code>
       </Typography>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
               <FaCode size={20} /> Frontend
@@ -397,7 +397,7 @@ npm start`}</code>
           </Paper>
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
               <FaDatabase size={20} /> Backend
@@ -415,7 +415,7 @@ npm start`}</code>
           </Paper>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Paper sx={{ p: 3, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
               <FaLink size={20} /> APIs Externas
@@ -445,7 +445,7 @@ npm start`}</code>
       </Typography>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
               <FaCode size={20} /> Frontend
@@ -463,7 +463,7 @@ npm start`}</code>
           </Paper>
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 6 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
               <FaDatabase size={20} /> Backend
@@ -481,7 +481,7 @@ npm start`}</code>
           </Paper>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={12}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
               <FaLink size={20} /> External APIs
@@ -782,7 +782,7 @@ npm start`}</code>
         </Typography>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card
               sx={{
                 height: '100%',
@@ -818,7 +818,7 @@ npm start`}</code>
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card
               sx={{
                 height: '100%',
@@ -854,7 +854,7 @@ npm start`}</code>
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card
               sx={{
                 height: '100%',
@@ -890,7 +890,7 @@ npm start`}</code>
             </Card>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card
               sx={{
                 height: '100%',
