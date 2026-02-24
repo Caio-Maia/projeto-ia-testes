@@ -14,6 +14,8 @@ import {
   Card,
   CardContent,
   Grid,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   FaBook,
@@ -45,6 +47,8 @@ function TabPanel(props) {
 function DocumentationPage() {
   const { language } = useLanguage();
   const { isDarkMode } = useDarkMode();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [tabValue, setTabValue] = useState(0);
   const isPT = language === 'pt-BR';
 
@@ -669,11 +673,23 @@ npm start`}</code>
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
       {/* Hero Section */}
-      <Box sx={{ mb: 6, textAlign: 'center' }}>
+      <Paper
+        elevation={0}
+        sx={{
+          mb: 4,
+          p: { xs: 3, md: 5 },
+          textAlign: 'center',
+          borderRadius: 3,
+          background: isDarkMode
+            ? 'linear-gradient(135deg, #111827 0%, #1f2937 100%)'
+            : 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+          border: `1px solid ${isDarkMode ? '#374151' : '#bfdbfe'}`,
+        }}
+      >
         <Typography
-          variant="h3"
+          variant={isMobile ? 'h4' : 'h3'}
           sx={{
             fontWeight: 700,
             mb: 2,
@@ -690,24 +706,48 @@ npm start`}</code>
             ? 'Guia completo para começar a usar o IA-Testes e aproveitar todos os seus recursos'
             : 'Complete guide to get started with IA-Testes and make the most of its features'}
         </Typography>
-      </Box>
+      </Paper>
 
       {/* Tabs */}
-      <Paper sx={{ mb: 4, backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
+      <Paper
+        elevation={0}
+        sx={{
+          mb: 3,
+          backgroundColor: isDarkMode ? '#1a202c' : '#ffffff',
+          borderRadius: 2.5,
+          border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
+          position: 'sticky',
+          top: 12,
+          zIndex: 5,
+          backdropFilter: 'blur(6px)',
+        }}
+      >
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
           aria-label="documentation tabs"
+          variant={isMobile ? 'scrollable' : 'fullWidth'}
+          scrollButtons="auto"
           sx={{
+            px: 1,
             borderBottom: `1px solid ${isDarkMode ? '#374151' : '#e0e0e0'}`,
             '& .MuiTab-root': {
               color: isDarkMode ? '#d1d5db' : '#666',
               fontWeight: 600,
               fontSize: '0.95rem',
+              minHeight: 54,
+              textTransform: 'none',
+              borderRadius: 1.5,
+              mx: 0.5,
+              my: 0.75,
+              transition: 'all 0.2s ease',
             },
             '& .Mui-selected': {
-              color: isDarkMode ? '#3b82f6' : '#1976d2',
+              color: '#ffffff !important',
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              boxShadow: '0 6px 16px rgba(37, 99, 235, 0.25)',
             },
+            '& .MuiTabs-indicator': { display: 'none' },
           }}
         >
           <Tab label={isPT ? '🚀 Início Rápido' : '🚀 Quick Start'} id="tab-0" aria-controls="tabpanel-0" />
@@ -716,32 +756,47 @@ npm start`}</code>
           <Tab label={isPT ? '📡 API' : '📡 API'} id="tab-3" aria-controls="tabpanel-3" />
         </Tabs>
 
-        <TabPanel value={tabValue} index={0}>
-          {quickStartContent}
-        </TabPanel>
+      </Paper>
 
-        <TabPanel value={tabValue} index={1}>
-          {featureContent}
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={2}>
-          {techStackContent}
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={3}>
-          {apiContent}
-        </TabPanel>
+      <Paper
+        elevation={0}
+        sx={{
+          mb: 4,
+          p: { xs: 2, md: 3 },
+          borderRadius: 2.5,
+          border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
+          backgroundColor: isDarkMode ? '#111827' : '#ffffff',
+          minHeight: 420,
+        }}
+      >
+        <TabPanel value={tabValue} index={0}>{quickStartContent}</TabPanel>
+        <TabPanel value={tabValue} index={1}>{featureContent}</TabPanel>
+        <TabPanel value={tabValue} index={2}>{techStackContent}</TabPanel>
+        <TabPanel value={tabValue} index={3}>{apiContent}</TabPanel>
       </Paper>
 
       {/* Additional Resources */}
-      <Box sx={{ mt: 6 }}>
+      <Box sx={{ mt: 5 }}>
         <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
           {isPT ? '📖 Recursos Adicionais' : '📖 Additional Resources'}
         </Typography>
 
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
+            <Card
+              sx={{
+                height: '100%',
+                backgroundColor: isDarkMode ? '#1a202c' : '#ffffff',
+                border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
+                borderRadius: 2,
+                transition: 'all 0.25s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 24px rgba(59, 130, 246, 0.15)',
+                  borderColor: '#3b82f6',
+                },
+              }}
+            >
               <CardContent sx={{ textAlign: 'center' }}>
                 <FaBook size={32} color="#3b82f6" style={{ marginBottom: 16 }} />
                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
@@ -764,7 +819,20 @@ npm start`}</code>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
+            <Card
+              sx={{
+                height: '100%',
+                backgroundColor: isDarkMode ? '#1a202c' : '#ffffff',
+                border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
+                borderRadius: 2,
+                transition: 'all 0.25s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 24px rgba(59, 130, 246, 0.15)',
+                  borderColor: '#3b82f6',
+                },
+              }}
+            >
               <CardContent sx={{ textAlign: 'center' }}>
                 <FaTerminal size={32} color="#3b82f6" style={{ marginBottom: 16 }} />
                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
@@ -787,7 +855,20 @@ npm start`}</code>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
+            <Card
+              sx={{
+                height: '100%',
+                backgroundColor: isDarkMode ? '#1a202c' : '#ffffff',
+                border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
+                borderRadius: 2,
+                transition: 'all 0.25s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 24px rgba(59, 130, 246, 0.15)',
+                  borderColor: '#3b82f6',
+                },
+              }}
+            >
               <CardContent sx={{ textAlign: 'center' }}>
                 <FaClipboard size={32} color="#3b82f6" style={{ marginBottom: 16 }} />
                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
@@ -810,7 +891,20 @@ npm start`}</code>
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card sx={{ backgroundColor: isDarkMode ? '#1a202c' : '#ffffff' }}>
+            <Card
+              sx={{
+                height: '100%',
+                backgroundColor: isDarkMode ? '#1a202c' : '#ffffff',
+                border: `1px solid ${isDarkMode ? '#374151' : '#e2e8f0'}`,
+                borderRadius: 2,
+                transition: 'all 0.25s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 24px rgba(59, 130, 246, 0.15)',
+                  borderColor: '#3b82f6',
+                },
+              }}
+            >
               <CardContent sx={{ textAlign: 'center' }}>
                 <FaShieldAlt size={32} color="#3b82f6" style={{ marginBottom: 16 }} />
                 <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: isDarkMode ? '#f3f4f6' : '#1f2937' }}>
